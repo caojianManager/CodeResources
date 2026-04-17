@@ -101,7 +101,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         set => SetField(ref _advertisementSections, value);
     }
 
-    public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "Unknown Device" : Name;
+    public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "N/A" : Name;
 
     public string SignalText => $"{Rssi} dBm";
 

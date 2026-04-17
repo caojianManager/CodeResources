@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace BLETool;
 
@@ -145,10 +147,12 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly BleManager _ble = new();
     private readonly ObservableCollection<BleGattServiceInfo> _gattProfileCache = new();
+    private readonly ConcurrentQueue<string> _pendingNotificationMessages = new();
+    private readonly DispatcherTimer _notificationUiTimer;
 
     private BleDeviceInfo? _selectedDevice;
     private BleGattCharacteristicNode? _selectedCharacteristic;
-    private string _status = "Ready";
+    private string _status = "就绪";
     private bool _isConnected;
     private string _writeData = "Hello BLE";
     private string _filterText = string.Empty;
@@ -158,7 +162,9 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
     private bool _notifyEnabled;
     private bool _syncingNotifyState;
     private long _receivedBytes;
-    private string _readValueText = "0 Byte";
+    private long _pendingReceivedBytes;
+    private string _readValueText = "0 字节";
+    private string? _latestNotificationPayload;
     private DateTime _notificationWindowStart = DateTime.UtcNow;
 
     public BleViewModel()
@@ -172,6 +178,13 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         _ble.DeviceUpdated += OnDeviceUpdated;
         _ble.ConnectionChanged += OnConnectionChanged;
         _ble.DataReceived += OnDataReceived;
+
+        _notificationUiTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(120)
+        };
+        _notificationUiTimer.Tick += (_, _) => FlushPendingNotificationUi();
+        _notificationUiTimer.Start();
 
         StartScanCommand = new AsyncRelayCommand(StartScanAsync);
         StopScanCommand = new AsyncRelayCommand(StopScanAsync);
@@ -211,8 +224,10 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
             _selectedDevice = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedDevice));
             OnPropertyChanged(nameof(SelectedDeviceName));
             OnPropertyChanged(nameof(SelectedDeviceAddress));
+            OnPropertyChanged(nameof(SelectedDeviceAdvertisementType));
             RefreshAdvertisementRows();
             RefreshCommandStates();
         }
@@ -230,20 +245,31 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
             _selectedCharacteristic = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedCharacteristic));
             OnPropertyChanged(nameof(SelectedCharacteristicName));
             OnPropertyChanged(nameof(SelectedCharacteristicUuid));
             OnPropertyChanged(nameof(SelectedCharacteristicProperties));
             OnPropertyChanged(nameof(SelectedCharacteristicHandleText));
+            OnPropertyChanged(nameof(SelectedCharacteristicSupportsRead));
+            OnPropertyChanged(nameof(SelectedCharacteristicSupportsNotify));
+            OnPropertyChanged(nameof(SelectedCharacteristicSupportsWrite));
+            OnPropertyChanged(nameof(ShowWriteEditor));
+            OnPropertyChanged(nameof(ShowNotifyMessages));
+            OnPropertyChanged(nameof(ShowReadResult));
             SyncSelectedCharacteristicState();
             RefreshCommandStates();
         }
     }
 
-    public string SelectedDeviceName => SelectedDevice?.DisplayName ?? "No Device";
+    public string SelectedDeviceName => SelectedDevice?.DisplayName ?? "未选择设备";
 
     public string SelectedDeviceAddress => SelectedDevice?.Address ?? "--";
 
-    public string SelectedCharacteristicName => SelectedCharacteristic?.Name ?? "No Characteristic";
+    public string SelectedDeviceAdvertisementType => SelectedDevice?.AdvertisementType ?? "--";
+
+    public bool HasSelectedDevice => SelectedDevice != null;
+
+    public string SelectedCharacteristicName => SelectedCharacteristic?.Name ?? "未选择特征";
 
     public string SelectedCharacteristicUuid => SelectedCharacteristic?.Uuid ?? "--";
 
@@ -251,6 +277,20 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
     public string SelectedCharacteristicHandleText =>
         SelectedCharacteristic == null ? "--" : SelectedCharacteristic.Handle.ToString();
+
+    public bool HasSelectedCharacteristic => SelectedCharacteristic != null;
+
+    public bool SelectedCharacteristicSupportsRead => SelectedCharacteristic?.SupportsRead == true;
+
+    public bool SelectedCharacteristicSupportsNotify => SelectedCharacteristic?.SupportsNotify == true;
+
+    public bool SelectedCharacteristicSupportsWrite => SelectedCharacteristic?.SupportsWrite == true;
+
+    public bool ShowWriteEditor => SelectedCharacteristicSupportsWrite && !SelectedCharacteristicSupportsNotify;
+
+    public bool ShowNotifyMessages => SelectedCharacteristicSupportsNotify;
+
+    public bool ShowReadResult => SelectedCharacteristicSupportsRead && !SelectedCharacteristicSupportsNotify;
 
     public string Status
     {
@@ -271,7 +311,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public string ConnectionStateText => IsConnected ? "True" : "False";
+    public string ConnectionStateText => IsConnected ? "已连接" : "未连接";
 
     public string WriteData
     {
@@ -317,7 +357,10 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
     public bool IsBondedMode => DeviceListMode == DeviceListMode.Bonded;
 
-    public string DeviceCountText => $"{DevicesView.Cast<object>().Count()} devices";
+    public string DeviceCountText =>
+        IsBondedMode
+            ? $"已配对设备数: {DevicesView.Cast<object>().Count()}"
+            : $"已发现设备数: {DevicesView.Cast<object>().Count()}";
 
     public bool ShowCharacteristics
     {
@@ -373,14 +416,14 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public string ReceivedBytesText => $"{ReceivedBytes} Byte";
+    public string ReceivedBytesText => FormatByteSize(ReceivedBytes);
 
     public string ReceiveSpeedText
     {
         get
         {
             double elapsed = Math.Max((DateTime.UtcNow - _notificationWindowStart).TotalSeconds, 1);
-            return $"{ReceivedBytes / elapsed:0.0} B/S";
+            return $"{FormatByteSize(ReceivedBytes / elapsed)}/s";
         }
     }
 
@@ -401,7 +444,11 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void Dispose() => _ble.Dispose();
+    public void Dispose()
+    {
+        _notificationUiTimer.Stop();
+        _ble.Dispose();
+    }
 
     public void SelectGattNode(object? node)
     {
@@ -417,12 +464,13 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         GattServices.Clear();
         AdvertisementRows.Clear();
         NotificationMessages.Clear();
+        ClearPendingNotificationState();
         _gattProfileCache.Clear();
         SelectedDevice = null;
         SelectedCharacteristic = null;
         ReceivedBytes = 0;
-        ReadValueText = "0 Byte";
-        Status = "Scanning BLE devices...";
+        ReadValueText = "0 字节";
+        Status = "正在扫描 BLE 设备...";
         _ble.StartScan();
         return Task.CompletedTask;
     }
@@ -430,7 +478,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
     private Task StopScanAsync()
     {
         _ble.StopScan();
-        Status = $"Scan stopped, found {Devices.Count} devices";
+        Status = $"扫描已停止，共发现 {Devices.Count} 个设备";
         return Task.CompletedTask;
     }
 
@@ -454,20 +502,20 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         SelectedDevice = device;
         try
         {
-            Status = $"Pairing {device.DisplayName}...";
+            Status = $"正在配对 {device.DisplayName}...";
             bool ok = await _ble.PairAsync(device.DeviceId);
             if (ok)
             {
                 device.IsPaired = true;
             }
 
-            Status = ok ? "Pair success" : "Pair failed";
+            Status = ok ? "配对成功" : "配对失败";
             AddLog(Status);
             DevicesView.Refresh();
         }
         catch (Exception ex)
         {
-            HandleError("Pair", ex);
+            HandleError("配对", ex);
         }
     }
 
@@ -481,14 +529,14 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         SelectedDevice = device;
         try
         {
-            Status = $"Connecting {device.DisplayName}...";
+            Status = $"正在连接 {device.DisplayName}...";
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             await _ble.ConnectAsync(device.DeviceId, cancellation.Token);
             await LoadGattProfileAsync();
         }
         catch (Exception ex)
         {
-            HandleError("Connect", ex);
+            HandleError("连接", ex);
         }
     }
 
@@ -500,11 +548,11 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
             GattServices.Clear();
             _gattProfileCache.Clear();
             SelectedCharacteristic = null;
-            AddLog("Disconnected");
+            AddLog("设备已断开");
         }
         catch (Exception ex)
         {
-            HandleError("Disconnect", ex);
+            HandleError("断开连接", ex);
         }
     }
 
@@ -512,13 +560,13 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
     {
         try
         {
-            Status = "Reconnecting...";
+            Status = "正在重新连接...";
             await _ble.ReconnectAsync();
             await LoadGattProfileAsync();
         }
         catch (Exception ex)
         {
-            HandleError("Reconnect", ex);
+            HandleError("重新连接", ex);
         }
     }
 
@@ -533,11 +581,12 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         {
             byte[] data = Encoding.UTF8.GetBytes(WriteData);
             await _ble.WriteAsync(SelectedCharacteristic.ServiceUuid, SelectedCharacteristic.CharacteristicUuid, data);
-            AddLog($"[INFO] Write {SelectedCharacteristic.Uuid}: {BitConverter.ToString(data)}");
+            Status = $"写入成功: {SelectedCharacteristic.Name}";
+            AddLog($"[INFO] 写入成功: {SelectedCharacteristic.Name} | 内容: {WriteData} | HEX: {BitConverter.ToString(data)}");
         }
         catch (Exception ex)
         {
-            HandleError("Write", ex);
+            HandleError("写入", ex);
         }
     }
 
@@ -555,12 +604,12 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
                 }
 
                 RebuildGattServiceTree();
-                Status = $"Services loaded: {_gattProfileCache.Count}";
+                Status = $"服务加载完成，共 {_gattProfileCache.Count} 个服务";
             });
         }
         catch (Exception ex)
         {
-            HandleError("Load services", ex);
+            HandleError("加载服务", ex);
         }
     }
 
@@ -575,19 +624,20 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         {
             byte[] data = await _ble.ReadAsync(SelectedCharacteristic.ServiceUuid, SelectedCharacteristic.CharacteristicUuid);
             ReadValueText = FormatPayload(data);
-            AddLog($"[INFO] Read {SelectedCharacteristic.Uuid} success");
+            AddLog($"[INFO] 读取 {SelectedCharacteristic.Uuid} 成功");
         }
         catch (Exception ex)
         {
-            HandleError("Read", ex);
+            HandleError("读取", ex);
         }
     }
 
     private Task ClearNotificationsAsync()
     {
         NotificationMessages.Clear();
+        ClearPendingNotificationState();
         ReceivedBytes = 0;
-        ReadValueText = "0 Byte";
+        ReadValueText = "0 字节";
         _notificationWindowStart = DateTime.UtcNow;
         return Task.CompletedTask;
     }
@@ -611,20 +661,20 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
             {
                 await _ble.SubscribeAsync(SelectedCharacteristic.ServiceUuid, SelectedCharacteristic.CharacteristicUuid);
                 SelectedCharacteristic.IsSubscribed = true;
-                AddLog($"[INFO] Notify enabled: {SelectedCharacteristic.Uuid}");
+                AddLog($"[INFO] 已启用通知: {SelectedCharacteristic.Uuid}");
             }
             else
             {
                 await _ble.UnsubscribeAsync(SelectedCharacteristic.ServiceUuid, SelectedCharacteristic.CharacteristicUuid);
                 SelectedCharacteristic.IsSubscribed = false;
-                AddLog($"[INFO] Notify disabled: {SelectedCharacteristic.Uuid}");
+                AddLog($"[INFO] 已关闭通知: {SelectedCharacteristic.Uuid}");
             }
         }
         catch (Exception ex)
         {
             SelectedCharacteristic.IsSubscribed = false;
             SyncNotifyFlag(false);
-            HandleError("Notify", ex);
+            HandleError("通知订阅", ex);
         }
     }
 
@@ -669,6 +719,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
             ?? GattServices.SelectMany(service => service.Characteristics).FirstOrDefault();
 
         SelectedCharacteristic = selectedNode;
+        OnPropertyChanged(nameof(HasSelectedCharacteristic));
     }
 
     private void OnDeviceDiscovered(object? sender, BleDeviceInfo device)
@@ -676,7 +727,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         RunOnUI(() =>
         {
             UpsertDevice(device, autoSelectIfNeeded: true);
-            AddLog($"[INFO] Device found: {device.DisplayName} {device.Address}");
+            AddLog($"[INFO] 发现设备: {device.DisplayName} {device.Address}");
         });
     }
 
@@ -715,7 +766,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         RunOnUI(() =>
         {
             IsConnected = e.IsConnected;
-            Status = e.IsConnected ? $"Connected: {e.DeviceId}" : $"Disconnected: {e.Reason}";
+            Status = e.IsConnected ? $"已连接: {e.DeviceId}" : $"已断开: {e.Reason}";
             AddLog($"[INFO] {Status}");
             if (!e.IsConnected)
             {
@@ -723,31 +774,23 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
                 _gattProfileCache.Clear();
                 SelectedCharacteristic = null;
                 SyncNotifyFlag(false);
+                OnPropertyChanged(nameof(HasSelectedCharacteristic));
             }
         });
     }
 
     private void OnDataReceived(object? sender, BleDataReceivedEventArgs e)
     {
-        RunOnUI(() =>
+        BleGattCharacteristicNode? selectedCharacteristic = SelectedCharacteristic;
+        if (selectedCharacteristic != null &&
+            selectedCharacteristic.ServiceUuid == e.ServiceUuid &&
+            selectedCharacteristic.CharacteristicUuid == e.CharacteristicUuid)
         {
-            if (SelectedCharacteristic != null &&
-                SelectedCharacteristic.ServiceUuid == e.ServiceUuid &&
-                SelectedCharacteristic.CharacteristicUuid == e.CharacteristicUuid)
-            {
-                string payload = FormatPayload(e.Data);
-                NotificationMessages.Add($"[{e.Timestamp:HH:mm:ss.fff}] {payload}");
-                if (NotificationMessages.Count > 300)
-                {
-                    NotificationMessages.RemoveAt(0);
-                }
-
-                ReceivedBytes += e.Data.Length;
-                ReadValueText = payload;
-            }
-
-            AddLog($"[INFO] Notify {e.CharacteristicUuid}: {BitConverter.ToString(e.Data)}");
-        });
+            string payload = FormatPayload(e.Data);
+            _pendingNotificationMessages.Enqueue($"[{e.Timestamp:HH:mm:ss.fff}] {payload}");
+            Interlocked.Add(ref _pendingReceivedBytes, e.Data.Length);
+            _latestNotificationPayload = payload;
+        }
     }
 
     private void RefreshAdvertisementRows()
@@ -755,6 +798,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         AdvertisementRows.Clear();
         if (SelectedDevice == null)
         {
+            OnPropertyChanged(nameof(SelectedDeviceAdvertisementType));
             return;
         }
 
@@ -767,6 +811,8 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
                 Data = row.Data
             });
         }
+
+        OnPropertyChanged(nameof(SelectedDeviceAdvertisementType));
     }
 
     private bool FilterDevice(object item)
@@ -811,10 +857,53 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
     private void SyncSelectedCharacteristicState()
     {
         NotificationMessages.Clear();
+        ClearPendingNotificationState();
         ReceivedBytes = 0;
         _notificationWindowStart = DateTime.UtcNow;
-        ReadValueText = "0 Byte";
+        ReadValueText = "0 字节";
         SyncNotifyFlag(SelectedCharacteristic?.IsSubscribed == true);
+    }
+
+    private void ClearPendingNotificationState()
+    {
+        while (_pendingNotificationMessages.TryDequeue(out _))
+        {
+        }
+
+        Interlocked.Exchange(ref _pendingReceivedBytes, 0);
+        _latestNotificationPayload = null;
+    }
+
+    private void FlushPendingNotificationUi()
+    {
+        int processed = 0;
+        while (processed < 40 && _pendingNotificationMessages.TryDequeue(out string? message))
+        {
+            NotificationMessages.Add(message);
+            if (NotificationMessages.Count > 300)
+            {
+                NotificationMessages.RemoveAt(0);
+            }
+
+            processed++;
+        }
+
+        long receivedBytesDelta = Interlocked.Exchange(ref _pendingReceivedBytes, 0);
+        if (receivedBytesDelta > 0)
+        {
+            ReceivedBytes += receivedBytesDelta;
+        }
+
+        if (!string.IsNullOrEmpty(_latestNotificationPayload))
+        {
+            ReadValueText = _latestNotificationPayload;
+            _latestNotificationPayload = null;
+        }
+
+        if (processed > 0 || receivedBytesDelta > 0)
+        {
+            OnPropertyChanged(nameof(ReceiveSpeedText));
+        }
     }
 
     private void SyncNotifyFlag(bool value)
@@ -826,7 +915,7 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
 
     private void HandleError(string action, Exception ex)
     {
-        string message = $"{action} failed: {ex.Message}";
+        string message = $"{action}失败: {ex.Message}";
         RunOnUI(() =>
         {
             Status = message;
@@ -883,6 +972,21 @@ public sealed class BleViewModel : INotifyPropertyChanged, IDisposable
         {
             Application.Current?.Dispatcher.Invoke(action);
         }
+    }
+
+    private static string FormatByteSize(double bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        double value = Math.Max(bytes, 0);
+        int unitIndex = 0;
+
+        while (value >= 1024 && unitIndex < units.Length - 1)
+        {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return unitIndex == 0 ? $"{value:0} {units[unitIndex]}" : $"{value:0.0} {units[unitIndex]}";
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
