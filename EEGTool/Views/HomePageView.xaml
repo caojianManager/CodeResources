@@ -1,0 +1,40 @@
+﻿<bs:BaseWindow x:Class="EEGTool.Views.HomePageView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:bs="clr-namespace:FrameWork.View"
+        xmlns:local="clr-namespace:EEGTool.Views"
+        mc:Ignorable="d"
+        Title="HomePageView" Height="450" Width="800">
+    <Grid>
+        <Border x:Name="OuterBorder" CornerRadius="5" SizeChanged="OuterBorder_OnSizeChanged">
+            <Border.Clip>
+                <RectangleGeometry x:Name="OuterBorderClip" RadiusX="5" RadiusY="5"/>
+            </Border.Clip>
+            <Border.Background>
+                <LinearGradientBrush
+                    StartPoint="1,0"
+                    EndPoint="0,1">
+                    <GradientStop
+                        Color="#FFFFFF"
+                        Offset="0" />
+                    <GradientStop
+                        Color="#D4EAFF"
+                        Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Background="Red">
+
+                </Grid>
+            </Grid>
+
+        </Border>
+    </Grid>
+</bs:BaseWindow>

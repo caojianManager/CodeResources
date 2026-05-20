@@ -36,8 +36,8 @@ namespace EEGTool
         {
             var starupVM = StartupViewModel.ShowWindow();
             await Task.Delay(2000);
-            //HomePageViewModel.ShowWindow();
-            //starupVM.CloseWindow();
+            HomePageViewModel.ShowWindow();
+            starupVM.CloseWindow();
         }
     }
 
