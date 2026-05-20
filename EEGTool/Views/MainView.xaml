@@ -116,6 +116,7 @@
                             </Border.Effect>
 
                             <Button Background="Transparent"
+                                    Command="{Binding CollectionCommand}"
                                 Margin="0"
                                 Style="{StaticResource RoundPaneButtonStyle}"
                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
@@ -159,6 +160,7 @@
                             </Border.Effect>
 
                             <Button Background="Transparent"
+                                    Command="{Binding PlaybackCommand}"
                                 Margin="0"
                                 Style="{StaticResource RoundPaneButtonStyle}"
                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
