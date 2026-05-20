@@ -1,6 +1,7 @@
 ﻿using EEGTool.Views.Basics;
 using Framework;
 using FrameWork;
+using FrameWork.Event;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -54,12 +55,20 @@ namespace EEGTool.ViewModels
             _pages = new ObservableCollection<IApplicationContentView>(CreateAllPages());
             Pages = new ReadOnlyObservableCollection<IApplicationContentView>(_pages);
             SelectedPage = Pages.FirstOrDefault();
+            Config();
+        }
+
+        private void Config()
+        {
+            EventUtilManager.EventUitl.AddEvent<Type>(Framework.Event.EventName.SWITCH_PAGE_WITH_TYPE,
+                (type) => { SwithViewPortPage(type); });
         }
 
 
         private IEnumerable<IApplicationContentView> CreateAllPages()
         {
             yield return new MainViewModel();
+            yield return new CollectionHomeViewModel();
         }
 
         private void SwithViewPortPage(Type type)

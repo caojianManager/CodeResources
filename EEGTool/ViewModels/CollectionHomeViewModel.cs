@@ -1,7 +1,5 @@
 ﻿using EEGTool.Views.Basics;
-using Framework.Event;
 using Framework.MVVM.Commands;
-using FrameWork.Event;
 using FrameWork.MVVM;
 using System;
 using System.Collections.Generic;
@@ -12,9 +10,9 @@ using System.Windows.Input;
 
 namespace EEGTool.ViewModels
 {
-    public class MainViewModel : BindableBase,IApplicationContentView
+    public class CollectionHomeViewModel : BindableBase, IApplicationContentView
     {
-        public string Name => "首页";
+        public string Name => "采集主页";
         private bool _isSelected = false;
         public bool IsSelected
         {
@@ -29,27 +27,9 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
-        public ICommand? CollectionCommand { get; set; }
-
-        public ICommand? PlaybackCommand { get; set; }
-
-
         public void Init()
         {
-            Config();
-        }
-
-        private void Config()
-        {
-            PlaybackCommand = new RelayCommand((o) =>
-            {
-                ClickPlaybackBtn();
-            });
-
-            CollectionCommand = new RelayCommand((o) =>
-            {
-                ClickCollectionBtn();
-            });
+     
         }
 
         private void ClickPlaybackBtn()
@@ -59,7 +39,7 @@ namespace EEGTool.ViewModels
 
         private void ClickCollectionBtn()
         {
-            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionHomeViewModel));
+
         }
 
         public void OnHide()
