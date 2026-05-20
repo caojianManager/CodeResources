@@ -5,18 +5,31 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EEGTool.Views"
         mc:Ignorable="d"
-        Title="StartupView" Height="450" Width="800">
+        Title="StartupView" Height="300" Width="500">
     <Grid>
-        <Border Background="#E4E7E4" CornerRadius="10">
+        <Border CornerRadius="10">
+
+            <Border.Background>
+                <LinearGradientBrush
+                    StartPoint="0,0"
+                    EndPoint="0,1">
+                    <GradientStop
+                        Color="#FFFFFF"
+                        Offset="0" />
+                    <GradientStop
+                        Color="#D4EAFF"
+                        Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
             <StackPanel Orientation="Vertical"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                 <Image x:Name="StartupAniImage" 
-                       Width="200" Height="200" 
+                       Width="120" Height="120" 
                        Stretch="UniformToFill"
                        Margin="0,20,0,0"/>
-                <TextBlock Margin="0,20,0,5" FontSize="18" Foreground="#1F456E" TextAlignment="Center" Text="OpenBCI GUI v6.0.0 for WPF"/>
-                <TextBlock Margin="5" FontSize="18" Foreground="#1F456E" TextAlignment="Center" Text="September 2023"/>
+                <TextBlock Margin="0,30,0,5" FontSize="18" Foreground="#1F456E" TextAlignment="Center" Text="EEGTool GUI v1.0.0"/>
+                <TextBlock Margin="5" FontSize="12" Foreground="#1F456E" TextAlignment="Center" Text="脑电图机工具 2026"/>
             </StackPanel>
 
         </Border>
