@@ -1,0 +1,24 @@
+﻿<Window x:Class="EEGTool.Views.StartupView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EEGTool.Views"
+        mc:Ignorable="d"
+        Title="StartupView" Height="450" Width="800">
+    <Grid>
+        <Border Background="#E4E7E4" CornerRadius="10">
+            <StackPanel Orientation="Vertical"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                <Image x:Name="StartupAniImage" 
+                       Width="200" Height="200" 
+                       Stretch="UniformToFill"
+                       Margin="0,20,0,0"/>
+                <TextBlock Margin="0,20,0,5" FontSize="18" Foreground="#1F456E" TextAlignment="Center" Text="OpenBCI GUI v6.0.0 for WPF"/>
+                <TextBlock Margin="5" FontSize="18" Foreground="#1F456E" TextAlignment="Center" Text="September 2023"/>
+            </StackPanel>
+
+        </Border>
+    </Grid>
+</Window>
