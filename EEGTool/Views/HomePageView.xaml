@@ -6,9 +6,10 @@
         xmlns:bs="clr-namespace:FrameWork.View"
         xmlns:hp="clr-namespace:FrameWork.Helper"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:rs="clr-namespace:Resources"
         xmlns:local="clr-namespace:EEGTool.Views"
         mc:Ignorable="d"
-        Title="HomePageView" Height="450" Width="800">
+        Title="HomePageView" Height="800" Width="1200">
 
     <bs:BaseWindow.Resources>
         <ResourceDictionary>
@@ -51,6 +52,41 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+
+            <Style x:Key="RoundPaneButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="hp:ButtonHelper.CornerRadius" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}"
+                                        CornerRadius="{TemplateBinding hp:ButtonHelper.CornerRadius}"/>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                <Border x:Name="HoverBorder"
+                                        Background="Black"
+                                        CornerRadius="{TemplateBinding hp:ButtonHelper.CornerRadius}"
+                                        Opacity="0"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.2"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.2"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </bs:BaseWindow.Resources>
     <Grid>
@@ -74,12 +110,14 @@
                         Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
+
+    
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="35"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-
+         
                 <Grid Background="Transparent">
                     <Border BorderThickness="0,0,0,1" BorderBrush="LightGray"></Border>
                     
@@ -143,6 +181,84 @@
                                                         Foreground="#494D50"/>
                         </Button>
                     </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"></Image>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <Grid Width="600" Height="600">
+                        <Image x:Name="StartupAniImageCenter" 
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Stretch"
+                               Stretch="UniformToFill"
+                               Margin="0,0,0,0"/>
+
+                        <Grid Margin="100"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                    BorderThickness="2,2,0,2" BorderBrush="Gray"
+                                    CornerRadius="300,0,0,300">
+
+                                <Border.Background>
+                                    <LinearGradientBrush
+                                        StartPoint="1,0"
+                                        EndPoint="0,1">
+                                        <GradientStop
+                                            Color="#FFFFFF"
+                                            Offset="0" />
+                                        <GradientStop
+                                            Color="#da1838"
+                                            Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+
+                                <Button Background="Transparent"
+                                        Margin="0"
+                                        Style="{StaticResource RoundPaneButtonStyle}"
+                                        hp:ButtonHelper.CornerRadius="300,0,0,300">
+                                    <StackPanel>
+                                        <TextBlock Text="采" FontSize="56" Foreground="#1F456E"/>
+                                        <TextBlock Text="集" FontSize="56" Foreground="#1F456E"/>
+                                    </StackPanel>
+                                </Button>
+
+                            </Border>
+                            <Border Grid.Column="1" BorderThickness="1,2,2,2" BorderBrush="Gray"
+                                    CornerRadius="0,300,300,0">
+                                <Border.Background>
+                                    <LinearGradientBrush
+                                        StartPoint="0,1"
+                                        EndPoint="1,0">
+                                        <GradientStop
+                                            Color="#FFFFFF"
+                                            Offset="0" />
+                                        <GradientStop
+                                            Color="#D4EAFF"
+                                            Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+
+                                <Button Background="Transparent"
+                                        Margin="0"
+                                        Style="{StaticResource RoundPaneButtonStyle}"
+                                        hp:ButtonHelper.CornerRadius="0,300,300,0">
+                                    <StackPanel>
+                                        <TextBlock Text="回" FontSize="56" Foreground="#1F456E"/>
+                                        <TextBlock Text="放" FontSize="56" Foreground="#1F456E"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Grid>
 
