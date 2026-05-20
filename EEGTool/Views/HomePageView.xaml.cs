@@ -40,13 +40,6 @@ namespace EEGTool.Views
             image.EndInit();
             ImageBehavior.SetAnimatedSource(StartupAniImage, image);
             ImageBehavior.SetAnimationSpeedRatio(StartupAniImage, animationSpeedRatio);
-
-            var image1 = new BitmapImage();
-            image1.BeginInit();
-            image1.UriSource = new Uri("pack://application:,,,/EEGTool;component/Resources/images/OpenBCI-LoadingGIF-blue-256.gif");
-            image1.EndInit();
-            ImageBehavior.SetAnimatedSource(StartupAniImageCenter, image1);
-            ImageBehavior.SetAnimationSpeedRatio(StartupAniImageCenter, animationSpeedRatio);
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e)

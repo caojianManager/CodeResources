@@ -10,7 +10,10 @@ namespace Resources
 
         public static ImageSource WARNING_ICON = Load("/Resources/images/warning_icon.png");
         public static ImageSource SYSTEM_BG = Load("/Resources/images/system_bg.jpg");
-      
+
+        public static ImageSource COLLECTION = Load("/Resources/images/collection.png");
+        public static ImageSource PLAYBACK = Load("/Resources/images/playback.png");
+
 
     }
 }
