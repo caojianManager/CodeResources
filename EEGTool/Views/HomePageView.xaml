@@ -4,11 +4,61 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:bs="clr-namespace:FrameWork.View"
+        xmlns:hp="clr-namespace:FrameWork.Helper"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:local="clr-namespace:EEGTool.Views"
         mc:Ignorable="d"
         Title="HomePageView" Height="450" Width="800">
+
+    <bs:BaseWindow.Resources>
+        <ResourceDictionary>
+            <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="hp:ButtonHelper.CornerRadius" Value="0" />
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <!-- 阴影效果 -->
+                                <Border x:Name="HoverBorder"
+                     Background="Transparent"
+                     CornerRadius="{TemplateBinding hp:ButtonHelper.CornerRadius}"
+                     Opacity="0"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <!-- 鼠标悬停 -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.2"/>
+                                    <Setter TargetName="HoverBorder" Property="Background" Value="Gray"/>
+                                </Trigger>
+
+                                <!-- 鼠标按下 -->
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.3"/>
+                                    <Setter TargetName="HoverBorder" Property="Background" Value="DarkGray"/>
+                                </Trigger>
+
+                                <!-- 禁用状态 -->
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </bs:BaseWindow.Resources>
     <Grid>
-        <Border x:Name="OuterBorder" CornerRadius="5" SizeChanged="OuterBorder_OnSizeChanged">
+        <Border x:Name="OuterBorder" 
+                CornerRadius="5"
+                BorderBrush="LightGray"
+                BorderThickness="1"
+                SizeChanged="OuterBorder_OnSizeChanged">
             <Border.Clip>
                 <RectangleGeometry x:Name="OuterBorderClip" RadiusX="5" RadiusY="5"/>
             </Border.Clip>
@@ -30,8 +80,69 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Grid Background="Red">
+                <Grid Background="Transparent">
+                    <Border BorderThickness="0,0,0,1" BorderBrush="LightGray"></Border>
+                    
+                    <StackPanel HorizontalAlignment="Left"
+                          VerticalAlignment="Center"
+                          Margin="15,0,0,0"
+                          Orientation="Horizontal">
 
+                        <Image x:Name="StartupAniImage" 
+                               Width="20" Height="20" 
+                               Stretch="UniformToFill"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                        <TextBlock Text="脑电图机工具" FontSize="12" 
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Bottom"
+                                   Margin="0,0,0,2"
+                                   Foreground="Black"></TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" 
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0">
+                        <!-- 最小化 -->
+                        <Button Click="Minimize_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Width="60" 
+                                Height="38"
+                                Style="{StaticResource TitleBarButtonStyle}">
+                            <iconPacks:PackIconMaterial Kind="WindowMinimize" 
+                                                        VerticalAlignment="Center"
+                                                        Width="13" Height="13" 
+                                                        Foreground="#494D50"/>
+                        </Button>
+
+                        <!-- 最大化/还原 -->
+                        <Button Click="MaximizeRestore_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Width="60" Height="38"
+                                Padding="0"
+                                Style="{StaticResource TitleBarButtonStyle}">
+                            <iconPacks:PackIconMaterial x:Name="MaxIcon" 
+                                                        Kind="WindowMaximize"
+                                                        Width="13" Height="13"
+                                                        Foreground="#494D50"/>
+                        </Button>
+
+                        <!-- 关闭 -->
+                        <Button Click="Close_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                hp:ButtonHelper.CornerRadius="0,10,0,0"
+                                Style="{StaticResource TitleBarButtonStyle}"
+                                Width="60" Height="38" Cursor="Hand">
+                            <iconPacks:PackIconMaterial Kind="WindowClose" 
+                                                        Width="13" Height="13" 
+                                                        Foreground="#494D50"/>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Grid>
 
