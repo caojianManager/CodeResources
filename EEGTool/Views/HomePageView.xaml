@@ -13,6 +13,11 @@
 
     <bs:BaseWindow.Resources>
         <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Views/Views.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
             <Style x:Key="TitleBarButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
@@ -53,38 +58,7 @@
                 </Setter>
             </Style>
 
-            <Style x:Key="RoundPaneButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="hp:ButtonHelper.CornerRadius" Value="0"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Grid>
-
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
-                                <Border x:Name="HoverBorder"
-                                        Background="Black"
-                                        Opacity="0"/>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.2"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.2"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+ 
         </ResourceDictionary>
     </bs:BaseWindow.Resources>
     <Grid>
@@ -186,141 +160,10 @@
                 </Grid>
 
                 <Grid Grid.Row="1">
-
-                    <Grid Width="390" Height="600">
-
-                        <Border CornerRadius="10">
-                            <Border.Background>
-                                <LinearGradientBrush
-                                    StartPoint="1,0"
-                                    EndPoint="0,1">
-                                    <GradientStop
-                                        Color="#FFFFFF"
-                                        Offset="0" />
-                                    <GradientStop
-                                        Color="#D4EAFF"
-                                        Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.Background>
-
-
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="18"
-                                                  ShadowDepth="2"
-                                                  Direction="270"
-                                                  Opacity="0.25"
-                                                  Color="#000000"/>
-                            </Border.Effect>
-                        </Border>
-
-
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="39"/>
-                                <RowDefinition Height="20"/>
-                                <RowDefinition Height="100"/>
-                                <RowDefinition Height="20"/>
-                                <RowDefinition Height="100"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid>
-                        
-                                <TextBlock Text="功能选择" 
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-                                <Grid Background="LightGray" Height="0.5"
-                                      HorizontalAlignment="Stretch"
-                                      Margin="15,0"
-                                      VerticalAlignment="Bottom"></Grid>
-                            </Grid>
-
-                            <Grid Grid.Row="2" Margin="25,5">
-                                <Border BorderThickness="0.5" BorderBrush="LightGray" CornerRadius="10">
-
-                                    <Border.Background>
-                                        <LinearGradientBrush
-                                            StartPoint="0,1"
-                                            EndPoint="2,0">
-                                            <GradientStop
-                                                Color="#FFFFFF"
-                                                Offset="0" />
-                                            <GradientStop
-                                                Color="#D4EAFF"
-                                                Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="18"
-                                                          ShadowDepth="2"
-                                                          Direction="270"
-                                                          Opacity="0.1"
-                                                          Color="#000000"/>
-                                    </Border.Effect>
-
-                                    <Button Background="Transparent"
-                                            Margin="0"
-                                            Style="{StaticResource RoundPaneButtonStyle}"
-                                            hp:ButtonHelper.CornerRadius="300,0,0,300">
-                                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                            <Image Source="{x:Static rs:ResourcesImagePath.COLLECTION}"
-                                                   Width="35" Height="35"></Image>
-                                            <TextBlock Text="采 集" FontSize="12"
-                                                       Margin="0,2,0,0"
-                                                       HorizontalAlignment="Center"
-                                                       Foreground="#1F456E"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                </Border>
-                            </Grid>
-
-
-
-                            <Grid Grid.Row="4" Margin="25,5">
-                                <Border BorderThickness="0.5" BorderBrush="LightGray" CornerRadius="10">
-
-                                    <Border.Background>
-                                        <LinearGradientBrush
-                                            StartPoint="0,1"
-                                            EndPoint="2,0">
-                                            <GradientStop
-                                                Color="#FFFFFF"
-                                                Offset="0" />
-                                            <GradientStop
-                                                Color="#D4EAFF"
-                                                Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="18"
-                                                          ShadowDepth="2"
-                                                          Direction="270"
-                                                          Opacity="0.1"
-                                                          Color="#000000"/>
-                                    </Border.Effect>
-
-                                    <Button Background="Transparent"
-                                            Margin="0"
-                                            Style="{StaticResource RoundPaneButtonStyle}"
-                                            hp:ButtonHelper.CornerRadius="300,0,0,300">
-                                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                            <Image Source="{x:Static rs:ResourcesImagePath.PLAYBACK}"
-                                                   Width="35" Height="35"></Image>
-                                            <TextBlock Text="回 放" FontSize="12"
-                                                       Margin="0,2,0,0"
-                                                       HorizontalAlignment="Center"
-                                                       Foreground="#1F456E"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                </Border>
-                            </Grid>
-                        </Grid>
-                    </Grid>
+                    <ContentControl Content="{Binding SelectedPage}"/>
                 </Grid>
+
+            
             </Grid>
 
         </Border>
