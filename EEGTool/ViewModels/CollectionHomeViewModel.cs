@@ -31,6 +31,25 @@ namespace EEGTool.ViewModels
 
         public ICommand? BackHomeCommand { get; set; }
 
+        private bool _isDeviceConnectTabSelected = true;
+        public bool IsDeviceConnectTabSelected
+        {
+            get => _isDeviceConnectTabSelected;
+            set
+            {
+                if (SetProperty(ref _isDeviceConnectTabSelected, value))
+                {
+                    OnPropertyChanged(nameof(IsCollectionConfigTabSelected));
+                }
+            }
+        }
+
+        public bool IsCollectionConfigTabSelected
+        {
+            get => !IsDeviceConnectTabSelected;
+            set => IsDeviceConnectTabSelected = !value;
+        }
+
         public void Init()
         {
             Config();

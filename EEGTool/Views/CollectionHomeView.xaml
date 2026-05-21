@@ -121,7 +121,8 @@
         </Setter>
     </Style>
     <DataTemplate DataType="{x:Type vm:CollectionHomeViewModel}">
-        <Grid HorizontalAlignment="Stretch"
+        <Grid x:Name="RootLayout"
+              HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
             <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"/>
 
@@ -169,6 +170,7 @@
                               Width="1" Background="LightGray"
                               Margin="15,5"></Grid>
                         <RadioButton GroupName="CollectionHomeTabs"
+                                     IsChecked="{Binding IsDeviceConnectTabSelected}"
                                      Style="{StaticResource TitleBarTabRadioStyle}">
                             <TextBlock Text="设备连接"
                                        FontSize="14"
@@ -181,7 +183,7 @@
                               Width="1" Background="LightGray"
                               Margin="0,5"></Grid>
                         <RadioButton GroupName="CollectionHomeTabs"
-                                     IsChecked="True"
+                                     IsChecked="{Binding IsCollectionConfigTabSelected}"
                                      Style="{StaticResource TitleBarTabRadioStyle}">
                             <TextBlock Text="采集配置"
                                        FontSize="14"
@@ -196,11 +198,33 @@
                 <Grid Grid.Row="1">
                     <ccv:CollectionConfigView Margin="0" 
                                               HorizontalAlignment="Stretch"
-                                              VerticalAlignment="Stretch"/>
+                                              VerticalAlignment="Stretch">
+                        <ccv:CollectionConfigView.Style>
+                            <Style TargetType="ccv:CollectionConfigView">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.IsCollectionConfigTabSelected, ElementName=RootLayout}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ccv:CollectionConfigView.Style>
+                    </ccv:CollectionConfigView>
 
                     <dc:BLEConnectView Margin="0" 
-                                              HorizontalAlignment="Stretch"
-                                              VerticalAlignment="Stretch"/>
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch">
+                        <dc:BLEConnectView.Style>
+                            <Style TargetType="dc:BLEConnectView">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.IsDeviceConnectTabSelected, ElementName=RootLayout}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dc:BLEConnectView.Style>
+                    </dc:BLEConnectView>
                 </Grid>
               
             </Grid>
