@@ -80,7 +80,7 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
-
+            IsDeviceConnectTabSelected = true;
         }
     }
 }

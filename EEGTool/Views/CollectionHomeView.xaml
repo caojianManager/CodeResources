@@ -202,9 +202,24 @@
                         <ccv:CollectionConfigView.Style>
                             <Style TargetType="ccv:CollectionConfigView">
                                 <Setter Property="Visibility" Value="Collapsed" />
+                                <Setter Property="Opacity" Value="0" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.IsCollectionConfigTabSelected, ElementName=RootLayout}" Value="True">
                                         <Setter Property="Visibility" Value="Visible" />
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0"
+                                                                     To="1"
+                                                                     Duration="0:0:0.22" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding DataContext.IsCollectionConfigTabSelected, ElementName=RootLayout}" Value="False">
+                                        <Setter Property="Opacity" Value="0" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -217,9 +232,24 @@
                         <dc:BLEConnectView.Style>
                             <Style TargetType="dc:BLEConnectView">
                                 <Setter Property="Visibility" Value="Collapsed" />
+                                <Setter Property="Opacity" Value="0" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.IsDeviceConnectTabSelected, ElementName=RootLayout}" Value="True">
                                         <Setter Property="Visibility" Value="Visible" />
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0"
+                                                                     To="1"
+                                                                     Duration="0:0:0.22" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding DataContext.IsDeviceConnectTabSelected, ElementName=RootLayout}" Value="False">
+                                        <Setter Property="Opacity" Value="0" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
