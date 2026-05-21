@@ -6,7 +6,15 @@
         <ResourceDictionary>
 
             <ResourceDictionary.MergedDictionaries>
-
+                <!--Metro-->
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/light.blue.xaml" />
+                <!--资源文件-->
+                <ResourceDictionary Source="/FrameWork/Themes/Styles/CheckBoxStyle.xaml"/>
+                <ResourceDictionary Source="/FrameWork/Themes/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="/FrameWork/Themes/Styles/CornerRadius.xaml"/>
+                <ResourceDictionary Source="/FrameWork/Themes/Styles/Common.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
