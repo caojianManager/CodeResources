@@ -109,5 +109,19 @@ namespace EEGTool.Views
             OuterBorderClip.RadiusY = radius;
             OuterBorderClip.Rect = new Rect(0, 0, OuterBorder.ActualWidth, OuterBorder.ActualHeight);
         }
+
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                ToggleMaximizeRestore();
+                return;
+            }
+
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                TryDragWindow();
+            }
+        }
     }
 }

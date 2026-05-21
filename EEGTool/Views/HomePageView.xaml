@@ -66,6 +66,7 @@
                 CornerRadius="5"
                 BorderBrush="LightGray"
                 BorderThickness="1"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
                 SizeChanged="OuterBorder_OnSizeChanged">
             <Border.Clip>
                 <RectangleGeometry x:Name="OuterBorderClip" RadiusX="5" RadiusY="5"/>
@@ -159,9 +160,9 @@
                     <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"></Image>
                 </Grid>
 
-                <Grid Grid.Row="1">
-                    <ContentControl Content="{Binding SelectedPage}"/>
-                </Grid>
+                <Border Grid.Row="1">
+                    <ContentControl Content="{Binding SelectedPage}" Margin="0"/>
+                </Border>
 
             
             </Grid>
