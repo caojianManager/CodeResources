@@ -157,7 +157,7 @@
                 </Grid>
 
                 <Grid Grid.Row="1">
-                    <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"></Image>
+                    <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"/>
                 </Grid>
 
                 <Border Grid.Row="1">
