@@ -3,6 +3,8 @@
                     xmlns:rs="clr-namespace:Resources"
                     xmlns:hp="clr-namespace:FrameWork.Helper"
                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                    xmlns:ccv="clr-namespace:EEGTool.Views.Collection"
+                    xmlns:dc="clr-namespace:EEGTool.Views.DeviceConnect"
                     xmlns:vm="clr-namespace:EEGTool.ViewModels">
 
     <!-- 标题栏按钮样式 -->
@@ -181,7 +183,7 @@
                         <RadioButton GroupName="CollectionHomeTabs"
                                      IsChecked="True"
                                      Style="{StaticResource TitleBarTabRadioStyle}">
-                            <TextBlock Text="模板配置"
+                            <TextBlock Text="采集配置"
                                        FontSize="14"
                                        Foreground="Black"
                                        HorizontalAlignment="Center"
@@ -189,6 +191,16 @@
                         </RadioButton>
 
                     </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <ccv:CollectionConfigView Margin="0" 
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"/>
+
+                    <dc:BLEConnectView Margin="0" 
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"/>
                 </Grid>
               
             </Grid>
