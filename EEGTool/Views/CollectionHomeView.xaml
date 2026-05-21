@@ -155,6 +155,7 @@
                                 Margin="8,0,0,3"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Bottom"
+                                Command="{Binding BackHomeCommand}"
                                 ToolTip="返回首页">
                             <iconPacks:PackIconGameIcons Kind="Brain"
                                                          Width="20"

@@ -1,5 +1,7 @@
 ﻿using EEGTool.Views.Basics;
+using Framework.Event;
 using Framework.MVVM.Commands;
+using FrameWork.Event;
 using FrameWork.MVVM;
 using System;
 using System.Collections.Generic;
@@ -27,9 +29,19 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
+        public ICommand? BackHomeCommand { get; set; }
+
         public void Init()
         {
-     
+            Config();
+        }
+
+        private void Config()
+        {
+            BackHomeCommand = new RelayCommand((o) =>
+            {
+                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
+            });
         }
 
         private void ClickPlaybackBtn()
