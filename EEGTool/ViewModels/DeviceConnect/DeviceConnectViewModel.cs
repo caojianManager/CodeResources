@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,12 @@ namespace EEGTool.ViewModels.DeviceConnect
     {
 
         private BleManager _ble;
+        private ObservableCollection<BleDeviceInfo> _devices = new ObservableCollection<BleDeviceInfo>();
+        public ObservableCollection<BleDeviceInfo> Devices
+        {
+            get => _devices;
+            set => SetProperty(ref _devices, value);
+        }
 
         public ICommand? ScanDeviceCommand { get; set; }
 
