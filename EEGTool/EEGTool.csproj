@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -36,6 +36,17 @@
   <!-- DLLs 复制到输出目录 -->
   <Target Name="CopyDllsToOutput" AfterTargets="Build">
     <Copy SourceFiles="@(None)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <!-- 确保运行时按文件路径访问的图片被复制到输出目录 -->
+  <ItemGroup>
+    <ImageFilesToCopy Include="Resources\images\**\*.*" />
+  </ItemGroup>
+  <Target Name="CopyImageFilesToOutput" AfterTargets="Build">
+    <Copy
+      SourceFiles="@(ImageFilesToCopy)"
+      DestinationFiles="@(ImageFilesToCopy->'$(OutDir)Resources\images\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
   </Target>
 
    <!-- 图片资源 -->
