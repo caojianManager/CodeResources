@@ -57,8 +57,7 @@
                     <RowDefinition Height="39"/>
                     <RowDefinition Height="10"/>
                     <RowDefinition Height="100"/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition Height="100"/>
+            
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -119,6 +118,58 @@
                                    VerticalAlignment="Center"
                                    Style="{StaticResource FieldLabelStyle}"></TextBlock>
                     </Grid>
+                </Grid>
+
+                <Grid Grid.Row="3" ClipToBounds="False">
+                    <Border x:Name="ScanButtonBorder"
+                            CornerRadius="10"
+                            BorderThickness="0.5"
+                            BorderBrush="LightGray"
+                            Background="White"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,20">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <Border.RenderTransformOrigin>0.5,0.5</Border.RenderTransformOrigin>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="24"
+                                              ShadowDepth="3"
+                                              Direction="270"
+                                              Opacity="0.35"
+                                              Color="#66000000"/>
+                        </Border.Effect>
+                        <Button Background="Transparent"
+                                BorderThickness="0"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Cursor="Hand"
+                                Width="135"
+                                Height="35"
+                                PreviewMouseLeftButtonDown="ScanButton_PreviewMouseLeftButtonDown"
+                                PreviewMouseLeftButtonUp="ScanButton_PreviewMouseLeftButtonUp"
+                                MouseLeave="ScanButton_MouseLeave">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  RecognizesAccessKey="True"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="扫描设备" FontSize="14" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"  Style="{StaticResource FieldLabelStyle}"/>
+                        </Button>
+                    </Border>
                 </Grid>
 
             </Grid>

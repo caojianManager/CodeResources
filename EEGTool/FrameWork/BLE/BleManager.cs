@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
@@ -15,6 +16,9 @@ using Windows.Foundation;
 
 namespace BLETool;
 
+/// <summary>
+/// BLE 广播数据段信息。
+/// </summary>
 public sealed class BleAdvertisementSection
 {
     public int Length { get; init; }
@@ -22,6 +26,9 @@ public sealed class BleAdvertisementSection
     public string Data { get; init; } = string.Empty;
 }
 
+/// <summary>
+/// GATT 特征信息。
+/// </summary>
 public sealed class BleGattCharacteristicInfo
 {
     public string Name { get; init; } = string.Empty;
@@ -34,6 +41,9 @@ public sealed class BleGattCharacteristicInfo
     public bool SupportsWrite { get; init; }
 }
 
+/// <summary>
+/// GATT 服务信息（包含特征列表）。
+/// </summary>
 public sealed class BleGattServiceInfo
 {
     public string Name { get; init; } = string.Empty;
@@ -42,6 +52,9 @@ public sealed class BleGattServiceInfo
         Array.Empty<BleGattCharacteristicInfo>();
 }
 
+/// <summary>
+/// 扫描到的 BLE 设备信息（可绑定到 UI）。
+/// </summary>
 public sealed class BleDeviceInfo : INotifyPropertyChanged
 {
     private string _deviceId = string.Empty;
@@ -107,6 +120,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>
+    /// 深拷贝当前设备对象，避免外部修改内部状态。
+    /// </summary>
     public BleDeviceInfo Clone()
     {
         return new BleDeviceInfo
@@ -129,6 +145,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         };
     }
 
+    /// <summary>
+    /// 用另一个设备对象的值更新当前对象。
+    /// </summary>
     public void UpdateFrom(BleDeviceInfo other)
     {
         DeviceId = other.DeviceId;
@@ -166,6 +185,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
     }
 }
 
+/// <summary>
+/// BLE 通知/指示数据事件参数。
+/// </summary>
 public sealed class BleDataReceivedEventArgs : EventArgs
 {
     public Guid ServiceUuid { get; init; }
@@ -174,6 +196,9 @@ public sealed class BleDataReceivedEventArgs : EventArgs
     public DateTimeOffset Timestamp { get; init; }
 }
 
+/// <summary>
+/// BLE 连接状态变化事件参数。
+/// </summary>
 public sealed class BleConnectionChangedEventArgs : EventArgs
 {
     public string DeviceId { get; init; } = string.Empty;
@@ -181,6 +206,9 @@ public sealed class BleConnectionChangedEventArgs : EventArgs
     public string Reason { get; init; } = string.Empty;
 }
 
+/// <summary>
+/// BLE 业务异常。
+/// </summary>
 public sealed class BleException : Exception
 {
     public BleException(string message) : base(message)
@@ -192,6 +220,10 @@ public sealed class BleException : Exception
     }
 }
 
+/// <summary>
+/// BLE 核心管理器，提供扫描、配对、连接、读写、订阅、重连等能力。
+/// </summary>
+[SupportedOSPlatform("windows10.0.10240.0")]
 public sealed class BleManager : IDisposable
 {
     private sealed class AdvertisementSnapshot
@@ -220,11 +252,26 @@ public sealed class BleManager : IDisposable
     private int _reconnectDelayMs = 2000;
     private int _reconnectMaxAttempts = 5;
 
+    /// <summary>
+    /// 发现新设备时触发。
+    /// </summary>
     public event EventHandler<BleDeviceInfo>? DeviceDiscovered;
+    /// <summary>
+    /// 设备信息更新时触发（RSSI、连接状态、广播数据等）。
+    /// </summary>
     public event EventHandler<BleDeviceInfo>? DeviceUpdated;
+    /// <summary>
+    /// 连接状态变化时触发。
+    /// </summary>
     public event EventHandler<BleConnectionChangedEventArgs>? ConnectionChanged;
+    /// <summary>
+    /// 收到 Notify/Indicate 数据时触发。
+    /// </summary>
     public event EventHandler<BleDataReceivedEventArgs>? DataReceived;
 
+    /// <summary>
+    /// 开始扫描 BLE 设备（设备枚举 + 广播监听）。
+    /// </summary>
     public void StartScan()
     {
         ThrowIfDisposed();
@@ -261,6 +308,9 @@ public sealed class BleManager : IDisposable
         _advertisementWatcher.Start();
     }
 
+    /// <summary>
+    /// 停止扫描 BLE 设备。
+    /// </summary>
     public void StopScan()
     {
         if (_deviceWatcher != null)
@@ -289,11 +339,17 @@ public sealed class BleManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 获取当前已发现设备快照列表。
+    /// </summary>
     public IReadOnlyList<BleDeviceInfo> GetDiscoveredDevices()
     {
         return _devicesById.Values.Select(device => device.Clone()).ToList();
     }
 
+    /// <summary>
+    /// 对指定设备执行配对。
+    /// </summary>
     public async Task<bool> PairAsync(string deviceId)
     {
         var deviceInfo = await DeviceInformation.CreateFromIdAsync(deviceId)
@@ -320,6 +376,9 @@ public sealed class BleManager : IDisposable
         throw new BleException($"配对失败，状态: {result.Status}");
     }
 
+    /// <summary>
+    /// 对指定设备取消配对。
+    /// </summary>
     public async Task<bool> UnpairAsync(string deviceId)
     {
         var deviceInfo = await DeviceInformation.CreateFromIdAsync(deviceId)
@@ -341,6 +400,9 @@ public sealed class BleManager : IDisposable
         return ok;
     }
 
+    /// <summary>
+    /// 连接到指定设备，并等待 GATT 可用。
+    /// </summary>
     public async Task ConnectAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -370,6 +432,9 @@ public sealed class BleManager : IDisposable
 
     public bool IsConnected => _device?.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
+    /// <summary>
+    /// 读取当前连接设备的 GATT 结构（服务与特征）。
+    /// </summary>
     public async Task<IReadOnlyList<BleGattServiceInfo>> GetGattProfileAsync(CancellationToken cancellationToken = default)
     {
         if (_device == null)
@@ -423,6 +488,9 @@ public sealed class BleManager : IDisposable
         return services;
     }
 
+    /// <summary>
+    /// 向指定特征写入字节数据。
+    /// </summary>
     public async Task WriteAsync(Guid serviceUuid, Guid characteristicUuid, byte[] data)
     {
         var characteristic = await GetCharacteristicAsync(serviceUuid, characteristicUuid);
@@ -447,6 +515,9 @@ public sealed class BleManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 从指定特征读取字节数据。
+    /// </summary>
     public async Task<byte[]> ReadAsync(Guid serviceUuid, Guid characteristicUuid)
     {
         var characteristic = await GetCharacteristicAsync(serviceUuid, characteristicUuid);
@@ -464,6 +535,9 @@ public sealed class BleManager : IDisposable
         return result.Value.ToArray();
     }
 
+    /// <summary>
+    /// 订阅指定特征的 Notify/Indicate。
+    /// </summary>
     public async Task SubscribeAsync(Guid serviceUuid, Guid characteristicUuid)
     {
         var characteristic = await GetCharacteristicAsync(serviceUuid, characteristicUuid);
@@ -498,6 +572,9 @@ public sealed class BleManager : IDisposable
         _subscribedCharacteristics[subscriptionKey] = characteristic;
     }
 
+    /// <summary>
+    /// 取消订阅指定特征。
+    /// </summary>
     public async Task UnsubscribeAsync(Guid serviceUuid, Guid characteristicUuid)
     {
         string subscriptionKey = GetSubscriptionKey(serviceUuid, characteristicUuid);
@@ -511,6 +588,9 @@ public sealed class BleManager : IDisposable
             GattClientCharacteristicConfigurationDescriptorValue.None);
     }
 
+    /// <summary>
+    /// 主动断开当前连接并取消所有订阅。
+    /// </summary>
     public async Task DisconnectAsync()
     {
         _autoReconnect = false;
@@ -529,6 +609,9 @@ public sealed class BleManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 配置自动重连策略。
+    /// </summary>
     public void ConfigureReconnect(bool enable, int delayMs = 2000, int maxAttempts = 5)
     {
         _autoReconnect = enable;
@@ -536,6 +619,9 @@ public sealed class BleManager : IDisposable
         _reconnectMaxAttempts = maxAttempts;
     }
 
+    /// <summary>
+    /// 手动触发重连（使用上次连接的设备 ID）。
+    /// </summary>
     public async Task ReconnectAsync()
     {
         if (string.IsNullOrWhiteSpace(_connectedDeviceId))
@@ -1023,4 +1109,23 @@ public sealed class BleManager : IDisposable
     {
         return $"{serviceUuid:B}|{characteristicUuid:B}";
     }
+}
+
+/// <summary>
+/// 对外工具类入口：统一创建/获取 BLE 管理器。
+/// </summary>
+[SupportedOSPlatform("windows10.0.10240.0")]
+public static class BleToolKit
+{
+    private static readonly Lazy<BleManager> _shared = new(() => new BleManager());
+
+    /// <summary>
+    /// 获取共享管理器实例（适合单进程内全局复用）。
+    /// </summary>
+    public static BleManager Shared => _shared.Value;
+
+    /// <summary>
+    /// 创建独立管理器实例（适合多上下文隔离使用）。
+    /// </summary>
+    public static BleManager Create() => new();
 }
