@@ -147,6 +147,7 @@
                                 Cursor="Hand"
                                 Width="135"
                                 Height="35"
+                                Command="{Binding ScanDeviceCommand}"
                                 PreviewMouseLeftButtonDown="ScanButton_PreviewMouseLeftButtonDown"
                                 PreviewMouseLeftButtonUp="ScanButton_PreviewMouseLeftButtonUp"
                                 MouseLeave="ScanButton_MouseLeave">
