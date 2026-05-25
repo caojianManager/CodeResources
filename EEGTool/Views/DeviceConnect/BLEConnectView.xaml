@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:EEGTool.Views.DeviceConnect"
              xmlns:vm="clr-namespace:EEGTool.ViewModels.DeviceConnect"
              xmlns:hp="clr-namespace:FrameWork.Helper"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:rs="clr-namespace:Resources"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
@@ -20,6 +21,48 @@
             <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+        <Style x:Key="ConnectActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0071BC" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#0071BC" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RootBorder" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.90" ScaleY="0.90" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -112,7 +155,7 @@
                                    VerticalAlignment="Center"
                                    Style="{StaticResource FieldLabelStyle}"/>
 
-                        <TextBlock Grid.Row="2" Grid.ColumnSpan="4"
+                        <TextBlock Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="4"
                                    Text="提示：此处显示当前连接设备信息，连接成功后去完成采集配置."
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
@@ -122,7 +165,7 @@
 
                 <ListBox Grid.Row="3"
                           ItemsSource="{Binding BtDevices}"
-                          Margin="20,25,20,80"
+                          Margin="15,25,15,80"
                           BorderThickness="0"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -130,24 +173,98 @@
                           ScrollViewer.CanContentScroll="False"
                           VirtualizingStackPanel.IsVirtualizing="False"
                           SelectedItem="{Binding SelectedBtDevice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-               
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Background="Transparent" BorderThickness="0">
+                                            <ContentPresenter
+                                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid
-                                  Height="50"
-                                  Margin="1">
-                                <Border
-                                  x:Name="ItemBackground"
-                                  CornerRadius="5"
-                                  BorderThickness="1"
+                            <Grid Height="50" Margin="3,2,3,3">
+                                <Border x:Name="ItemBackground"
+                                        CornerRadius="5"
+                                        Background="White"
+                                        BorderThickness="0.5"
+                                        BorderBrush="LightGray">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="10"
+                                                          ShadowDepth="1"
+                                                          Direction="270"
+                                                          Opacity="0.1"
+                                                          Color="#66000000"/>
+                                    </Border.Effect>
 
-                              Background="Transparent" />
-                  
+                                    <Grid>
+                                        <Border Width="35" Height="35" 
+                                                HorizontalAlignment="Left"
+                                                Margin="15,0,0,0"
+                                                VerticalAlignment="Center"
+                                                BorderThickness="1"
+                                                CornerRadius="17.5"
+                                                BorderBrush="LightGray">
+                                            <Border.Background>
+                                                <LinearGradientBrush
+                                                    StartPoint="1,0"
+                                                    EndPoint="0,1">
+                                                    <GradientStop
+                                                        Color="#FFFFFF"
+                                                        Offset="0" />
+                                                    <GradientStop
+                                                        Color="#D4EAFF"
+                                                        Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <iconPacks:PackIconForkAwesome Kind="Bluetooth" 
+                                                                           Foreground="Gray"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Orientation="Vertical" Margin="60,0,120,0"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="N/A" FontSize="14" Foreground="Black"/>
+                                            <TextBlock Text="asfjsoajfisajoj" FontSize="10" Foreground="Gray"></TextBlock>
+                                        </StackPanel>
+
+                                        <Grid Width="60" Height="25"
+                                              Margin="0,0,15,0"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center">
+                                            <Button VerticalAlignment="Center"
+                                                    HorizontalAlignment="Center"
+                                                    Width="60" Height="25"
+                                                    Style="{StaticResource ConnectActionButtonStyle}"
+                                                    Padding="0"
+                                                    Content="连 接"
+                                                    BorderThickness="0"
+                                                    Background="#0071BC"
+                                                    Foreground="White"/>
+                                        </Grid>
+                                       
+                                    </Grid>
+                                </Border>
                             </Grid>
-
                         </DataTemplate>
-
-
                     </ListBox.ItemTemplate>
 
 

@@ -87,7 +87,7 @@ namespace EEGTool.ViewModels.DeviceConnect
 
             foreach (var dv in devices)
             {
-                await Task.Delay(2);
+                await Task.Delay(10);
                 BtDevices.Add(dv);
             }
         }
