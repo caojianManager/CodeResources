@@ -242,20 +242,20 @@
                                         <StackPanel Orientation="Vertical" Margin="60,0,120,0"
                                                     HorizontalAlignment="Left"
                                                     VerticalAlignment="Center">
-                                            <TextBlock Text="N/A" FontSize="14" Foreground="Black"/>
-                                            <TextBlock Text="asfjsoajfisajoj" FontSize="10" Foreground="Gray"></TextBlock>
+                                            <TextBlock Text="{Binding Name}" FontSize="14" Foreground="Black"/>
+                                            <TextBlock Text="{Binding Address}" FontSize="10" Foreground="Gray"></TextBlock>
                                         </StackPanel>
 
-                                        <Grid Width="60" Height="25"
+                                        <Grid Width="80" Height="25"
                                               Margin="0,0,15,0"
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Center">
                                             <Button VerticalAlignment="Center"
                                                     HorizontalAlignment="Center"
-                                                    Width="60" Height="25"
+                                                    Width="80" Height="25"
                                                     Style="{StaticResource ConnectActionButtonStyle}"
                                                     Padding="0"
-                                                    Content="连 接"
+                                                    Content="连  接"
                                                     BorderThickness="0"
                                                     Background="#0071BC"
                                                     Foreground="White"/>
