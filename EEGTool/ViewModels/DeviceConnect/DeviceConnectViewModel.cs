@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using BLETool;
 using FrameWork.MVVM;
 using Framework.MVVM.Commands;
@@ -68,6 +69,41 @@ namespace EEGTool.ViewModels.DeviceConnect
         public bool CanScan => !IsConnecting;
         public bool HasConnectingDevice => IsConnecting && !string.IsNullOrWhiteSpace(ConnectingDeviceId);
 
+        private string _currentDeviceAddress = "--";
+        public string CurrentDeviceAddress
+        {
+            get => _currentDeviceAddress;
+            set => SetProperty(ref _currentDeviceAddress, value);
+        }
+
+        private string _currentDeviceName = "--";
+        public string CurrentDeviceName
+        {
+            get => _currentDeviceName;
+            set => SetProperty(ref _currentDeviceName, value);
+        }
+
+        private string _currentAdvertisementType = "--";
+        public string CurrentAdvertisementType
+        {
+            get => _currentAdvertisementType;
+            set => SetProperty(ref _currentAdvertisementType, value);
+        }
+
+        private string _currentConnectionStatus = "未连接";
+        public string CurrentConnectionStatus
+        {
+            get => _currentConnectionStatus;
+            set => SetProperty(ref _currentConnectionStatus, value);
+        }
+
+        private Brush _currentConnectionStatusBrush = Brushes.Red;
+        public Brush CurrentConnectionStatusBrush
+        {
+            get => _currentConnectionStatusBrush;
+            set => SetProperty(ref _currentConnectionStatusBrush, value);
+        }
+
 
         public DeviceConnectViewModel()
         {
@@ -100,6 +136,21 @@ namespace EEGTool.ViewModels.DeviceConnect
         private void OnDeviceUpdated(object? sender, BleDeviceInfo deviceInfo)
         {
             DeviceUpdated(deviceInfo);
+            RunOnUI(() =>
+            {
+                var device = BtDevices.FirstOrDefault(x => x.DeviceId == deviceInfo.DeviceId);
+                if (device == null)
+                {
+                    return;
+                }
+
+                device.Name = deviceInfo.Name;
+                device.Address = deviceInfo.Address;
+                device.AdvertisementType = deviceInfo.AdvertisementType;
+                device.Rssi = deviceInfo.Rssi;
+                device.IsConnected = deviceInfo.IsConnected;
+                SyncCurrentConnectedDeviceInfo();
+            });
         }
 
         private void OnConnectionChanged(object? sender, BleConnectionChangedEventArgs e)
@@ -111,6 +162,8 @@ namespace EEGTool.ViewModels.DeviceConnect
                 {
                     device.IsConnected = e.IsConnected;
                 }
+
+                SyncCurrentConnectedDeviceInfo();
             });
         }
 
@@ -149,6 +202,7 @@ namespace EEGTool.ViewModels.DeviceConnect
                     RunOnUI(() =>
                     {
                         device.IsConnected = false;
+                        SyncCurrentConnectedDeviceInfo();
                         if (!_isViewUnloading)
                         {
                             MessageBox.Show("设备已断开连接。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -176,6 +230,7 @@ namespace EEGTool.ViewModels.DeviceConnect
                         {
                             dv.IsConnected = dv.DeviceId == device.DeviceId;
                         }
+                        SyncCurrentConnectedDeviceInfo();
 
                         if (!_isViewUnloading)
                         {
@@ -272,6 +327,8 @@ namespace EEGTool.ViewModels.DeviceConnect
                 await Task.Delay(100, _lifetimeCts.Token);
                 BtDevices.Add(dv);
             }
+
+            SyncCurrentConnectedDeviceInfo();
         }
 
         public async Task OnViewUnloadedAsync()
@@ -307,10 +364,37 @@ namespace EEGTool.ViewModels.DeviceConnect
                     dv.IsConnecting = false;
                 }
 
+                SetDisconnectedInfo();
+
                 _lifetimeCts.Dispose();
                 _lifetimeCts = new CancellationTokenSource();
                 _isViewUnloading = false;
             }
+        }
+
+        private void SyncCurrentConnectedDeviceInfo()
+        {
+            var connectedDevice = BtDevices.FirstOrDefault(d => d.IsConnected);
+            if (connectedDevice == null)
+            {
+                SetDisconnectedInfo();
+                return;
+            }
+
+            CurrentDeviceAddress = string.IsNullOrWhiteSpace(connectedDevice.Address) ? "--" : connectedDevice.Address;
+            CurrentDeviceName = string.IsNullOrWhiteSpace(connectedDevice.Name) ? "--" : connectedDevice.Name;
+            CurrentAdvertisementType = string.IsNullOrWhiteSpace(connectedDevice.AdvertisementType) ? "--" : connectedDevice.AdvertisementType;
+            CurrentConnectionStatus = "已连接";
+            CurrentConnectionStatusBrush = Brushes.Green;
+        }
+
+        private void SetDisconnectedInfo()
+        {
+            CurrentDeviceAddress = "--";
+            CurrentDeviceName = "--";
+            CurrentAdvertisementType = "--";
+            CurrentConnectionStatus = "未连接";
+            CurrentConnectionStatusBrush = Brushes.Red;
         }
 
         private static void RunOnUI(Action action)
