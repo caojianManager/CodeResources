@@ -13,21 +13,29 @@ using Framework.MVVM.Commands;
 
 namespace EEGTool.ViewModels.DeviceConnect
 {
-    public class DeviceConnectViewModel:BindableBase
+    public class DeviceConnectViewModel : BindableBase
     {
 
         private BleManager _ble;
-        private ObservableCollection<BleDeviceInfo> _devices = new ObservableCollection<BleDeviceInfo>();
-        public ObservableCollection<BleDeviceInfo> Devices
+        private ObservableCollection<BleDeviceInfo> _btDevices = new ObservableCollection<BleDeviceInfo>();
+        public ObservableCollection<BleDeviceInfo> BtDevices
         {
-            get => _devices;
-            set => SetProperty(ref _devices, value);
+            get => _btDevices;
+            set => SetProperty(ref _btDevices, value);
+        }
+
+        private BleDeviceInfo _selectedBtDevice = null;
+
+        public BleDeviceInfo SelectedBtDevice
+        {
+            get => _selectedBtDevice;
+            set => SetProperty(ref _selectedBtDevice, value);
         }
 
         public ICommand? ScanDeviceCommand { get; set; }
 
 
-        private DeviceConnectViewModel()
+        public DeviceConnectViewModel()
         {
             Config();
         }
@@ -74,6 +82,14 @@ namespace EEGTool.ViewModels.DeviceConnect
             //按照蓝牙名称过滤设备
             devices = devices.Where(d => d.Name.StartsWith("16CH_", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            BtDevices.Clear();
+
+            foreach (var dv in devices)
+            {
+                await Task.Delay(2);
+                BtDevices.Add(dv);
+            }
         }
     }
 }
