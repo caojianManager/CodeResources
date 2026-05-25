@@ -63,6 +63,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
     private short _rssi;
     private bool _isPaired;
     private bool _isConnected;
+    private bool _isConnecting;
     private string _advertisementType = "N/A";
     private IReadOnlyList<BleAdvertisementSection> _advertisementSections = Array.Empty<BleAdvertisementSection>();
 
@@ -102,6 +103,12 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         set => SetField(ref _isConnected, value);
     }
 
+    public bool IsConnecting
+    {
+        get => _isConnecting;
+        set => SetField(ref _isConnecting, value);
+    }
+
     public string AdvertisementType
     {
         get => _advertisementType;
@@ -133,6 +140,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
             Rssi = Rssi,
             IsPaired = IsPaired,
             IsConnected = IsConnected,
+            IsConnecting = IsConnecting,
             AdvertisementType = AdvertisementType,
             AdvertisementSections = AdvertisementSections
                 .Select(section => new BleAdvertisementSection
@@ -156,6 +164,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         Rssi = other.Rssi;
         IsPaired = other.IsPaired;
         IsConnected = other.IsConnected;
+        IsConnecting = other.IsConnecting;
         AdvertisementType = other.AdvertisementType;
         AdvertisementSections = other.AdvertisementSections
             .Select(section => new BleAdvertisementSection

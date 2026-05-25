@@ -22,12 +22,36 @@
             <Setter Property="FontSize" Value="11" />
             <Setter Property="Margin" Value="0,0,0,2" />
         </Style>
+        <Style x:Key="ConnectingIndicatorStyle" TargetType="Border">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="Opacity" Value="0" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasConnectingDevice}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Setter Property="Opacity" Value="1" />
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="ConnectingMarqueeStoryboard">
+                            <Storyboard RepeatBehavior="Forever">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 From="-260"
+                                                 To="260"
+                                                 Duration="0:0:1.0" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="ConnectingMarqueeStoryboard" />
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="ConnectActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#0071BC" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderBrush" Value="#0071BC" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
+            <Setter Property="Content" Value="连  接" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -63,6 +87,19 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                    <Setter Property="Background" Value="#D83A3A" />
+                    <Setter Property="BorderBrush" Value="#D83A3A" />
+                    <Setter Property="Content" Value="断开连接" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DataContext.IsConnecting, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                    <Setter Property="Content" Value="连接中..." />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
@@ -111,9 +148,24 @@
                          FontSize="14"
                          VerticalAlignment="Center"/>
                     <Grid Background="LightGray" Height="0.5"
-                    HorizontalAlignment="Stretch"
-                    Margin="15,0"
-                    VerticalAlignment="Bottom"></Grid>
+                        HorizontalAlignment="Stretch"
+                        Margin="15,0"
+                        VerticalAlignment="Bottom"></Grid>
+                    <Border HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            Height="2"
+                            Margin="15,0"
+                            ClipToBounds="True"
+                            Background="#22D83A3A">
+                        <Border Width="90"
+                                HorizontalAlignment="Left"
+                                Background="#D83A3A"
+                                Style="{StaticResource ConnectingIndicatorStyle}">
+                            <Border.RenderTransform>
+                                <TranslateTransform X="-240" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Border>
                 </Grid>
                 <Grid Grid.Row="2" HorizontalAlignment="Stretch"
                       Margin="15,0">
@@ -254,8 +306,9 @@
                                                     HorizontalAlignment="Center"
                                                     Width="80" Height="25"
                                                     Style="{StaticResource ConnectActionButtonStyle}"
+                                                    Command="{Binding DataContext.ToggleDeviceConnectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
                                                     Padding="0"
-                                                    Content="连  接"
                                                     BorderThickness="0"
                                                     Background="#0071BC"
                                                     Foreground="White"/>
@@ -297,6 +350,7 @@
                                 Cursor="Hand"
                                 Width="135"
                                 Height="35"
+                                IsEnabled="{Binding CanScan}"
                                 Command="{Binding ScanDeviceCommand}"
                                 PreviewMouseLeftButtonDown="ScanButton_PreviewMouseLeftButtonDown"
                                 PreviewMouseLeftButtonUp="ScanButton_PreviewMouseLeftButtonUp"
@@ -325,12 +379,7 @@
 
             </Grid>
 
-            <Border HorizontalAlignment="Stretch"
-                    VerticalAlignment="Bottom"
-                    Height="10"
-                    CornerRadius="0,0,10,10"
-                    Margin="0,0,0,0"
-                    Background="Red"></Border>
+            
         </Grid>
     </Grid>
 </UserControl>
