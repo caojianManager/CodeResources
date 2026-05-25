@@ -49,6 +49,21 @@ namespace EEGTool.ViewModels.DeviceConnect
                 {
                     OnPropertyChanged(nameof(CanScan));
                     OnPropertyChanged(nameof(HasConnectingDevice));
+                    OnPropertyChanged(nameof(HasActivityIndicator));
+                }
+            }
+        }
+
+        private bool _isScanning;
+        public bool IsScanning
+        {
+            get => _isScanning;
+            set
+            {
+                if (SetProperty(ref _isScanning, value))
+                {
+                    OnPropertyChanged(nameof(CanScan));
+                    OnPropertyChanged(nameof(HasActivityIndicator));
                 }
             }
         }
@@ -66,8 +81,9 @@ namespace EEGTool.ViewModels.DeviceConnect
             }
         }
 
-        public bool CanScan => !IsConnecting;
+        public bool CanScan => !IsConnecting && !IsScanning;
         public bool HasConnectingDevice => IsConnecting && !string.IsNullOrWhiteSpace(ConnectingDeviceId);
+        public bool HasActivityIndicator => HasConnectingDevice || IsScanning;
 
         private string _currentDeviceAddress = "--";
         public string CurrentDeviceAddress
@@ -298,6 +314,7 @@ namespace EEGTool.ViewModels.DeviceConnect
 
             try
             {
+                IsScanning = true;
                 _ble.StartScan();
                 // 断开连接后设备可能会延迟恢复广播，延长扫描窗口提升命中率。
                 await Task.Delay(2000, _lifetimeCts.Token);
@@ -309,6 +326,7 @@ namespace EEGTool.ViewModels.DeviceConnect
             finally
             {
                 _ble.StopScan();
+                IsScanning = false;
                 _scanGate.Release();
             }
 

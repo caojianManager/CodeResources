@@ -25,7 +25,16 @@ namespace EEGTool.Views.DeviceConnect
         public BLEConnectView()
         {
             InitializeComponent();
+            Loaded += BLEConnectView_Loaded;
             Unloaded += BLEConnectView_Unloaded;
+        }
+
+        private void BLEConnectView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DeviceConnectViewModel vm && vm.ScanDeviceCommand?.CanExecute(null) == true)
+            {
+                vm.ScanDeviceCommand.Execute(null);
+            }
         }
 
         private async void BLEConnectView_Unloaded(object sender, RoutedEventArgs e)

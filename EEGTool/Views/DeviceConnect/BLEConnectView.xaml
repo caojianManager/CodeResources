@@ -26,7 +26,7 @@
             <Setter Property="Visibility" Value="Collapsed" />
             <Setter Property="Opacity" Value="0" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding HasConnectingDevice}" Value="True">
+                <DataTrigger Binding="{Binding HasActivityIndicator}" Value="True">
                     <Setter Property="Visibility" Value="Visible" />
                     <Setter Property="Opacity" Value="1" />
                     <DataTrigger.EnterActions>
@@ -48,7 +48,7 @@
         <Style x:Key="ConnectingTrackStyle" TargetType="Border">
             <Setter Property="Visibility" Value="Collapsed" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding HasConnectingDevice}" Value="True">
+                <DataTrigger Binding="{Binding HasActivityIndicator}" Value="True">
                     <Setter Property="Visibility" Value="Visible" />
                 </DataTrigger>
             </Style.Triggers>
@@ -238,6 +238,7 @@
                                    Text="提示：此处显示当前连接设备信息，连接成功后去完成采集配置."
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
+                                   Foreground="#ec3b09"
                                    Style="{StaticResource FieldLabelStyle}"></TextBlock>
                     </Grid>
                 </Grid>
