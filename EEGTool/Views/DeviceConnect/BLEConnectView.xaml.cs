@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using EEGTool.ViewModels.DeviceConnect;
 
 namespace EEGTool.Views.DeviceConnect
 {
@@ -24,6 +25,15 @@ namespace EEGTool.Views.DeviceConnect
         public BLEConnectView()
         {
             InitializeComponent();
+            Unloaded += BLEConnectView_Unloaded;
+        }
+
+        private async void BLEConnectView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DeviceConnectViewModel vm)
+            {
+                await vm.OnViewUnloadedAsync();
+            }
         }
 
         private void ScanButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

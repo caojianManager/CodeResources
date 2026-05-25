@@ -45,6 +45,14 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="ConnectingTrackStyle" TargetType="Border">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasConnectingDevice}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="ConnectActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#0071BC" />
             <Setter Property="Foreground" Value="White" />
@@ -156,7 +164,8 @@
                             Height="2"
                             Margin="15,0"
                             ClipToBounds="True"
-                            Background="#22D83A3A">
+                            Background="#22D83A3A"
+                            Style="{StaticResource ConnectingTrackStyle}">
                         <Border Width="90"
                                 HorizontalAlignment="Left"
                                 Background="#D83A3A"

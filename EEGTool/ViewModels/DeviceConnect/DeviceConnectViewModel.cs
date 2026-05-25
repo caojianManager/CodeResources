@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -14,6 +15,10 @@ namespace EEGTool.ViewModels.DeviceConnect
     {
 
         private BleManager _ble;
+        private readonly SemaphoreSlim _connectGate = new SemaphoreSlim(1, 1);
+        private CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
+        private bool _isViewUnloading;
+        private int _activeConnectOperations;
         private ObservableCollection<BleDeviceInfo> _btDevices = new ObservableCollection<BleDeviceInfo>();
         public ObservableCollection<BleDeviceInfo> BtDevices
         {
@@ -71,20 +76,9 @@ namespace EEGTool.ViewModels.DeviceConnect
         private void Config()
         {
             _ble = BleToolKit.Shared;
-            _ble.DeviceDiscovered += (_, d) => { DeviceDiscovered(d); };
-            _ble.DeviceUpdated += (_, d) => { DeviceUpdated(d); };
-            _ble.ConnectionChanged += (_, e) =>
-            {
-                RunOnUI(() =>
-                {
-                    IsConnecting = false;
-                    var device = BtDevices.FirstOrDefault(x => x.DeviceId == e.DeviceId);
-                    if (device != null)
-                    {
-                        device.IsConnected = e.IsConnected;
-                    }
-                });
-            };
+            _ble.DeviceDiscovered += OnDeviceDiscovered;
+            _ble.DeviceUpdated += OnDeviceUpdated;
+            _ble.ConnectionChanged += OnConnectionChanged;
 
             ScanDeviceCommand = new RelayCommand((o) =>
             {
@@ -94,6 +88,28 @@ namespace EEGTool.ViewModels.DeviceConnect
             ToggleDeviceConnectionCommand = new RelayCommand((o) =>
             {
                 _ = ToggleDeviceConnectionAsync(o as BleDeviceInfo);
+            });
+        }
+
+        private void OnDeviceDiscovered(object? sender, BleDeviceInfo deviceInfo)
+        {
+            DeviceDiscovered(deviceInfo);
+        }
+
+        private void OnDeviceUpdated(object? sender, BleDeviceInfo deviceInfo)
+        {
+            DeviceUpdated(deviceInfo);
+        }
+
+        private void OnConnectionChanged(object? sender, BleConnectionChangedEventArgs e)
+        {
+            RunOnUI(() =>
+            {
+                var device = BtDevices.FirstOrDefault(x => x.DeviceId == e.DeviceId);
+                if (device != null)
+                {
+                    device.IsConnected = e.IsConnected;
+                }
             });
         }
 
@@ -109,8 +125,17 @@ namespace EEGTool.ViewModels.DeviceConnect
 
         private async Task ToggleDeviceConnectionAsync(BleDeviceInfo? device)
         {
-            if (_ble == null || device == null || string.IsNullOrWhiteSpace(device.DeviceId) || IsConnecting)
+            if (_ble == null || device == null || string.IsNullOrWhiteSpace(device.DeviceId))
             {
+                return;
+            }
+
+            if (!await _connectGate.WaitAsync(0))
+            {
+                RunOnUI(() =>
+                {
+                    MessageBox.Show("当前已有连接任务正在进行，请稍候。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
                 return;
             }
 
@@ -123,11 +148,15 @@ namespace EEGTool.ViewModels.DeviceConnect
                     RunOnUI(() =>
                     {
                         device.IsConnected = false;
-                        MessageBox.Show("设备已断开连接。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                        if (!_isViewUnloading)
+                        {
+                            MessageBox.Show("设备已断开连接。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
                     });
                 }
                 else
                 {
+                    Interlocked.Increment(ref _activeConnectOperations);
                     IsConnecting = true;
                     ConnectingDeviceId = device.DeviceId;
                     RunOnUI(() =>
@@ -138,7 +167,7 @@ namespace EEGTool.ViewModels.DeviceConnect
                         }
                     });
 
-                    await _ble.ConnectAsync(device.DeviceId);
+                    await _ble.ConnectAsync(device.DeviceId, _lifetimeCts.Token);
 
                     RunOnUI(() =>
                     {
@@ -147,31 +176,54 @@ namespace EEGTool.ViewModels.DeviceConnect
                             dv.IsConnected = dv.DeviceId == device.DeviceId;
                         }
 
-                        MessageBox.Show("蓝牙连接成功。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                        if (!_isViewUnloading)
+                        {
+                            MessageBox.Show("蓝牙连接成功。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                    });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (!_isViewUnloading)
+                {
+                    RunOnUI(() =>
+                    {
+                        MessageBox.Show("连接任务已取消，请重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                     });
                 }
             }
             catch (Exception ex)
             {
-                RunOnUI(() =>
+                if (!_isViewUnloading)
                 {
-                    MessageBox.Show($"蓝牙连接失败：{ex.Message}", "连接失败", MessageBoxButton.OK, MessageBoxImage.Warning);
-                });
+                    RunOnUI(() =>
+                    {
+                        MessageBox.Show($"蓝牙连接失败：{ex.Message}", "连接失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    });
+                }
             }
             finally
             {
                 if (isConnectAction)
                 {
-                    IsConnecting = false;
-                    ConnectingDeviceId = string.Empty;
-                    RunOnUI(() =>
+                    var remaining = Interlocked.Decrement(ref _activeConnectOperations);
+                    if (remaining <= 0)
                     {
-                        foreach (var dv in BtDevices)
+                        Interlocked.Exchange(ref _activeConnectOperations, 0);
+                        IsConnecting = false;
+                        ConnectingDeviceId = string.Empty;
+                        RunOnUI(() =>
                         {
-                            dv.IsConnecting = false;
-                        }
-                    });
+                            foreach (var dv in BtDevices)
+                            {
+                                dv.IsConnecting = false;
+                            }
+                        });
+                    }
                 }
+
+                _connectGate.Release();
             }
         }
 
@@ -186,7 +238,7 @@ namespace EEGTool.ViewModels.DeviceConnect
             if (IsConnecting)
                 return;
             _ble.StartScan();
-            await Task.Delay(500);
+            await Task.Delay(500, _lifetimeCts.Token);
             _ble.StopScan();
 
 
@@ -201,8 +253,47 @@ namespace EEGTool.ViewModels.DeviceConnect
 
             foreach (var dv in devices)
             {
-                await Task.Delay(100);
+                await Task.Delay(100, _lifetimeCts.Token);
                 BtDevices.Add(dv);
+            }
+        }
+
+        public async Task OnViewUnloadedAsync()
+        {
+            if (_isViewUnloading)
+            {
+                return;
+            }
+
+            _isViewUnloading = true;
+
+            try
+            {
+                _lifetimeCts.Cancel();
+                _ble.StopScan();
+                await _ble.DisconnectAsync();
+            }
+            catch
+            {
+                // Ignore cleanup failures during page unload.
+            }
+            finally
+            {
+                _ble.DeviceDiscovered -= OnDeviceDiscovered;
+                _ble.DeviceUpdated -= OnDeviceUpdated;
+                _ble.ConnectionChanged -= OnConnectionChanged;
+                Interlocked.Exchange(ref _activeConnectOperations, 0);
+
+                IsConnecting = false;
+                ConnectingDeviceId = string.Empty;
+                foreach (var dv in BtDevices)
+                {
+                    dv.IsConnecting = false;
+                }
+
+                _lifetimeCts.Dispose();
+                _lifetimeCts = new CancellationTokenSource();
+                _isViewUnloading = false;
             }
         }
 
