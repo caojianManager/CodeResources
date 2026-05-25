@@ -16,6 +16,7 @@ namespace EEGTool.ViewModels.DeviceConnect
 
         private BleManager _ble;
         private readonly SemaphoreSlim _connectGate = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _scanGate = new SemaphoreSlim(1, 1);
         private CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
         private bool _isViewUnloading;
         private int _activeConnectOperations;
@@ -237,13 +238,28 @@ namespace EEGTool.ViewModels.DeviceConnect
                 return;
             if (IsConnecting)
                 return;
-            _ble.StartScan();
-            await Task.Delay(500, _lifetimeCts.Token);
-            _ble.StopScan();
+            if (!await _scanGate.WaitAsync(0))
+                return;
+
+            try
+            {
+                _ble.StartScan();
+                // 断开连接后设备可能会延迟恢复广播，延长扫描窗口提升命中率。
+                await Task.Delay(2000, _lifetimeCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            finally
+            {
+                _ble.StopScan();
+                _scanGate.Release();
+            }
 
 
             //获取扫描结果
-            var devices = _ble.GetDiscoveredDevices();
+            var devices = _ble.GetDiscoveredDevices(onlyAdvertising: true);
 
             //按照蓝牙名称过滤设备
             devices = devices.Where(d => d.Name.StartsWith("16CH_", StringComparison.OrdinalIgnoreCase))

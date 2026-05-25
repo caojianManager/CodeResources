@@ -351,9 +351,18 @@ public sealed class BleManager : IDisposable
     /// <summary>
     /// 获取当前已发现设备快照列表。
     /// </summary>
-    public IReadOnlyList<BleDeviceInfo> GetDiscoveredDevices()
+    public IReadOnlyList<BleDeviceInfo> GetDiscoveredDevices(bool onlyAdvertising = false)
     {
-        return _devicesById.Values.Select(device => device.Clone()).ToList();
+        IEnumerable<BleDeviceInfo> devices = _devicesById.Values;
+        if (onlyAdvertising)
+        {
+            devices = devices.Where(device =>
+                device.IsConnected
+                || (!string.IsNullOrWhiteSpace(device.Address)
+                    && _advertisementsByAddress.ContainsKey(device.Address)));
+        }
+
+        return devices.Select(device => device.Clone()).ToList();
     }
 
     /// <summary>
