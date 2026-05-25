@@ -344,7 +344,6 @@ namespace EEGTool.ViewModels.DeviceConnect
             {
                 _lifetimeCts.Cancel();
                 _ble.StopScan();
-                await _ble.DisconnectAsync();
             }
             catch
             {
@@ -363,8 +362,6 @@ namespace EEGTool.ViewModels.DeviceConnect
                 {
                     dv.IsConnecting = false;
                 }
-
-                SetDisconnectedInfo();
 
                 _lifetimeCts.Dispose();
                 _lifetimeCts = new CancellationTokenSource();
