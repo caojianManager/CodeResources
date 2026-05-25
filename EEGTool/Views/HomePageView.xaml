@@ -146,7 +146,7 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Padding="0"
-                                hp:ButtonHelper.CornerRadius="0,10,0,0"
+                                hp:ButtonHelper.CornerRadius="0,0,0,0"
                                 Style="{StaticResource TitleBarButtonStyle}"
                                 Width="60" Height="38" Cursor="Hand">
                             <iconPacks:PackIconMaterial Kind="WindowClose" 

@@ -179,7 +179,15 @@
                     </Grid>
                 </Grid>
 
-            
+                <Grid Grid.Row="3"
+                      Margin="15,15,15,100">
+                    <Border HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            BorderThickness="0.5"
+                            CornerRadius="5"
+                            BorderBrush="LightGray"
+                            ></Border>
+                </Grid>
 
                 <Grid Grid.Row="3" ClipToBounds="False">
                     <Border x:Name="ScanButtonBorder"
