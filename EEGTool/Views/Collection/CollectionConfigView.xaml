@@ -75,6 +75,120 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <Style
+     x:Key="RoundCornerComboBoxStyle"
+     TargetType="{x:Type ComboBox}">
+            <!-- 设置默认尺寸（可根据需要调整，或在使用时覆盖） -->
+            <Setter
+         Property="Width"
+         Value="279" />
+            <Setter
+         Property="Height"
+         Value="30" />
+            <Setter
+         Property="FontSize"
+         Value="12" />
+
+            <!-- 渐变背景（核心：可在使用时通过Background属性覆盖） -->
+            <Setter
+         Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush
+                 EndPoint="0.5,1"
+                 StartPoint="0.5,0">
+                        <GradientStop
+                     Color="#FFFCFCFC" />
+                        <GradientStop
+                     Color="#FFE6E6E6"
+                     Offset="1" />
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+
+            <!-- 核心：圆角ControlTemplate 修复点击区域 -->
+            <Setter
+         Property="Template">
+                <Setter.Value>
+                    <ControlTemplate
+                 TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <!-- 1. 新增列定义：左侧内容区 + 右侧箭头区 -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition
+                             Width="*" />
+                                <ColumnDefinition
+                             Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ComboBox主体圆角容器 -->
+                            <Border
+                         x:Name="border"
+                         Grid.ColumnSpan="2"
+                         CornerRadius="5"
+                         Background="{TemplateBinding Background}"
+                         BorderThickness="0" />
+
+                            <!-- 2. 关键修复：ToggleButton铺满整个ComboBox，接收所有点击 -->
+                            <ToggleButton
+                         x:Name="toggleButton"
+                         Grid.ColumnSpan="2"
+                         Focusable="False"
+                         IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                         ClickMode="Press"
+                         Background="Transparent"
+                         BorderThickness="0" />
+
+                            <!-- 3. 选中内容显示区域（左侧） -->
+                            <ContentPresenter
+                         x:Name="contentPresenter"
+                         Margin="10,0,0,0"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Content="{TemplateBinding SelectionBoxItem}"
+                         ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
+
+                            <!-- 4. 固定箭头图标（右侧） -->
+                            <Path
+                         Grid.Column="1"
+                         x:Name="Arrow"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Center"
+                         Margin="0 0 10 0"
+                         Data="M0,0 L0,2 L4,6 L8,2 L8,0 L4,4 z"
+                         Fill="#666666" />
+
+                            <!-- 下拉列表：保持原有样式 -->
+                            <Popup
+                         x:Name="Popup"
+                         Grid.ColumnSpan="2"
+                         Placement="Bottom"
+                         IsOpen="{TemplateBinding IsDropDownOpen}"
+                         AllowsTransparency="True"
+                         Focusable="False"
+                         PopupAnimation="Slide">
+                                <Grid
+                             x:Name="DropDown"
+                             MinWidth="{TemplateBinding ActualWidth}"
+                             MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border
+                                 x:Name="DropDownBorder"
+                                 BorderThickness="1"
+                                 BorderBrush="#CCCCCC"
+                                 Background="White"
+                                 CornerRadius="8" />
+                                    <ScrollViewer
+                                 Margin="4,6,4,6">
+                                        <ItemsPresenter
+                                     KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
 
@@ -185,8 +299,49 @@
                             VerticalAlignment="Stretch"
                             BorderThickness="0.5"
                             CornerRadius="5"
-                            BorderBrush="LightGray"
-                            ></Border>
+                            BorderBrush="LightGray"></Border>
+
+
+                    <Grid Margin="15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="采样率:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
+
+                        <ComboBox Grid.Row="0" Grid.Column="1" Width="150" Height="25"
+                                  FontSize="14"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Margin="20,0,0,0"
+                                  ItemsSource="{Binding SampleRateItems}"
+                                  SelectedItem="{Binding SelectedSampleRate}"
+                                  Style="{StaticResource RoundCornerComboBoxStyle}" Cursor=""/>
+
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="采样模板:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
+
+                        <ComboBox Grid.Row="1" Grid.Column="1" Width="150" Height="25"
+                                  FontSize="14"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Margin="20,0,0,0"
+                                  ItemsSource="{Binding TemplateItems}"
+                                  SelectedItem="{Binding SelectedTemplate}"
+                                  Style="{StaticResource RoundCornerComboBoxStyle}" Cursor=""/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="视频录制:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
+
+                       
+                    </Grid>
+       
                 </Grid>
 
                 <Grid Grid.Row="3" ClipToBounds="False">
