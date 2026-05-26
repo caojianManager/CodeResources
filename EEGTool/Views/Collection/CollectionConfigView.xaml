@@ -339,7 +339,23 @@
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="视频录制:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
 
-                       
+                        <StackPanel Grid.Row="2" Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center">
+                            <RadioButton Content="是"
+                                         Background="Transparent"
+                                         GroupName="VideoRecordGroup"
+                                         IsChecked="{Binding IsVideoRecordYes, Mode=TwoWay}"
+                                         Margin="0,0,20,0"
+                                         VerticalAlignment="Center"/>
+                            <RadioButton Content="否"
+                                         GroupName="VideoRecordGroup"
+                                         Background="Transparent"
+                                         IsChecked="{Binding IsVideoRecordNo, Mode=TwoWay}"
+                                         VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
                     </Grid>
        
                 </Grid>
@@ -348,11 +364,22 @@
                     <Border x:Name="ScanButtonBorder"
                      CornerRadius="10"
                      BorderThickness="0.5"
-                     BorderBrush="LightGray"
-                     Background="White"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Bottom"
                      Margin="0,0,0,20">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="White"/>
+                                <Setter Property="BorderBrush" Value="LightGray"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CanCollection}" Value="False">
+                                        <Setter Property="Background" Value="#D9D9D9"/>
+                                        <Setter Property="BorderBrush" Value="#BFBFBF"/>
+                                        <Setter Property="Effect" Value="{x:Null}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <Border.RenderTransform>
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
                         </Border.RenderTransform>
@@ -378,22 +405,42 @@
                          MouseLeave="ScanButton_MouseLeave">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Background" Value="#FFFFFF"/>
                                     <Setter Property="BorderBrush" Value="Transparent"/>
                                     <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Foreground" Value="#637487"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
-                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                           RecognizesAccessKey="True"/>
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                               RecognizesAccessKey="True"/>
+                                                </Border>
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Background" Value="#D9D9D9"/>
+                                            <Setter Property="Foreground" Value="#8F8F8F"/>
+                                        </Trigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Button.Style>
                             <TextBlock Text="开始采集" FontSize="14" HorizontalAlignment="Center"
-                                VerticalAlignment="Center"  Style="{StaticResource FieldLabelStyle}"/>
+                                VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelStyle}">
+                                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CanCollection}" Value="False">
+                                                <Setter Property="Foreground" Value="#8F8F8F"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Button>
                     </Border>
                 </Grid>
