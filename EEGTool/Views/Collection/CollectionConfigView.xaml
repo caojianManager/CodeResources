@@ -285,7 +285,7 @@
 
 
                         <TextBlock Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="4"
-                            Text="提示：前先完成好设备的连接，再进行采集配置"
+                            Text="提示：采集前先完成好设备的连接，再进行采集配置"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Foreground="#ec3b09"
@@ -317,7 +317,7 @@
                         <TextBlock Text="采样率:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
 
                         <ComboBox Grid.Row="0" Grid.Column="1" Width="150" Height="25"
-                                  FontSize="14"
+                                  FontSize="12"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Center"
                                   Margin="20,0,0,0"
@@ -329,7 +329,7 @@
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="采样模板:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
 
                         <ComboBox Grid.Row="1" Grid.Column="1" Width="150" Height="25"
-                                  FontSize="14"
+                                  FontSize="12"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Center"
                                   Margin="20,0,0,0"

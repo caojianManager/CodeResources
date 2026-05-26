@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:EEGTool.Views.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
-    <Grid Background="Red">
+    <Grid Background="Transparent">
             
     </Grid>
 </UserControl>

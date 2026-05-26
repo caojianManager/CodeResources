@@ -46,7 +46,11 @@
                                                      Height="20"
                                                      Foreground="#4D4D4D" />
                     </Button>
-                    </StackPanel>
+
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Width="1" Background="LightGray"
+                          Margin="15,5"></Grid>
+                </StackPanel>
                 </Grid>
             <tpv:TemplateView Grid.Row="1"/>
             </Grid>
