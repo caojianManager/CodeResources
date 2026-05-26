@@ -43,10 +43,7 @@
     <ImageFilesToCopy Include="Resources\images\**\*.*" />
   </ItemGroup>
   <Target Name="CopyImageFilesToOutput" AfterTargets="Build">
-    <Copy
-      SourceFiles="@(ImageFilesToCopy)"
-      DestinationFiles="@(ImageFilesToCopy->'$(OutDir)Resources\images\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ImageFilesToCopy)" DestinationFiles="@(ImageFilesToCopy->'$(OutDir)Resources\images\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
    <!-- 图片资源 -->
@@ -54,6 +51,9 @@
     <Resource Include="Resources\images\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="Resources\images\collection.png" />
   </ItemGroup>
 
   <!-- 配置文件 -->

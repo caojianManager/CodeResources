@@ -13,7 +13,7 @@ namespace Resources
 
         public static ImageSource COLLECTION = Load("/Resources/images/collection.png");
         public static ImageSource PLAYBACK = Load("/Resources/images/playback.png");
-
+        public static ImageSource TEMPLATE = Load("/Resources/images/template.png");
 
     }
 }

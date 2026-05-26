@@ -12,9 +12,9 @@ using System.Windows.Input;
 
 namespace EEGTool.ViewModels
 {
-    public class MainViewModel : BindableBase,IApplicationContentView
+    public class TemplateHomeViewModel : BindableBase,IApplicationContentView
     {
-        public string Name => "首页";
+        public string Name => "模板配置";
         private bool _isSelected = false;
         public bool IsSelected
         {
@@ -29,10 +29,8 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
-        public ICommand? CollectionCommand { get; set; }
+        public ICommand? BackHomeCommand { get; set; }
 
-        public ICommand? PlaybackCommand { get; set; }
-        public ICommand? TemplateCommand { get; set; }
 
 
         public void Init()
@@ -42,25 +40,10 @@ namespace EEGTool.ViewModels
 
         private void Config()
         {
-            PlaybackCommand = new RelayCommand((o) =>
+            BackHomeCommand = new RelayCommand((o) =>
             {
-                ClickPlaybackBtn();
+                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
-
-            CollectionCommand = new RelayCommand((o) =>
-            {
-                ClickCollectionBtn();
-            });
-
-            TemplateCommand = new RelayCommand((o) =>
-            {
-                ClickTemplateBtn();
-            });
-        }
-
-        private void ClickTemplateBtn()
-        {
-            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(TemplateHomeViewModel));
         }
 
         private void ClickPlaybackBtn()
@@ -70,7 +53,7 @@ namespace EEGTool.ViewModels
 
         private void ClickCollectionBtn()
         {
-            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionHomeViewModel));
+
         }
 
         public void OnHide()

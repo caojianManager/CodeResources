@@ -3,5 +3,6 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/Views/MainView.xaml"/>
         <ResourceDictionary Source="/Views/CollectionHomeView.xaml"/>
+        <ResourceDictionary Source="/Views/TemplateHomeView.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
