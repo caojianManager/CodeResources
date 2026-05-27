@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:local="clr-namespace:EEGTool.Views.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
@@ -113,26 +114,56 @@
                     </Grid>
 
                     <Grid Grid.Row="2">
-                        <Border CornerRadius="8"
-                                BorderThickness="0.5"
-                                BorderBrush="LightGray"
-                                Background="White"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24"
-                                                  ShadowDepth="3"
-                                                  Direction="270"
-                                                  Opacity="0.35"
-                                                  Color="#66000000"/>
-                            </Border.Effect>
-                            <Button Style="{StaticResource EffectActionButtonStyle}"
-                                    Width="110"
-                                    Height="30"
-                                    FontSize="14"
-                                    Content="确 认"
-                                    Command="{Binding CreateTemplateCommand}" />
-                        </Border>
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <Border CornerRadius="8"
+                                    BorderThickness="0.5"
+                                    BorderBrush="LightGray"
+                                    Background="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24"
+                                                      ShadowDepth="3"
+                                                      Direction="270"
+                                                      Opacity="0.35"
+                                                      Color="#66000000"/>
+                                </Border.Effect>
+                                <Button Style="{StaticResource EffectActionButtonStyle}"
+                                        Width="110"
+                                        Height="30"
+                                        FontSize="14"
+                                        Content="确 认"
+                                        Command="{Binding CreateTemplateCommand}" />
+                            </Border>
+
+                            <Border CornerRadius="8"
+                                    BorderThickness="0.5"
+                                    BorderBrush="LightGray"
+                                    Background="Transparent"
+                                    Margin="35,0,0,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24"
+                                                      ShadowDepth="3"
+                                                      Direction="270"
+                                                      Opacity="0.35"
+                                                      Color="#66000000"/>
+                                </Border.Effect>
+                                <Button Style="{StaticResource EffectActionButtonStyle}"
+                                        Width="110"
+                                        Background="#861B2D"
+                                        Foreground="White"
+                                        Height="30"
+                                        FontSize="14"
+                                        Content="取 消"
+                                        Command="{Binding CreateTemplateCommand}" />
+                            </Border>
+                        </StackPanel>
+                        
                     </Grid>
                 </Grid>
             </Grid>
