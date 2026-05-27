@@ -72,5 +72,70 @@
         </Grid>
 
         <Grid Grid.Column="1" Background="Transparent"></Grid>
+
+        <Grid Grid.Column="0" Grid.ColumnSpan="2">
+            <Border Background="Black" Opacity="0.25"/>
+
+            <Grid Width="500" Height="300">
+                <Border BorderThickness="0.5" BorderBrush="LightGray" 
+                        CornerRadius="8">
+                    <Border.Background>
+                        <LinearGradientBrush
+                            StartPoint="1,0"
+                            EndPoint="0,1">
+                            <GradientStop
+                                Color="#FFFFFF"
+                                Offset="0" />
+                            <GradientStop
+                                Color="#D4EAFF"
+                                Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="80"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <TextBlock Text="新建模板" 
+                                   FontSize="14"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        <Grid HorizontalAlignment="Stretch"
+                              VerticalAlignment="Bottom"
+                              Height="1"
+                              Background="LightGray"
+                              Margin="15,0"></Grid>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Border CornerRadius="8"
+                                BorderThickness="0.5"
+                                BorderBrush="LightGray"
+                                Background="White"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="24"
+                                                  ShadowDepth="3"
+                                                  Direction="270"
+                                                  Opacity="0.35"
+                                                  Color="#66000000"/>
+                            </Border.Effect>
+                            <Button Style="{StaticResource EffectActionButtonStyle}"
+                                    Width="110"
+                                    Height="30"
+                                    FontSize="14"
+                                    Content="确 认"
+                                    Command="{Binding CreateTemplateCommand}" />
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>
