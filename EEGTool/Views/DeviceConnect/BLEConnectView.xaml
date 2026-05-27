@@ -371,37 +371,15 @@
                                               Opacity="0.35"
                                               Color="#66000000"/>
                         </Border.Effect>
-                        <Button Background="Transparent"
-                                BorderThickness="0"
+                        <Button Style="{StaticResource CollectionActionButtonStyle}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
-                                Cursor="Hand"
                                 Width="135"
                                 Height="35"
+                                FontSize="14"
+                                Content="扫描设备"
                                 IsEnabled="{Binding CanScan}"
-                                Command="{Binding ScanDeviceCommand}"
-                                PreviewMouseLeftButtonDown="ScanButton_PreviewMouseLeftButtonDown"
-                                PreviewMouseLeftButtonUp="ScanButton_PreviewMouseLeftButtonUp"
-                                MouseLeave="ScanButton_MouseLeave">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                                  RecognizesAccessKey="True"/>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </Button.Style>
-                            <TextBlock Text="扫描设备" FontSize="14" HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"  Style="{StaticResource FieldLabelStyle}"/>
-                        </Button>
+                                Command="{Binding ScanDeviceCommand}"/>
                     </Border>
                 </Grid>
 

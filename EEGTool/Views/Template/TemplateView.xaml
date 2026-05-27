@@ -6,7 +6,32 @@
              xmlns:local="clr-namespace:EEGTool.Views.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
-    <Grid Background="Transparent">
-            
+    <Grid Background="White">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+        <Grid Background="Transparent">
+            <StackPanel HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top">
+                <Grid Height="50">
+                    <TextBlock Text="模板配置"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"
+                               FontSize="16"
+                               Foreground="#2f3542"
+                               Margin="15,0,0,0"/>
+                    <Grid HorizontalAlignment="Stretch"
+                          VerticalAlignment="Bottom"
+                          Height="0.50"
+                          Background="LightGray"
+                          Margin="5,0"></Grid>
+                </Grid>
+            </StackPanel>
+
+          
+        </Grid>
+
+        <Grid Grid.Column="1" Background="Green"></Grid>
     </Grid>
 </UserControl>
