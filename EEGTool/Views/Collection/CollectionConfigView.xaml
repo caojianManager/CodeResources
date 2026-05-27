@@ -391,7 +391,7 @@
                                        Opacity="0.35"
                                        Color="#66000000"/>
                         </Border.Effect>
-                        <Button Style="{StaticResource CollectionActionButtonStyle}"
+                        <Button Style="{StaticResource EffectActionButtonStyle}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 Width="135"

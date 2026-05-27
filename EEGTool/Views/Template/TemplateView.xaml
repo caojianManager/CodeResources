@@ -6,12 +6,26 @@
              xmlns:local="clr-namespace:EEGTool.Views.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
-    <Grid Background="White">
+    <Grid Background="Transparent">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-        <Grid Background="Transparent">
+        <Grid Background="Transparent" Cursor="">
+            <Border>
+                <Border.Background>
+                    <LinearGradientBrush
+                        StartPoint="1,0"
+                        EndPoint="0,1">
+                        <GradientStop
+                            Color="#FFFFFF"
+                            Offset="0" />
+                        <GradientStop
+                            Color="#D4EAFF"
+                            Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
             <StackPanel HorizontalAlignment="Stretch"
                         VerticalAlignment="Top">
                 <Grid Height="50">
@@ -29,9 +43,34 @@
                 </Grid>
             </StackPanel>
 
-          
+            <Border CornerRadius="10"
+                    BorderThickness="0.5"
+                    BorderBrush="LightGray"
+                    Background="White"
+                    Margin="0,0,25,50"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24"
+                                      ShadowDepth="3"
+                                      Direction="270"
+                                      Opacity="0.35"
+                                      Color="#66000000"/>
+                </Border.Effect>
+                <Button Style="{StaticResource EffectActionButtonStyle}"
+                        Width="135"
+                        Height="35"
+                        FontSize="14"
+                        Content="新建模板"
+                        Command="{Binding CreateTemplateCommand}" />
+            </Border>
+
+            <Grid Width="1"
+                  Background="LightGray"
+                  VerticalAlignment="Stretch"
+                  HorizontalAlignment="Right"></Grid>
         </Grid>
 
-        <Grid Grid.Column="1" Background="Green"></Grid>
+        <Grid Grid.Column="1" Background="Transparent"></Grid>
     </Grid>
 </UserControl>
