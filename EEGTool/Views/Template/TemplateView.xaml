@@ -191,6 +191,67 @@
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Left"
                                        FontSize="14"></TextBlock>
+
+                            <Grid Grid.Row="2" Grid.Column="1" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0"
+                                         Height="30"
+                                         Padding="8,4"
+                                         VerticalContentAlignment="Center"
+                                         Text="{Binding CollectionDuration, UpdateSourceTrigger=PropertyChanged}"
+                                         PreviewTextInput="DurationTextBox_PreviewTextInput"
+                                         DataObject.Pasting="DurationTextBox_OnPasting">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="BorderBrush" Value="#D9D9D9"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <Border x:Name="Bd"
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="5"
+                                                                SnapsToDevicePixels="True">
+                                                            <ScrollViewer x:Name="PART_ContentHost"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.IsCollectionDurationError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="Red"/>
+                                                    <Setter Property="BorderThickness" Value="1.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+
+                                <TextBlock Grid.Column="1"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="14"
+                                           Text="s"/>
+
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Margin="2,4,0,0"
+                                           Foreground="Red"
+                                           FontSize="12"
+                                           Text="{Binding CollectionDurationErrorMessage}"
+                                           Visibility="{Binding IsCollectionDurationError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </Grid>
                         </Grid>
                     </Grid>
 

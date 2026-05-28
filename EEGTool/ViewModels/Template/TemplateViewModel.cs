@@ -15,6 +15,9 @@ namespace EEGTool.ViewModels.Template
         private string _templateName = string.Empty;
         private bool _isTemplateNameError;
         private string _templateNameErrorMessage = string.Empty;
+        private string _collectionDuration = string.Empty;
+        private bool _isCollectionDurationError;
+        private string _collectionDurationErrorMessage = string.Empty;
 
         public bool IsShowCreateTemplateWindow
         {
@@ -45,6 +48,31 @@ namespace EEGTool.ViewModels.Template
         {
             get => _templateNameErrorMessage;
             set => SetProperty(ref _templateNameErrorMessage, value);
+        }
+
+        public string CollectionDuration
+        {
+            get => _collectionDuration;
+            set
+            {
+                if (SetProperty(ref _collectionDuration, value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    IsCollectionDurationError = false;
+                    CollectionDurationErrorMessage = string.Empty;
+                }
+            }
+        }
+
+        public bool IsCollectionDurationError
+        {
+            get => _isCollectionDurationError;
+            set => SetProperty(ref _isCollectionDurationError, value);
+        }
+
+        public string CollectionDurationErrorMessage
+        {
+            get => _collectionDurationErrorMessage;
+            set => SetProperty(ref _collectionDurationErrorMessage, value);
         }
 
         public ICommand? CreateTemplateCommand { get; set; }
@@ -83,8 +111,24 @@ namespace EEGTool.ViewModels.Template
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(CollectionDuration))
+            {
+                IsCollectionDurationError = true;
+                CollectionDurationErrorMessage = "采集时长不能为空";
+                return;
+            }
+
+            if (!int.TryParse(CollectionDuration, out _))
+            {
+                IsCollectionDurationError = true;
+                CollectionDurationErrorMessage = "采集时长只能输入数字";
+                return;
+            }
+
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
+            IsCollectionDurationError = false;
+            CollectionDurationErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
         }
 
@@ -94,6 +138,9 @@ namespace EEGTool.ViewModels.Template
             TemplateName = string.Empty;
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
+            CollectionDuration = string.Empty;
+            IsCollectionDurationError = false;
+            CollectionDurationErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = true;
         }
 
