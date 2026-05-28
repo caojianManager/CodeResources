@@ -207,8 +207,10 @@
                                          Padding="8,4"
                                          VerticalContentAlignment="Center"
                                          Text="{Binding CollectionDuration, UpdateSourceTrigger=PropertyChanged}"
+                                         InputMethod.IsInputMethodEnabled="False"
                                          PreviewTextInput="DurationTextBox_PreviewTextInput"
-                                         DataObject.Pasting="DurationTextBox_OnPasting">
+                                         DataObject.Pasting="DurationTextBox_OnPasting"
+                                         TextChanged="DurationTextBox_TextChanged">
                                     <TextBox.Style>
                                         <Style TargetType="TextBox">
                                             <Setter Property="BorderBrush" Value="#D9D9D9"/>

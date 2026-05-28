@@ -47,5 +47,24 @@ namespace EEGTool.Views.Template
                 e.CancelCommand();
             }
         }
+
+        private void DurationTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox textBox)
+            {
+                return;
+            }
+
+            var original = textBox.Text;
+            var filtered = new string(original.Where(char.IsDigit).ToArray());
+            if (original == filtered)
+            {
+                return;
+            }
+
+            var caret = textBox.CaretIndex;
+            textBox.Text = filtered;
+            textBox.CaretIndex = Math.Min(caret, textBox.Text.Length);
+        }
     }
 }
