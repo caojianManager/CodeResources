@@ -109,7 +109,7 @@
 
                     <Grid>
                         <TextBlock Text="新建模板" 
-                                   FontSize="14"
+                                   FontSize="16"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                         <Grid HorizontalAlignment="Stretch"
@@ -117,6 +117,80 @@
                               Height="1"
                               Background="LightGray"
                               Margin="15,0"></Grid>
+                    </Grid>
+                    
+                    <Grid Grid.Row="1">
+                        <Grid Width="300" Height="120"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Background="Transparent">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*"/>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="模板名称:" 
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       FontSize="14"></TextBlock>
+
+                            <Grid Grid.Row="0" Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBox Height="30"
+                                         Padding="8,4"
+                                         VerticalContentAlignment="Center"
+                                         Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="BorderBrush" Value="#D9D9D9"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <Border x:Name="Bd"
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="5"
+                                                                SnapsToDevicePixels="True">
+                                                            <ScrollViewer x:Name="PART_ContentHost"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.IsTemplateNameError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="Red"/>
+                                                    <Setter Property="BorderThickness" Value="1.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+
+                                <TextBlock Grid.Row="1"
+                                           Margin="2,4,0,0"
+                                           Foreground="Red"
+                                           FontSize="12"
+                                           Text="{Binding TemplateNameErrorMessage}"
+                                           Visibility="{Binding IsTemplateNameError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </Grid>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="采集时长:" 
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       FontSize="14"></TextBlock>
+                        </Grid>
                     </Grid>
 
                     <Grid Grid.Row="2">
