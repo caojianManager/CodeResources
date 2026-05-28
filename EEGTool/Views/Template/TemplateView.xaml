@@ -83,7 +83,7 @@
         <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsShowCreateTemplateWindow,Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="Black" Opacity="0.25"/>
 
-            <Grid Width="500" Height="250">
+            <Grid Width="500" Height="270">
                 <Border BorderThickness="0.5" BorderBrush="LightGray" 
                         CornerRadius="8">
                     <Border.Background>
@@ -120,7 +120,7 @@
                     </Grid>
                     
                     <Grid Grid.Row="1">
-                        <Grid Width="300" Height="100"
+                        <Grid Width="300" Height="120"
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"
                               Margin="0,15,0,0"
@@ -243,7 +243,7 @@
                                            Margin="6,0,0,0"
                                            VerticalAlignment="Center"
                                            FontSize="14"
-                                           Text="s"/>
+                                           Text="秒"/>
 
                                 <TextBlock Grid.Row="1"
                                            Grid.Column="0"
