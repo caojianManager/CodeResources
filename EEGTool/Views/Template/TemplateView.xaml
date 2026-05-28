@@ -5,8 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:local="clr-namespace:EEGTool.Views.Template"
+             xmlns:vm="clr-namespace:EEGTool.ViewModels.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
+
+    <UserControl.DataContext>
+        <vm:TemplateViewModel/>
+    </UserControl.DataContext>
+
     <Grid Background="Transparent">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300"/>
@@ -74,7 +80,7 @@
 
         <Grid Grid.Column="1" Background="Transparent"></Grid>
 
-        <Grid Grid.Column="0" Grid.ColumnSpan="2">
+        <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsShowCreateTemplateWindow,Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="Black" Opacity="0.25"/>
 
             <Grid Width="500" Height="300">
@@ -96,7 +102,7 @@
 
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="39"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="80"/>
                     </Grid.RowDefinitions>
@@ -121,7 +127,7 @@
                             <Border CornerRadius="8"
                                     BorderThickness="0.5"
                                     BorderBrush="LightGray"
-                                    Background="White"
+                                    Background="Transparent"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                                 <Border.Effect>
@@ -136,7 +142,7 @@
                                         Height="30"
                                         FontSize="14"
                                         Content="确 认"
-                                        Command="{Binding CreateTemplateCommand}" />
+                                        Command="{Binding SureCreateTemplateCommand}" />
                             </Border>
 
                             <Border CornerRadius="8"
@@ -160,7 +166,7 @@
                                         Height="30"
                                         FontSize="14"
                                         Content="取 消"
-                                        Command="{Binding CreateTemplateCommand}" />
+                                        Command="{Binding CancelCreateCommand}" Cursor="Hand" />
                             </Border>
                         </StackPanel>
                         
