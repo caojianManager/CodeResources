@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:br="clr-namespace:EEGTool.Views.Common"
              xmlns:local="clr-namespace:EEGTool.Views.Template"
              xmlns:vm="clr-namespace:EEGTool.ViewModels.Template"
              mc:Ignorable="d" 
@@ -286,12 +287,12 @@
                                 </Border>
 
                                 <Border CornerRadius="8"
-                      BorderThickness="0.5"
-                      BorderBrush="LightGray"
-                      Background="Transparent"
-                      Margin="35,0,0,0"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
+                                      BorderThickness="0.5"
+                                      BorderBrush="LightGray"
+                                      Background="Transparent"
+                                      Margin="35,0,0,0"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="24"
                                         ShadowDepth="3"
@@ -300,13 +301,13 @@
                                         Color="#66000000"/>
                                     </Border.Effect>
                                     <Button Style="{StaticResource EffectActionButtonStyle}"
-                          Width="110"
-                          Background="#861B2D"
-                          Foreground="White"
-                          Height="35"
-                          FontSize="16"
-                          Content="取 消"
-                          Command="{Binding CancelCreateCommand}" Cursor="Hand" />
+                                              Width="110"
+                                              Background="#861B2D"
+                                              Foreground="White"
+                                              Height="35"
+                                              FontSize="16"
+                                              Content="取 消"
+                                              Command="{Binding CancelCreateCommand}" Cursor="Hand" />
                                 </Border>
                             </StackPanel>
 
@@ -318,7 +319,10 @@
                     </Grid>
 
                     <Grid Grid.Column="1" Background="White">
-
+                        <Grid Width="500" Height="500">
+                            <br:BrainAreaView HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Grid>
                     </Grid>
 
              
