@@ -95,7 +95,20 @@
 
                     
                     <Grid Background="Transparent">
-
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush
+                                    StartPoint="1,0"
+                                    EndPoint="0,1">
+                                    <GradientStop
+                                        Color="#FFFFFF"
+                                        Offset="0" />
+                                    <GradientStop
+                                        Color="#D4EAFF"
+                                        Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
                         <Grid Height="35" 
                               Margin="0"
                               HorizontalAlignment="Stretch"
@@ -229,7 +242,7 @@
                                           Margin="6,0,0,0"
                                           VerticalAlignment="Center"
                                           FontSize="14"
-                                          Text="秒"/>
+                                          Text="秒" Cursor=""/>
 
                                     <TextBlock Grid.Row="1"
                                           Grid.Column="0"
@@ -266,8 +279,8 @@
                                     </Border.Effect>
                                     <Button Style="{StaticResource EffectActionButtonStyle}"
                                               Width="110"
-                                              Height="30"
-                                              FontSize="14"
+                                              Height="35"
+                                              FontSize="16"
                                               Content="保 存"
                                               Command="{Binding SureCreateTemplateCommand}" />
                                 </Border>
@@ -290,14 +303,18 @@
                           Width="110"
                           Background="#861B2D"
                           Foreground="White"
-                          Height="30"
-                          FontSize="14"
+                          Height="35"
+                          FontSize="16"
                           Content="取 消"
                           Command="{Binding CancelCreateCommand}" Cursor="Hand" />
                                 </Border>
                             </StackPanel>
 
                         </Grid>
+
+                        <Grid Background="LightGray" Width="0.5" 
+                              VerticalAlignment="Stretch"
+                              HorizontalAlignment="Right"/>
                     </Grid>
 
                     <Grid Grid.Column="1" Background="White">

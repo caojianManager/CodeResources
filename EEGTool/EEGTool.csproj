@@ -53,6 +53,7 @@
     </Resource>
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="Resources\images\brain_area.png" />
     <Content Remove="Resources\images\collection.png" />
   </ItemGroup>
 
