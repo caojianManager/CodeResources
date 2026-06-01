@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EEGTool.Models.Template;
 
 namespace EEGTool
 { //APP 统一入口
@@ -22,6 +23,8 @@ namespace EEGTool
             Config.Instance.Init();
             SystemConfig.GetInstance().LoadConfig();
 
+            //初始化模板文件
+            TemplateFileManager.GetInstance().Init();       
 
             //log4net 日志开关
 #if DEBUG

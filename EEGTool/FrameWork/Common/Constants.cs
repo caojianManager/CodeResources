@@ -5,25 +5,7 @@ namespace FrameWork.Common
 {
     public static class Constants
     {
-        public static readonly string ShaderResoucesPath = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "shaders"));
-
-        public static int WindowMaxSeconds = 10;                     //最长数据长度
-        public static int WindowSeconds = 2;                        //时间窗口
-        public static int VertScale = 10;                           //默认EEG图表每个通道的高度阈值
-        public static int SampleIntervalMs = 60;                    //采样间隔时间
-        public static int WindowSecondsMax = 15;
-        public const int BufferWindowSec = 30 ;
-        public const int SERIES_RESISTOR_KOHM = 10;                 //P端通道上串联电阻大小
-        public static int CurrentElectricQuantity = 0;              //当前电池电量
-        public static string RootRecordFolder = "Records";          //相对路径文件夹
-
-        public static readonly List<string> ChannelList = new List<string>()
-        {
-            "Ch1","Ch2","Ch3","Ch4",
-            "Ch5","Ch6","Ch7","Ch8",
-            "Ch9","Ch10","Ch11","Ch12",
-            "Ch13","Ch14","Ch15","Ch16",
-        };
+        public static readonly string LocalDataPath = Path.Combine( Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"EEGTool");
 
         public static readonly ScColor[] ChannelColors = new ScColor[]
         {
