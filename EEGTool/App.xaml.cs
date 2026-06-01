@@ -18,8 +18,10 @@ namespace EegAcquisitionSystem
     public partial class App : Application
     {
         private static Mutex? _appMutex;
+        private static bool _mutexReleased;
+        private static bool _isExiting;
         private const string MutexName = "EEGTool_Mutex";
-        public static Action ExitEvt;
+        public static Action? ExitEvt;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -41,13 +43,10 @@ namespace EegAcquisitionSystem
             }
             this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             base.OnStartup(e);
+            ExitEvt += RequestExit;
             AppDomain.CurrentDomain.ProcessExit += (s, args) =>
             {
-                _appMutex?.ReleaseMutex();
-                _appMutex?.Dispose();
-                _appMutex = null;
-
-                Environment.Exit(0); // 彻底退出
+                ReleaseAppMutexSafely();
             };
 
             AppBootstrapper.GetInstance().OnStartUp();
@@ -79,13 +78,7 @@ namespace EegAcquisitionSystem
         /// </summary>
         private void ShutdownGracefully()
         {
-            try
-            {
-                Current?.Shutdown(); // 优雅关闭 WPF 应用
-            }
-            catch { /* 忽略 */ }
-
-            Environment.Exit(0);       // 确保退出进程
+            RequestExit();
         }
 
         /// <summary>
@@ -96,9 +89,7 @@ namespace EegAcquisitionSystem
             base.OnExit(e);
 
             // 释放互斥体
-            _appMutex?.ReleaseMutex();
-            _appMutex?.Dispose();
-            _appMutex = null;
+            ReleaseAppMutexSafely();
 
             // 可选：写退出日志
             LogExitTime();
@@ -117,6 +108,53 @@ namespace EegAcquisitionSystem
             catch
             {
                 // 忽略日志写入失败
+            }
+        }
+
+        private static void ReleaseAppMutexSafely()
+        {
+            if (_mutexReleased)
+            {
+                return;
+            }
+
+            try
+            {
+                _appMutex?.ReleaseMutex();
+            }
+            catch (ApplicationException)
+            {
+                // 当前线程未持有互斥体时会抛出，退出阶段可安全忽略。
+            }
+            finally
+            {
+                _appMutex?.Dispose();
+                _appMutex = null;
+                _mutexReleased = true;
+
+            }
+        }
+
+        private static void RequestExit()
+        {
+            if (_isExiting)
+            {
+                return;
+            }
+
+            _isExiting = true;
+
+            try
+            {
+                Current?.Shutdown();
+            }
+            catch
+            {
+                // 如果 WPF 已不可用，继续强制退出。
+            }
+            finally
+            {
+                Environment.Exit(0);
             }
         }
     }

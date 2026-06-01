@@ -22,6 +22,7 @@ namespace EEGTool.Views
             InitializeComponent();
             StateChanged += (_, _) => UpdateWindowChromeState();
             Loaded += HomePageView_Loaded;
+            Closed += HomePageView_Closed;
             UpdateWindowChromeState();
         }
 
@@ -63,9 +64,12 @@ namespace EEGTool.Views
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
+            Close();
+        }
+
+        private void HomePageView_Closed(object? sender, EventArgs e)
+        {
             App.ExitEvt?.Invoke();
-            Application.Current.Shutdown();
-            Process.GetCurrentProcess().Kill();
         }
 
         private void UpdateWindowChromeState()
