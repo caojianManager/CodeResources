@@ -249,14 +249,14 @@
                               Height="100">
 
                             <StackPanel Orientation="Horizontal"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center">
                                 <Border CornerRadius="8"
-                      BorderThickness="0.5"
-                      BorderBrush="LightGray"
-                      Background="Transparent"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
+                                          BorderThickness="0.5"
+                                          BorderBrush="LightGray"
+                                          Background="Transparent"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="24"
                                         ShadowDepth="3"
@@ -265,11 +265,11 @@
                                         Color="#66000000"/>
                                     </Border.Effect>
                                     <Button Style="{StaticResource EffectActionButtonStyle}"
-                          Width="110"
-                          Height="30"
-                          FontSize="14"
-                          Content="保 存"
-                          Command="{Binding SureCreateTemplateCommand}" />
+                                              Width="110"
+                                              Height="30"
+                                              FontSize="14"
+                                              Content="保 存"
+                                              Command="{Binding SureCreateTemplateCommand}" />
                                 </Border>
 
                                 <Border CornerRadius="8"
