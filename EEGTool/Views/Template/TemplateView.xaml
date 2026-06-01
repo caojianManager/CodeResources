@@ -81,234 +81,232 @@
         <Grid Grid.Column="1" Background="Transparent"></Grid>
 
         <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsShowCreateTemplateWindow,Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border Background="Black" Opacity="0.25"/>
+         
 
-            <Grid Width="500" Height="270">
-                <Border BorderThickness="0.5" BorderBrush="LightGray" 
-                        CornerRadius="8">
-                    <Border.Background>
-                        <LinearGradientBrush
-                            StartPoint="1,0"
-                            EndPoint="0,1">
-                            <GradientStop
-                                Color="#FFFFFF"
-                                Offset="0" />
-                            <GradientStop
-                                Color="#D4EAFF"
-                                Offset="1" />
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                  Background="WhiteSmoke">
+     
 
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="39"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="80"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Grid>
-                        <TextBlock Text="新建模板" 
-                                   FontSize="16"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                        <Grid HorizontalAlignment="Stretch"
-                              VerticalAlignment="Bottom"
-                              Height="1"
-                              Background="LightGray"
-                              Margin="15,0"></Grid>
-                    </Grid>
                     
-                    <Grid Grid.Row="1">
-                        <Grid Width="300" Height="120"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"
-                              Margin="0,15,0,0"
-                              Background="Transparent">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="1*"/>
-                                <RowDefinition Height="2"/>
-                                <RowDefinition Height="1*"/>
-                            </Grid.RowDefinitions>
+                    <Grid Background="Transparent">
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="3*"/>
-                            </Grid.ColumnDefinitions>
+                        <Grid Height="35" 
+                              Margin="0"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Top">
+                            <TextBlock Text="编辑模板" FontSize="14"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Bottom"
+                                       Margin="10,0,0,2"
+                                       Foreground="Gray"></TextBlock>
+                            <Grid Background="LightGray" Height="1"
+                                  Margin="10,0"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Bottom"/>
+                        </Grid>
 
-                            <TextBlock Text="模板名称:" 
+                        <StackPanel Margin="10,50,0,0"
+                                    Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+
+                                <TextBlock Text="模板名称:" 
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Left"
                                        FontSize="14"></TextBlock>
 
-                            <Grid Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                                <Grid VerticalAlignment="Center" Width="200"
+                                      Margin="18,0,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <TextBox Height="30"
+                                    <TextBox Height="30"
                                          Padding="8,4"
                                          VerticalContentAlignment="Center"
                                          Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}">
-                                    <TextBox.Style>
-                                        <Style TargetType="TextBox">
-                                            <Setter Property="BorderBrush" Value="#D9D9D9"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="TextBox">
-                                                        <Border x:Name="Bd"
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="BorderBrush" Value="#D9D9D9"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TextBox">
+                                                            <Border x:Name="Bd"
                                                                 Background="{TemplateBinding Background}"
                                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                                 BorderThickness="{TemplateBinding BorderThickness}"
                                                                 CornerRadius="5"
                                                                 SnapsToDevicePixels="True">
-                                                            <ScrollViewer x:Name="PART_ContentHost"/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding DataContext.IsTemplateNameError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="Red"/>
-                                                    <Setter Property="BorderThickness" Value="1.5"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBox.Style>
-                                </TextBox>
+                                                                <ScrollViewer x:Name="PART_ContentHost"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsTemplateNameError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="Red"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
 
-                                <TextBlock Grid.Row="1"
+                                    <TextBlock Grid.Row="1"
                                            Margin="2,4,0,0"
                                            Foreground="Red"
                                            FontSize="12"
                                            Text="{Binding TemplateNameErrorMessage}"
                                            Visibility="{Binding IsTemplateNameError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            </Grid>
+                                </Grid>
+                            </StackPanel>
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="采集时长:" 
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Left"
-                                       FontSize="14"></TextBlock>
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="0,15,0,0">
+                                <TextBlock Text="采集时长:" 
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Left"
+                                      FontSize="14"></TextBlock>
 
-                            <Grid Grid.Row="2" Grid.Column="1" VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                <Grid VerticalAlignment="Center" Width="200"
+                                      Margin="16,0,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBox Grid.Column="0"
-                                         Height="30"
-                                         Padding="8,4"
-                                         VerticalContentAlignment="Center"
-                                         Text="{Binding CollectionDuration, UpdateSourceTrigger=PropertyChanged}"
-                                         InputMethod.IsInputMethodEnabled="False"
-                                         PreviewTextInput="DurationTextBox_PreviewTextInput"
-                                         DataObject.Pasting="DurationTextBox_OnPasting"
-                                         TextChanged="DurationTextBox_TextChanged">
-                                    <TextBox.Style>
-                                        <Style TargetType="TextBox">
-                                            <Setter Property="BorderBrush" Value="#D9D9D9"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="TextBox">
-                                                        <Border x:Name="Bd"
-                                                                Background="{TemplateBinding Background}"
-                                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                                CornerRadius="5"
-                                                                SnapsToDevicePixels="True">
-                                                            <ScrollViewer x:Name="PART_ContentHost"/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding DataContext.IsCollectionDurationError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="Red"/>
-                                                    <Setter Property="BorderThickness" Value="1.5"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBox.Style>
-                                </TextBox>
+                                    <TextBox Grid.Column="0"
+                                        Height="30"
+                                        Padding="8,4"
+                                        VerticalContentAlignment="Center"
+                                        Text="{Binding CollectionDuration, UpdateSourceTrigger=PropertyChanged}"
+                                        InputMethod.IsInputMethodEnabled="False"
+                                        PreviewTextInput="DurationTextBox_PreviewTextInput"
+                                        DataObject.Pasting="DurationTextBox_OnPasting"
+                                        TextChanged="DurationTextBox_TextChanged">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="BorderBrush" Value="#D9D9D9"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TextBox">
+                                                            <Border x:Name="Bd"
+                                                               Background="{TemplateBinding Background}"
+                                                               BorderBrush="{TemplateBinding BorderBrush}"
+                                                               BorderThickness="{TemplateBinding BorderThickness}"
+                                                               CornerRadius="5"
+                                                               SnapsToDevicePixels="True">
+                                                                <ScrollViewer x:Name="PART_ContentHost"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsCollectionDurationError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="Red"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
 
-                                <TextBlock Grid.Column="1"
-                                           Margin="6,0,0,0"
-                                           VerticalAlignment="Center"
-                                           FontSize="14"
-                                           Text="秒"/>
+                                    <TextBlock Grid.Column="1"
+                                          Margin="6,0,0,0"
+                                          VerticalAlignment="Center"
+                                          FontSize="14"
+                                          Text="秒"/>
 
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="0"
-                                           Grid.ColumnSpan="2"
-                                           Margin="2,4,0,0"
-                                           Foreground="Red"
-                                           FontSize="12"
-                                           Text="{Binding CollectionDurationErrorMessage}"
-                                           Visibility="{Binding IsCollectionDurationError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            </Grid>
+                                    <TextBlock Grid.Row="1"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Margin="2,4,0,0"
+                                          Foreground="Red"
+                                          VerticalAlignment="Center"
+                                          FontSize="12"
+                                          Text="{Binding CollectionDurationErrorMessage}"
+                                          Visibility="{Binding IsCollectionDurationError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Grid HorizontalAlignment="Stretch"
+                              VerticalAlignment="Bottom"
+                              Height="100">
+
+                            <StackPanel Orientation="Horizontal"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                                <Border CornerRadius="8"
+                      BorderThickness="0.5"
+                      BorderBrush="LightGray"
+                      Background="Transparent"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="24"
+                                        ShadowDepth="3"
+                                        Direction="270"
+                                        Opacity="0.35"
+                                        Color="#66000000"/>
+                                    </Border.Effect>
+                                    <Button Style="{StaticResource EffectActionButtonStyle}"
+                          Width="110"
+                          Height="30"
+                          FontSize="14"
+                          Content="保 存"
+                          Command="{Binding SureCreateTemplateCommand}" />
+                                </Border>
+
+                                <Border CornerRadius="8"
+                      BorderThickness="0.5"
+                      BorderBrush="LightGray"
+                      Background="Transparent"
+                      Margin="35,0,0,0"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="24"
+                                        ShadowDepth="3"
+                                        Direction="270"
+                                        Opacity="0.35"
+                                        Color="#66000000"/>
+                                    </Border.Effect>
+                                    <Button Style="{StaticResource EffectActionButtonStyle}"
+                          Width="110"
+                          Background="#861B2D"
+                          Foreground="White"
+                          Height="30"
+                          FontSize="14"
+                          Content="取 消"
+                          Command="{Binding CancelCreateCommand}" Cursor="Hand" />
+                                </Border>
+                            </StackPanel>
+
                         </Grid>
                     </Grid>
 
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Column="1" Background="White">
 
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <Border CornerRadius="8"
-                                    BorderThickness="0.5"
-                                    BorderBrush="LightGray"
-                                    Background="Transparent"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24"
-                                                      ShadowDepth="3"
-                                                      Direction="270"
-                                                      Opacity="0.35"
-                                                      Color="#66000000"/>
-                                </Border.Effect>
-                                <Button Style="{StaticResource EffectActionButtonStyle}"
-                                        Width="110"
-                                        Height="30"
-                                        FontSize="14"
-                                        Content="确 认"
-                                        Command="{Binding SureCreateTemplateCommand}" />
-                            </Border>
-
-                            <Border CornerRadius="8"
-                                    BorderThickness="0.5"
-                                    BorderBrush="LightGray"
-                                    Background="Transparent"
-                                    Margin="35,0,0,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24"
-                                                      ShadowDepth="3"
-                                                      Direction="270"
-                                                      Opacity="0.35"
-                                                      Color="#66000000"/>
-                                </Border.Effect>
-                                <Button Style="{StaticResource EffectActionButtonStyle}"
-                                        Width="110"
-                                        Background="#861B2D"
-                                        Foreground="White"
-                                        Height="30"
-                                        FontSize="14"
-                                        Content="取 消"
-                                        Command="{Binding CancelCreateCommand}" Cursor="Hand" />
-                            </Border>
-                        </StackPanel>
-                        
                     </Grid>
+
+             
+
+              
                 </Grid>
             </Grid>
         </Grid>
