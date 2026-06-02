@@ -138,6 +138,63 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="ElectrodeScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track"
+                                   IsDirectionReversed="True"
+                                   Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Focusable="False"
+                                                  IsTabStop="False"
+                                                  Command="ScrollBar.PageUpCommand"
+                                                  Opacity="0"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb"
+                                           MinHeight="32">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="ThumbBorder"
+                                                        Width="6"
+                                                        Margin="1,2"
+                                                        Background="#C7D6E8"
+                                                        CornerRadius="3"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#9DB9D8"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#7FA6CC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Focusable="False"
+                                                  IsTabStop="False"
+                                                  Command="ScrollBar.PageDownCommand"
+                                                  Opacity="0"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="Height" Value="8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <UserControl.DataContext>
@@ -392,6 +449,10 @@
                                 Background="Transparent"
                                 Style="{StaticResource EmptyListStyle}">
 
+                            <ListBox.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource ElectrodeScrollBarStyle}"/>
+                            </ListBox.Resources>
+
                             <!-- 使用 WrapPanel 实现多列自动换行 -->
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -402,8 +463,8 @@
                             <!-- 每个 Item 的样式 -->
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="135" Height="45"
-                                           Margin="8,0,0,8"
+                                    <Border Width="130" Height="45"
+                                           Margin="10,0,0,10"
                                            BorderThickness="0"
                                            BorderBrush="LightGray"
                                            Background="White"
