@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Text.RegularExpressions;
 using FrameWork.MVVM;
 using Framework.MVVM.Commands;
 
@@ -11,11 +12,13 @@ namespace EEGTool.ViewModels.Template
 {
     public class TemplateViewModel : BindableBase
     {
+        private static readonly Regex DurationRegex = new Regex(@"^\d{2}:[0-5]\d:[0-5]\d$");
         private bool _isShowCreateTemplateWindow = false;
         private string _templateName = string.Empty;
         private bool _isTemplateNameError;
         private string _templateNameErrorMessage = string.Empty;
         private string _collectionDuration = string.Empty;
+        private double _collectionDurationSeconds;
         private bool _isCollectionDurationError;
         private string _collectionDurationErrorMessage = string.Empty;
 
@@ -57,8 +60,28 @@ namespace EEGTool.ViewModels.Template
             {
                 if (SetProperty(ref _collectionDuration, value) && !string.IsNullOrWhiteSpace(value))
                 {
+                    CollectionDurationSeconds = ParseDurationSeconds(value);
                     IsCollectionDurationError = false;
                     CollectionDurationErrorMessage = string.Empty;
+                }
+            }
+        }
+
+        public double CollectionDurationSeconds
+        {
+            get => _collectionDurationSeconds;
+            set
+            {
+                var roundedValue = Math.Round(value);
+                if (SetProperty(ref _collectionDurationSeconds, roundedValue))
+                {
+                    _collectionDuration = FormatDuration((int)roundedValue);
+                    OnPropertyChanged(nameof(CollectionDuration));
+                    if (roundedValue > 0)
+                    {
+                        IsCollectionDurationError = false;
+                        CollectionDurationErrorMessage = string.Empty;
+                    }
                 }
             }
         }
@@ -118,10 +141,10 @@ namespace EEGTool.ViewModels.Template
                 return;
             }
 
-            if (!int.TryParse(CollectionDuration, out _))
+            if (!IsDurationValid(CollectionDuration))
             {
                 IsCollectionDurationError = true;
-                CollectionDurationErrorMessage = "采集时长只能输入数字";
+                CollectionDurationErrorMessage = "采集时长应大于 00:00:00，格式为 HH:mm:ss";
                 return;
             }
 
@@ -132,16 +155,58 @@ namespace EEGTool.ViewModels.Template
             IsShowCreateTemplateWindow = false;
         }
 
+        private static bool IsDurationValid(string duration)
+        {
+            if (!DurationRegex.IsMatch(duration))
+            {
+                return false;
+            }
+
+            var parts = duration.Split(':');
+            if (!int.TryParse(parts[0], out var hours) ||
+                !int.TryParse(parts[1], out var minutes) ||
+                !int.TryParse(parts[2], out var seconds) ||
+                hours > 99)
+            {
+                return false;
+            }
+
+            return hours * 3600 + minutes * 60 + seconds > 0;
+        }
+
 
         private void CreateTemplate()
         {
             TemplateName = string.Empty;
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
-            CollectionDuration = string.Empty;
+            CollectionDuration = "00:02:00";
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = true;
+        }
+
+        private static double ParseDurationSeconds(string duration)
+        {
+            var parts = duration.Split(':');
+            if (parts.Length != 3 ||
+                !int.TryParse(parts[0], out var hours) ||
+                !int.TryParse(parts[1], out var minutes) ||
+                !int.TryParse(parts[2], out var seconds))
+            {
+                return 0;
+            }
+
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
+        private static string FormatDuration(int totalSeconds)
+        {
+            totalSeconds = Math.Max(0, totalSeconds);
+            var hours = totalSeconds / 3600;
+            var minutes = totalSeconds % 3600 / 60;
+            var seconds = totalSeconds % 60;
+            return $"{hours:00}:{minutes:00}:{seconds:00}";
         }
 
 

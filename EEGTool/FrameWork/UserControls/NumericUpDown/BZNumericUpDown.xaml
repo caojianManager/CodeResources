@@ -9,12 +9,11 @@
         <!-- 中间输入框 -->
         <Border 
                 Background="White"
-                BorderThickness="1"
-                BorderBrush="LightGray"
+                BorderThickness="{Binding InputBorderThickness,ElementName=root}"
+                BorderBrush="{Binding InputBorderBrush,ElementName=root}"
                 CornerRadius="8">
             <TextBox x:Name="TextBoxValue"
                      Margin="2,2,30,2"
-                     Text="{Binding Value, ElementName=root, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                      FontSize="13"
                      Foreground="{Binding Foreground,ElementName=root}"
                      HorizontalContentAlignment="Center"

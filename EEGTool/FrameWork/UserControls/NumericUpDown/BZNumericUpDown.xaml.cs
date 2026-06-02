@@ -47,7 +47,7 @@ namespace FrameWork.UserControls.NumericUpDown
         private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (BZNumericUpDown)d;
-            ctrl.TextBoxValue.Text = ctrl.Value.ToString($"F{ctrl.DecimalPlaces}");
+            ctrl.TextBoxValue.Text = ctrl.GetDisplayText();
         }
 
         public static readonly DependencyProperty MinValueProperty =
@@ -93,6 +93,42 @@ namespace FrameWork.UserControls.NumericUpDown
         {
             get => (int)GetValue(DecimalPlacesProperty);
             set => SetValue(DecimalPlacesProperty, value);
+        }
+
+        public static readonly DependencyProperty InputBorderBrushProperty =
+            DependencyProperty.Register(nameof(InputBorderBrush), typeof(Brush), typeof(BZNumericUpDown), new PropertyMetadata(Brushes.LightGray));
+
+        public Brush InputBorderBrush
+        {
+            get => (Brush)GetValue(InputBorderBrushProperty);
+            set => SetValue(InputBorderBrushProperty, value);
+        }
+
+        public static readonly DependencyProperty InputBorderThicknessProperty =
+            DependencyProperty.Register(nameof(InputBorderThickness), typeof(Thickness), typeof(BZNumericUpDown), new PropertyMetadata(new Thickness(1)));
+
+        public Thickness InputBorderThickness
+        {
+            get => (Thickness)GetValue(InputBorderThicknessProperty);
+            set => SetValue(InputBorderThicknessProperty, value);
+        }
+
+        public static readonly DependencyProperty IsDurationProperty =
+            DependencyProperty.Register(nameof(IsDuration), typeof(bool), typeof(BZNumericUpDown), new PropertyMetadata(false, OnDisplayModeChanged));
+
+        public bool IsDuration
+        {
+            get => (bool)GetValue(IsDurationProperty);
+            set => SetValue(IsDurationProperty, value);
+        }
+
+        private static void OnDisplayModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var ctrl = (BZNumericUpDown)d;
+            if (ctrl.TextBoxValue != null)
+            {
+                ctrl.TextBoxValue.Text = ctrl.GetDisplayText();
+            }
         }
 
         #endregion
@@ -164,7 +200,7 @@ namespace FrameWork.UserControls.NumericUpDown
 
         private void ValidateValue()
         {
-            if (double.TryParse(TextBoxValue.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out double val))
+            if (TryParseTextValue(TextBoxValue.Text, out double val))
             {
                 if (val < MinValue) val = MinValue;
                 if (val > MaxValue) val = MaxValue;
@@ -175,7 +211,7 @@ namespace FrameWork.UserControls.NumericUpDown
                 Value = MinValue;
             }
 
-            TextBoxValue.Text = Value.ToString($"F{DecimalPlaces}");
+            TextBoxValue.Text = GetDisplayText();
         }
 
         private bool IsInputValidAfterInsert(string input)
@@ -197,11 +233,103 @@ namespace FrameWork.UserControls.NumericUpDown
             if (string.IsNullOrWhiteSpace(text))
                 return true;
 
+            if (IsDuration)
+                return IsDurationStructureValid(text);
+
             if (!IsDecimal || DecimalPlaces <= 0)
                 return Regex.IsMatch(text, @"^\d+$");
 
             var decimalSeparator = Regex.Escape(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
             return Regex.IsMatch(text, $@"^\d*({decimalSeparator}\d{{0,{DecimalPlaces}}})?$");
+        }
+
+        private bool TryParseTextValue(string text, out double value)
+        {
+            if (IsDuration)
+            {
+                if (TryParseDuration(text, out var totalSeconds))
+                {
+                    value = totalSeconds;
+                    return true;
+                }
+
+                value = 0;
+                return false;
+            }
+
+            return double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
+        private string GetDisplayText()
+        {
+            if (IsDuration)
+            {
+                return FormatDuration((int)Math.Round(Value));
+            }
+
+            return Value.ToString($"F{DecimalPlaces}");
+        }
+
+        private static bool IsDurationStructureValid(string text)
+        {
+            if (text.Length > 8)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < text.Length; index++)
+            {
+                var currentChar = text[index];
+                if (index == 2 || index == 5)
+                {
+                    if (currentChar != ':')
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (!char.IsDigit(currentChar))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryParseDuration(string text, out int totalSeconds)
+        {
+            totalSeconds = 0;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return false;
+            }
+
+            var parts = text.Split(':');
+            if (parts.Length != 3 ||
+                !int.TryParse(parts[0], out var hours) ||
+                !int.TryParse(parts[1], out var minutes) ||
+                !int.TryParse(parts[2], out var seconds) ||
+                hours < 0 || hours > 99 ||
+                minutes < 0 || minutes > 59 ||
+                seconds < 0 || seconds > 59)
+            {
+                return false;
+            }
+
+            totalSeconds = hours * 3600 + minutes * 60 + seconds;
+            return true;
+        }
+
+        private static string FormatDuration(int totalSeconds)
+        {
+            totalSeconds = Math.Max(0, totalSeconds);
+            var hours = totalSeconds / 3600;
+            var minutes = totalSeconds % 3600 / 60;
+            var seconds = totalSeconds % 60;
+            return $"{hours:00}:{minutes:00}:{seconds:00}";
         }
 
         #endregion

@@ -6,6 +6,7 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:br="clr-namespace:EEGTool.Views.Common"
              xmlns:local="clr-namespace:EEGTool.Views.Template"
+             xmlns:numericUpDown="clr-namespace:FrameWork.UserControls.NumericUpDown"
              xmlns:vm="clr-namespace:EEGTool.ViewModels.Template"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
@@ -79,7 +80,12 @@
                   HorizontalAlignment="Right"></Grid>
         </Grid>
 
-        <Grid Grid.Column="1" Background="Transparent"></Grid>
+        <Grid Grid.Column="1" Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="17*"/>
+                <RowDefinition Height="7*"/>
+            </Grid.RowDefinitions>
+        </Grid>
 
         <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsShowCreateTemplateWindow,Converter={StaticResource BooleanToVisibilityConverter}}">
          
@@ -191,63 +197,36 @@
                                       HorizontalAlignment="Left"
                                       FontSize="14"></TextBlock>
 
-                                <Grid VerticalAlignment="Center" Width="200"
+                                <Grid VerticalAlignment="Center" Width="100"
                                       Margin="16,0,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
 
-                                    <TextBox Grid.Column="0"
-                                        Height="30"
-                                        Padding="8,4"
-                                        VerticalContentAlignment="Center"
-                                        Text="{Binding CollectionDuration, UpdateSourceTrigger=PropertyChanged}"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        PreviewTextInput="DurationTextBox_PreviewTextInput"
-                                        DataObject.Pasting="DurationTextBox_OnPasting"
-                                        TextChanged="DurationTextBox_TextChanged">
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox">
-                                                <Setter Property="BorderBrush" Value="#D9D9D9"/>
-                                                <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="TextBox">
-                                                            <Border x:Name="Bd"
-                                                               Background="{TemplateBinding Background}"
-                                                               BorderBrush="{TemplateBinding BorderBrush}"
-                                                               BorderThickness="{TemplateBinding BorderThickness}"
-                                                               CornerRadius="5"
-                                                               SnapsToDevicePixels="True">
-                                                                <ScrollViewer x:Name="PART_ContentHost"/>
-                                                            </Border>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
+                                    <numericUpDown:BZNumericUpDown Height="35"
+                                                                    Width="100"
+                                                                    IsDuration="True"
+                                                                    DecimalPlaces="0"
+                                                                    MinValue="0"
+                                                                    MaxValue="359999"
+                                                                    Step="60"
+                                                                    Value="{Binding CollectionDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <numericUpDown:BZNumericUpDown.Style>
+                                            <Style TargetType="numericUpDown:BZNumericUpDown">
+                                                <Setter Property="InputBorderBrush" Value="#D6D6D6"/>
+                                                <Setter Property="InputBorderThickness" Value="1"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.IsCollectionDurationError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                        <Setter Property="BorderBrush" Value="Red"/>
-                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    <DataTrigger Binding="{Binding IsCollectionDurationError}" Value="True">
+                                                        <Setter Property="InputBorderBrush" Value="Red"/>
+                                                        <Setter Property="InputBorderThickness" Value="1.5"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
-
-                                    <TextBlock Grid.Column="1"
-                                          Margin="6,0,0,0"
-                                          VerticalAlignment="Center"
-                                          FontSize="14"
-                                          Text="秒" Cursor=""/>
+                                        </numericUpDown:BZNumericUpDown.Style>
+                                    </numericUpDown:BZNumericUpDown>
 
                                     <TextBlock Grid.Row="1"
-                                          Grid.Column="0"
-                                          Grid.ColumnSpan="2"
                                           Margin="2,4,0,0"
                                           Foreground="Red"
                                           VerticalAlignment="Center"
@@ -292,7 +271,7 @@
                                       Background="Transparent"
                                       Margin="35,0,0,0"
                                       HorizontalAlignment="Center"
-                                      VerticalAlignment="Center">
+                                      VerticalAlignment="Center" Cursor="">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="24"
                                         ShadowDepth="3"
