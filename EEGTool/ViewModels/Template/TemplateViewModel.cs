@@ -15,6 +15,7 @@ namespace EEGTool.ViewModels.Template
 {
     public class TemplateViewModel : BindableBase
     {
+        public Action<List<string>>? UpdateElectrodeAction;
         private bool _isShowCreateTemplateWindow = false;
         private bool _isTemplateNameError;
         private string _templateNameErrorMessage = string.Empty;
@@ -82,6 +83,7 @@ namespace EEGTool.ViewModels.Template
         public ICommand? CreateTemplateCommand { get; set; }
         public ICommand? CancelCreateCommand { get; set; }
         public ICommand? SureCreateTemplateCommand { get; set; }
+        public ICommand? DeleteElectrodeCommand { get; set; }
 
         public TemplateViewModel()
         {
@@ -119,6 +121,10 @@ namespace EEGTool.ViewModels.Template
                 SureCreateTemplate();
             });
 
+            DeleteElectrodeCommand = new RelayCommand((o) => {
+                DeleteElectrode(o);
+            });
+
             CancelCreateCommand = new RelayCommand((o) =>
             {
                 IsShowCreateTemplateWindow = false;
@@ -150,8 +156,6 @@ namespace EEGTool.ViewModels.Template
 
         public void AddElectrode(string eleName)
         {
-            if (Template == null)
-                Template = new TemplateInfoModel();
             var newEle = new Electrode
             {
                 Name = eleName,
@@ -163,6 +167,31 @@ namespace EEGTool.ViewModels.Template
             };
             Template.EleDirectory.Add(newEle);
             Template.IsUpdateTemplate = true;
+        }
+
+        private void DeleteElectrode(object obj)
+        {
+            var ele = obj as Electrode;
+            if (ele == null)
+                return;
+
+            var item = Template.EleDirectory
+                .FirstOrDefault(e => e.Name.Equals(ele.Name));
+
+            if (item != null)
+            {
+                Template.EleDirectory.Remove(item);
+                var directoryItem = Template.EleDirectory
+                    .FirstOrDefault(e => e.Name.Equals(ele.Name));
+                if (directoryItem != null)
+                {
+                    Template.EleDirectory.Remove(directoryItem);
+                }
+                Template.IsUpdateTemplate = true;
+            }
+            var eleList = Template.EleDirectory.Select(e => e.Name).ToList();
+            UpdateElectrodeAction?.Invoke(eleList);
+            //刷新电极
         }
 
         private void CreateTemplate()

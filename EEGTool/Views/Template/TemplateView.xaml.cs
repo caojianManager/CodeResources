@@ -25,7 +25,7 @@ namespace EEGTool.Views.Template
                 return;
             }
 
-
+            _viewModel.UpdateElectrodeAction = UpdateElectrode;
             BrainAreaView.SelectElectrode += (eleName) =>
             {
                 _viewModel.AddElectrode(eleName);
