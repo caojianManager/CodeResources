@@ -148,7 +148,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBox Height="30"
+                                    <TextBox Height="32"
                                          Padding="8,4"
                                          VerticalContentAlignment="Center"
                                          Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}">
@@ -197,15 +197,15 @@
                                       HorizontalAlignment="Left"
                                       FontSize="14"></TextBlock>
 
-                                <Grid VerticalAlignment="Center" Width="100"
-                                      Margin="16,0,0,0">
+                                <Grid VerticalAlignment="Center" Width="120"
+                                      Margin="18,0,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <numericUpDown:BZNumericUpDown Height="35"
-                                                                    Width="100"
+                                    <numericUpDown:BZNumericUpDown Height="32"
+                                                                    Width="120"
                                                                     IsDuration="True"
                                                                     DecimalPlaces="0"
                                                                     MinValue="0"
