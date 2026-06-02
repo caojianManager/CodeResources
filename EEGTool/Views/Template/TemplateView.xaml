@@ -14,6 +14,91 @@
              d:DesignHeight="1080" d:DesignWidth="1920">
 
     <UserControl.Resources>
+
+        <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <!-- 边框 -->
+                            <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="17"/>
+
+                            <!-- 显示选中项 -->
+                            <ContentPresenter Margin="5,0,0,0"
+                              VerticalAlignment="Center"
+                              HorizontalAlignment="Center"
+                              Content="{TemplateBinding SelectionBoxItem}"/>
+
+                            <ToggleButton x:Name="PART_DropDownToggle"
+                                      Focusable="False"
+                                      Cursor="Hand"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      BorderThickness="0"
+                                      Background="Transparent">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Border"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="0">
+                                            <iconPacks:PackIconFontAwesome Kind="AngleDownSolid" 
+                                                                    Margin="0,0,10,0"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Center"
+                                                                    Width="10" Height="5" 
+                                                                    Foreground="#494D50"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="Transparent"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="Transparent"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Border" Property="Opacity" Value="0.5"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+
+                            <!-- 下拉列表 -->
+                            <Popup x:Name="PART_Popup"
+                    VerticalOffset="10"
+                    Placement="Bottom"
+                    AllowsTransparency="True"
+                    Focusable="False"
+                    PopupAnimation="Slide"
+                    IsOpen="{TemplateBinding IsDropDownOpen}">
+                                <Border Background="LightGray"
+                        CornerRadius="0"
+                        BorderThickness="1"
+                        BorderBrush="LightGray"
+                        MinWidth="{TemplateBinding ActualWidth}">
+                                    <ScrollViewer>
+                                        <StackPanel IsItemsHost="True"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="EmptyListStyle" TargetType="ListBox">
             <Setter Property="Template">
                 <Setter.Value>
@@ -297,7 +382,7 @@
                         </Grid>
 
                         <ListBox
-                                ItemsSource="{Binding SelectedTemplate.Electrodes}"
+                                ItemsSource="{Binding Template.Electrodes}"
                                 SelectedValuePath="Channel"      
                                 HorizontalAlignment="Stretch"
                                 Margin="0,200,0,300"
@@ -326,17 +411,17 @@
                                         <Grid>
 
                                             <ComboBox Width="101" Height="34"
-                                   FontSize="14"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"
-                                   Margin="5,0,0,0"
-                                   ItemsSource="{Binding DataContext.ComboxItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                   SelectedItem="{Binding Channel, Mode=TwoWay}"
-                                   Style="{StaticResource ModernComboBoxStyle}" Cursor=""/>
+                                                       FontSize="14"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Center"
+                                                       Margin="5,0,0,0"
+                                                       ItemsSource="{Binding DataContext.ComboxItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       SelectedItem="{Binding Channel, Mode=TwoWay}"
+                                                       Style="{StaticResource ModernComboBoxStyle}" Cursor=""/>
                                             <Grid Width="34" Height="34"
-                              HorizontalAlignment="Left"
-                              VerticalAlignment="Center"
-                              Margin="5,0,0,0">
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  Margin="5,0,0,0">
                                                 <Border CornerRadius="17">
                                                     <Border.Background>
                                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -457,7 +542,9 @@
 
                     <Grid Grid.Column="1" Background="White">
                         <Grid Width="500" Height="500">
-                            <br:BrainAreaView HorizontalAlignment="Center"
+                            <br:BrainAreaView x:Name="BrainAreaView"
+                                              IsReadOnly="False"
+                                              HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Grid>
                     </Grid>

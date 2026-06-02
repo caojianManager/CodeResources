@@ -1,4 +1,6 @@
+using EEGTool.Views.Common;
 using System.Windows.Controls;
+using EEGTool.ViewModels.Template;
 
 namespace EEGTool.Views.Template
 {
@@ -7,9 +9,32 @@ namespace EEGTool.Views.Template
     /// </summary>
     public partial class TemplateView : UserControl
     {
+        private TemplateViewModel? _viewModel;
+
         public TemplateView()
         {
             InitializeComponent();
+            Config();
+        }
+
+        private void Config()
+        {
+            _viewModel = this.DataContext as TemplateViewModel;
+            if (_viewModel == null)
+            {
+                return;
+            }
+
+
+            BrainAreaView.SelectElectrode += (eleName) =>
+            {
+                _viewModel.AddElectrode(eleName);
+            };
+        }
+
+        private void UpdateElectrode(List<string> electrodes)
+        {
+            BrainAreaView.UpdateElectrode(electrodes);
         }
     }
 }

@@ -1,12 +1,13 @@
-﻿using System;
+﻿using EEGTool.Models.Template;
+using Framework.MVVM.Commands;
+using FrameWork.MVVM;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Text.RegularExpressions;
-using FrameWork.MVVM;
-using Framework.MVVM.Commands;
 
 namespace EEGTool.ViewModels.Template
 {
@@ -86,6 +87,14 @@ namespace EEGTool.ViewModels.Template
             }
         }
 
+        private TemplateInfoModel _template = null;
+
+        public TemplateInfoModel Template
+        {
+            get => _template;
+            set => SetProperty(ref _template, value);
+        }
+
         public bool IsCollectionDurationError
         {
             get => _isCollectionDurationError;
@@ -155,6 +164,25 @@ namespace EEGTool.ViewModels.Template
             IsShowCreateTemplateWindow = false;
         }
 
+        public void AddElectrode(string eleName)
+        {
+            if (Template == null)
+                Template = new TemplateInfoModel();
+            var newEle = new Electrode
+            {
+                Name = eleName,
+                Channel = "Ch1",
+            };
+            newEle.UpdateChannelAction += () =>
+            {
+                Template.IsUpdateTemplate = true;
+            };
+            Template.Electrodes.Add(newEle);
+            Template.EleDirectory.Add(newEle);
+            Template.IsUpdateTemplate = true;
+        }
+
+
         private static bool IsDurationValid(string duration)
         {
             if (!DurationRegex.IsMatch(duration))
@@ -208,6 +236,8 @@ namespace EEGTool.ViewModels.Template
             var seconds = totalSeconds % 60;
             return $"{hours:00}:{minutes:00}:{seconds:00}";
         }
+
+        
 
 
     }
