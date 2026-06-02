@@ -2,6 +2,7 @@
 using FrameWork.Log;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -189,7 +190,7 @@ namespace EEGTool.Models.Template
                 {
                     existingTemplate.Name = template.Name;
                     existingTemplate.Time = template.Time;
-                    existingTemplate.EleDirectory = template.EleDirectory.ToList();
+                    existingTemplate.EleDirectory = new ObservableCollection<Electrode>(template.EleDirectory);
                 }
                 else
                 {

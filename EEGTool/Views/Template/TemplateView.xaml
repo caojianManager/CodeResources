@@ -280,7 +280,7 @@
                                     <TextBox Height="32"
                                          Padding="8,4"
                                          VerticalContentAlignment="Center"
-                                         Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}">
+                                         Text="{Binding Template.Name, UpdateSourceTrigger=PropertyChanged}">
                                         <TextBox.Style>
                                             <Style TargetType="TextBox">
                                                 <Setter Property="BorderBrush" Value="#D9D9D9"/>
@@ -340,7 +340,7 @@
                                                                     MinValue="0"
                                                                     MaxValue="359999"
                                                                     Step="60"
-                                                                    Value="{Binding CollectionDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                                    Value="{Binding Template.Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                         <numericUpDown:BZNumericUpDown.Style>
                                             <Style TargetType="numericUpDown:BZNumericUpDown">
                                                 <Setter Property="InputBorderBrush" Value="#D6D6D6"/>
@@ -382,7 +382,7 @@
                         </Grid>
 
                         <ListBox
-                                ItemsSource="{Binding Template.Electrodes}"
+                                ItemsSource="{Binding Template.EleDirectory}"
                                 SelectedValuePath="Channel"      
                                 HorizontalAlignment="Stretch"
                                 Margin="0,200,0,300"
