@@ -402,12 +402,12 @@
                             <!-- 每个 Item 的样式 -->
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="122" Height="45"
-                       Margin="8,0,0,8"
-                       BorderThickness="0"
-                       BorderBrush="LightGray"
-                       Background="White"
-                       CornerRadius="8">
+                                    <Border Width="135" Height="45"
+                                           Margin="8,0,0,8"
+                                           BorderThickness="0"
+                                           BorderBrush="LightGray"
+                                           Background="White"
+                                           CornerRadius="8">
                                         <Grid>
 
                                             <ComboBox Width="101" Height="34"

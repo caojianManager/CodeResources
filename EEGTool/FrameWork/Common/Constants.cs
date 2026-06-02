@@ -7,6 +7,12 @@ namespace FrameWork.Common
     {
         public static readonly string LocalDataPath = Path.Combine( Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"EEGTool");
 
+        public static readonly List<string> ChannelList = new List<string>()
+        {
+            "Ch1","Ch2","Ch3","Ch4","Ch5","Ch6","Ch7","Ch8",
+            "Ch9","Ch10","Ch11","Ch12","Ch13","Ch14","Ch15","Ch16",
+        };
+
         public static readonly ScColor[] ChannelColors = new ScColor[]
         {
             ScColor.FromHtml("#FF4500"), ScColor.FromHtml("#32CD32"), ScColor.FromHtml("#DAA520"), ScColor.FromHtml("#C71585"),

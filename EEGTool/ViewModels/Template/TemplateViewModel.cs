@@ -1,8 +1,10 @@
 ﻿using EEGTool.Models.Template;
 using Framework.MVVM.Commands;
+using FrameWork.Common;
 using FrameWork.MVVM;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -36,6 +38,9 @@ namespace EEGTool.ViewModels.Template
             get => _templateNameErrorMessage;
             set => SetProperty(ref _templateNameErrorMessage, value);
         }
+
+        private readonly ObservableCollection<string> _comboxItems;
+        public ReadOnlyObservableCollection<string> ComboxItems { get; }
 
         private TemplateInfoModel _template = new TemplateInfoModel();
 
@@ -81,6 +86,8 @@ namespace EEGTool.ViewModels.Template
         public TemplateViewModel()
         {
             Template.PropertyChanged += Template_PropertyChanged;
+            _comboxItems = new ObservableCollection<string>(Constants.ChannelList.ToList());
+            ComboxItems = new ReadOnlyObservableCollection<string>(_comboxItems);
             Config();
         }
 
@@ -101,6 +108,7 @@ namespace EEGTool.ViewModels.Template
 
         private void Config()
         {
+
             CreateTemplateCommand = new RelayCommand((o) =>
             {
                 CreateTemplate();
