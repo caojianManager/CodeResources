@@ -235,7 +235,10 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  Background="Transparent"
                  ScrollViewer.CanContentScroll="False"
-                 VirtualizingStackPanel.IsVirtualizing="False" Cursor=""
+                 VirtualizingStackPanel.IsVirtualizing="False"
+                 SnapsToDevicePixels="True"
+                 UseLayoutRounding="True"
+                 Cursor=""
                   >
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
@@ -243,6 +246,7 @@
                         <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                         <Setter Property="Padding" Value="0"/>
                         <Setter Property="Margin" Value="0"/>
+                        <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Background" Value="Transparent"/>
                         <Setter Property="BorderBrush" Value="Transparent"/>
                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -269,9 +273,13 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid Height="75" Margin="0,-1,0,0">
-                            <Grid Margin="0,2" Cursor="">
-                                <Border BorderThickness="0,1,0,1" BorderBrush="LightGray"
+                        <Grid Height="75"
+                              Margin="0"
+                              SnapsToDevicePixels="True"
+                              UseLayoutRounding="True">
+                            <Grid Margin="0" Cursor="">
+                                <Border BorderThickness="0,0,0,1"
+                                        BorderBrush="LightGray"
                                         x:Name="STItemGrid" />
 
                                 <iconPacks:PackIconGameIcons Kind="BrainTentacle"  Width="30" Height="30"
