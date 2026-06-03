@@ -273,20 +273,37 @@
                             <Grid Margin="0,2" Cursor="">
                                 <Border BorderThickness="0,1,0,1" BorderBrush="LightGray"
                                         x:Name="STItemGrid" />
-                                <TextBlock HorizontalAlignment="Left"
-                                         VerticalAlignment="Center"
-                                         Margin="33,-25,80,0"
-                                         FontSize="16"
-                                           TextTrimming="CharacterEllipsis"
-                                          TextWrapping="NoWrap"
-                                         Text="{Binding Name}" 
-                                         />
-                                <TextBlock HorizontalAlignment="Left"
-                                         VerticalAlignment="Center"
-                                         Margin="33,25,0,0"
-                                         FontSize="16"
-                                         Text="{Binding Time}"/>
-                    
+
+                                <iconPacks:PackIconGameIcons Kind="BrainTentacle"  Width="35" Height="35"
+                                                             Margin="15,0,0,0"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Center"/>
+
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Left"
+                                            Margin="65,-20,0,0">
+                                    <TextBlock Text="模板名称："   FontSize="16"/>
+                                    <TextBlock      FontSize="16"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
+                                                    Text="{Binding Name}" 
+                                    />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Left"
+                                            Margin="65,20,0,0">
+                                    <TextBlock Text="采集时长：" FontSize="12" Foreground="Gray"/>
+                                    <TextBlock      FontSize="12"
+                                                    Foreground="Gray"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
+                                                    Text="{Binding Time}"/>
+
+                                </StackPanel>
+
                             </Grid>
                         </Grid>
                         <DataTemplate.Triggers>
