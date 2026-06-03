@@ -228,6 +228,10 @@
                        Foreground="Gray"
                        Margin="15,20,0,0"/>
 
+            <Grid Height="1" HorizontalAlignment="Stretch"
+                  VerticalAlignment="Top"
+                  Margin="0,48,0,150"
+                  Background="LightGray"/>
             <ListBox ItemsSource="{Binding Templates}" Margin="0,48,0,150"
                  SelectedItem="{Binding SelectedTemplate}"
                  BorderThickness="0"
@@ -335,6 +339,13 @@
                             <DataTrigger Binding="{Binding IsSelected}" Value="False">
                                 <Setter TargetName="STItemGrid" Property="Background" Value="Transparent"/>
                             </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSelected}" Value="False"/>
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="STItemGrid" Property="Background" Value="LightGray"/>
+                            </MultiDataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>
 
