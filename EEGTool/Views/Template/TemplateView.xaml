@@ -221,26 +221,14 @@
                     </LinearGradientBrush>
                 </Border.Background>
             </Border>
-            <StackPanel HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top">
-                <Grid Height="50">
-                    <TextBlock Text="模板配置"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Center"
-                               FontSize="16"
-                               Foreground="#2f3542"
-                               Margin="15,0,0,0"/>
-                    <Grid HorizontalAlignment="Stretch"
-                          VerticalAlignment="Bottom"
-                          Height="0.50"
-                          Background="LightGray"
-                          Margin="5,0"></Grid>
-                </Grid>
+            <TextBlock Text="模板配置"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Top"
+                       FontSize="16"
+                       Foreground="Gray"
+                       Margin="15,20,0,0"/>
 
-
-            </StackPanel>
-
-            <ListBox ItemsSource="{Binding Templates}" Margin="10,65,10,150"
+            <ListBox ItemsSource="{Binding Templates}" Margin="0,48,0,150"
                  SelectedItem="{Binding SelectedTemplate}"
                  BorderThickness="0"
                  ScrollViewer.VerticalScrollBarVisibility="Hidden"
@@ -282,8 +270,9 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Height="104" Margin="0,-1,0,0">
-                            <Grid Margin="6,2">
-                                <Border Background="#D5EBFF" x:Name="STItemGrid" CornerRadius="5"/>
+                            <Grid Margin="0,2" Cursor="">
+                                <Border BorderThickness="0,1,0,1" BorderBrush="LightGray"
+                                        x:Name="STItemGrid" />
                                 <TextBlock HorizontalAlignment="Left"
                                          VerticalAlignment="Center"
                                          Margin="33,-25,80,0"
@@ -297,32 +286,7 @@
                                          Margin="33,25,0,0"
                                          FontSize="16"
                                          Text="{Binding Time}"/>
-                                <Button HorizontalAlignment="Right"
-                                      Margin="0,5,45,0"
-                                      VerticalAlignment="Top"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      Padding="0"
-                                      Command="{Binding DataContext.EditTemplateCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                      CommandParameter="{Binding}"
-                                      Width="35" Height="40" Cursor="Hand">
-                                    <!--<Image Source="{x:Static rs:ResourcesImagePath.EDIT_ICON}"  Width="20" Height="35"/>-->
-
-                                </Button>
-                                <Button HorizontalAlignment="Right"
-                                      Margin="0,5,10,0"
-                                      VerticalAlignment="Top"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      Padding="0"
-                                      Command="{Binding DataContext.DeleteTemplateCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                      CommandParameter="{Binding}"
-                                      hp:ButtonHelper.CornerRadius="0,10,0,0"
-                                      Width="35" Height="38" Cursor="Hand">
-                                    <iconPacks:PackIconMaterial Kind="WindowClose" 
-                                              Width="16" Height="16" 
-                                              Foreground="#313131" Cursor=""/>
-                                </Button>
+                    
                             </Grid>
                         </Grid>
                         <DataTemplate.Triggers>
@@ -338,7 +302,7 @@
                                 </Setter>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected}" Value="False">
-                                <Setter TargetName="STItemGrid" Property="Background" Value="#D5EBFF"/>
+                                <Setter TargetName="STItemGrid" Property="Background" Value="Transparent"/>
                             </DataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>
