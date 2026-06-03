@@ -300,7 +300,7 @@
                                                     Foreground="Gray"
                                                     TextTrimming="CharacterEllipsis"
                                                     TextWrapping="NoWrap"
-                                                    Text="{Binding Time}"/>
+                                                    Text="{Binding FormattedTime}"/>
 
                                 </StackPanel>
 

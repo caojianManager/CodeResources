@@ -23,7 +23,26 @@ namespace EEGTool.Models.Template
         public int Time
         {
             get => _time;
-            set => SetProperty(ref _time, value);
+            set
+            {
+                if (SetProperty(ref _time, value))
+                {
+                    OnPropertyChanged(nameof(FormattedTime));
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public string FormattedTime
+        {
+            get
+            {
+                var totalSeconds = Math.Max(0, Time);
+                var hours = totalSeconds / 3600;
+                var minutes = totalSeconds % 3600 / 60;
+                var seconds = totalSeconds % 60;
+                return $"{hours:00}:{minutes:00}:{seconds:00}";
+            }
         }
 
         private string _name = string.Empty;
