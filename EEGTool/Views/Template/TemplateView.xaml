@@ -290,13 +290,13 @@
                                          FontSize="16"
                                            TextTrimming="CharacterEllipsis"
                                           TextWrapping="NoWrap"
-                                         Text="{Binding ShowName}" 
+                                         Text="{Binding Name}" 
                                          />
                                 <TextBlock HorizontalAlignment="Left"
                                          VerticalAlignment="Center"
                                          Margin="33,25,0,0"
                                          FontSize="16"
-                                         Text="{Binding ShowTime}"/>
+                                         Text="{Binding Time}"/>
                                 <Button HorizontalAlignment="Right"
                                       Margin="0,5,45,0"
                                       VerticalAlignment="Top"
