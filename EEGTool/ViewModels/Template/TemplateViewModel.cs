@@ -70,6 +70,14 @@ namespace EEGTool.ViewModels.Template
             }
         }
 
+        private ObservableCollection<TemplateInfoModel> _templates = new ObservableCollection<TemplateInfoModel>();
+
+        public ObservableCollection<TemplateInfoModel> Templates
+        {
+            get => _templates;
+            set => SetProperty(ref _templates, value);
+        }
+
         public bool IsCollectionDurationError
         {
             get => _isCollectionDurationError;
@@ -93,6 +101,7 @@ namespace EEGTool.ViewModels.Template
             _comboxItems = new ObservableCollection<string>(Constants.ChannelList.ToList());
             ComboxItems = new ReadOnlyObservableCollection<string>(_comboxItems);
             Config();
+            LoadTemplateModel();
         }
 
         private void Template_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -108,6 +117,23 @@ namespace EEGTool.ViewModels.Template
                 IsCollectionDurationError = false;
                 CollectionDurationErrorMessage = string.Empty;
             }
+        }
+
+        private void LoadTemplateModel()
+        {
+            var allTemplateFiles = TemplateFileManager.GetInstance().AllTemplates;
+
+            foreach (var item in allTemplateFiles)
+            {
+                Templates.Add(new TemplateInfoModel()
+                {
+                    TemplateId = item.TemplateId,
+                    Name = item.Name,
+                    Time = item.Time,
+                    EleDirectory = new ObservableCollection<Electrode>(item.EleDirectory)
+                });
+            }
+
         }
 
         private void Config()
@@ -160,6 +186,8 @@ namespace EEGTool.ViewModels.Template
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
+
+            TemplateFileManager.GetInstance().SaveTemplate(Template);
         }
 
         public void AddElectrode(string eleName)
@@ -167,7 +195,7 @@ namespace EEGTool.ViewModels.Template
             var newEle = new Electrode
             {
                 Name = eleName,
-                Channel = "Ch1",
+                Channel = GetNextAvailableChannel(),
             };
             newEle.UpdateChannelAction += () =>
             {
@@ -228,6 +256,18 @@ namespace EEGTool.ViewModels.Template
                     RefreshChannelConflicts();
                 };
             }
+        }
+
+        private string GetNextAvailableChannel()
+        {
+            var usedChannels = Template.EleDirectory
+                .Where(e => !string.IsNullOrWhiteSpace(e.Channel))
+                .Select(e => e.Channel.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return _comboxItems.FirstOrDefault(channel => !usedChannels.Contains(channel))
+                ?? _comboxItems.FirstOrDefault()
+                ?? string.Empty;
         }
 
         private void RefreshChannelConflicts()

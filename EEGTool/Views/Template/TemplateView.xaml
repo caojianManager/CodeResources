@@ -236,7 +236,116 @@
                           Background="LightGray"
                           Margin="5,0"></Grid>
                 </Grid>
+
+
             </StackPanel>
+
+            <ListBox ItemsSource="{Binding Templates}" Margin="10,65,10,150"
+                 SelectedItem="{Binding SelectedTemplate}"
+                 BorderThickness="0"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 Background="Transparent"
+                 ScrollViewer.CanContentScroll="False"
+                 VirtualizingStackPanel.IsVirtualizing="False" Cursor=""
+                  >
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="RootBorder"
+                                            Margin="0"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                        <!-- ContentPresenter 别忘了 ContentSource -->
+                                        <ContentPresenter
+                                        ContentSource="Content"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Height="104" Margin="0,-1,0,0">
+                            <Grid Margin="6,2">
+                                <Border Background="#D5EBFF" x:Name="STItemGrid" CornerRadius="5"/>
+                                <TextBlock HorizontalAlignment="Left"
+                                         VerticalAlignment="Center"
+                                         Margin="33,-25,80,0"
+                                         FontSize="16"
+                                           TextTrimming="CharacterEllipsis"
+                                          TextWrapping="NoWrap"
+                                         Text="{Binding ShowName}" 
+                                         />
+                                <TextBlock HorizontalAlignment="Left"
+                                         VerticalAlignment="Center"
+                                         Margin="33,25,0,0"
+                                         FontSize="16"
+                                         Text="{Binding ShowTime}"/>
+                                <Button HorizontalAlignment="Right"
+                                      Margin="0,5,45,0"
+                                      VerticalAlignment="Top"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Padding="0"
+                                      Command="{Binding DataContext.EditTemplateCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                      CommandParameter="{Binding}"
+                                      Width="35" Height="40" Cursor="Hand">
+                                    <!--<Image Source="{x:Static rs:ResourcesImagePath.EDIT_ICON}"  Width="20" Height="35"/>-->
+
+                                </Button>
+                                <Button HorizontalAlignment="Right"
+                                      Margin="0,5,10,0"
+                                      VerticalAlignment="Top"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Padding="0"
+                                      Command="{Binding DataContext.DeleteTemplateCommand,RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                      CommandParameter="{Binding}"
+                                      hp:ButtonHelper.CornerRadius="0,10,0,0"
+                                      Width="35" Height="38" Cursor="Hand">
+                                    <iconPacks:PackIconMaterial Kind="WindowClose" 
+                                              Width="16" Height="16" 
+                                              Foreground="#313131" Cursor=""/>
+                                </Button>
+                            </Grid>
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="STItemGrid" Property="Background" >
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FFE5A0" Offset="0"/>
+                                            <GradientStop Color="#FFEEC1" Offset="0.5"/>
+                                            <GradientStop Color="#FFDA7C" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="False">
+                                <Setter TargetName="STItemGrid" Property="Background" Value="#D5EBFF"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+
+
+                </ListBox.ItemTemplate>
+            </ListBox>
 
             <Border CornerRadius="10"
                     BorderThickness="0.5"
