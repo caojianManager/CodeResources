@@ -465,10 +465,20 @@
                                 <DataTemplate>
                                     <Border Width="130" Height="45"
                                            Margin="10,0,0,10"
-                                           BorderThickness="0"
-                                           BorderBrush="LightGray"
                                            Background="White"
                                            CornerRadius="8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="BorderBrush" Value="LightGray"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChannelConflict}" Value="True">
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                        <Setter Property="BorderBrush" Value="Red"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Grid>
 
                                             <ComboBox Width="101" Height="34"

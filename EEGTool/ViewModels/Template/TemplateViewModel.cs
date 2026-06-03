@@ -64,6 +64,8 @@ namespace EEGTool.ViewModels.Template
                 if (SetProperty(ref _template, newTemplate))
                 {
                     newTemplate.PropertyChanged += Template_PropertyChanged;
+                    ConfigureElectrodeChannelUpdates();
+                    RefreshChannelConflicts();
                 }
             }
         }
@@ -133,6 +135,12 @@ namespace EEGTool.ViewModels.Template
 
         private void SureCreateTemplate()
         {
+            RefreshChannelConflicts();
+            if (Template.EleDirectory.Any(e => e.IsChannelConflict))
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(Template.Name))
             {
                 IsTemplateNameError = true;
@@ -164,9 +172,11 @@ namespace EEGTool.ViewModels.Template
             newEle.UpdateChannelAction += () =>
             {
                 Template.IsUpdateTemplate = true;
+                RefreshChannelConflicts();
             };
             Template.EleDirectory.Add(newEle);
             Template.IsUpdateTemplate = true;
+            RefreshChannelConflicts();
         }
 
         private void DeleteElectrode(object obj)
@@ -191,6 +201,7 @@ namespace EEGTool.ViewModels.Template
             }
             var eleList = Template.EleDirectory.Select(e => e.Name).ToList();
             UpdateElectrodeAction?.Invoke(eleList);
+            RefreshChannelConflicts();
             //刷新电极
         }
 
@@ -207,7 +218,32 @@ namespace EEGTool.ViewModels.Template
             IsShowCreateTemplateWindow = true;
         }
 
-        
+        private void ConfigureElectrodeChannelUpdates()
+        {
+            foreach (var electrode in Template.EleDirectory)
+            {
+                electrode.UpdateChannelAction += () =>
+                {
+                    Template.IsUpdateTemplate = true;
+                    RefreshChannelConflicts();
+                };
+            }
+        }
+
+        private void RefreshChannelConflicts()
+        {
+            var conflictElectrodes = Template.EleDirectory
+                .Where(e => !string.IsNullOrWhiteSpace(e.Channel))
+                .GroupBy(e => e.Channel.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Select(e => e.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1)
+                .SelectMany(g => g)
+                .ToHashSet();
+
+            foreach (var electrode in Template.EleDirectory)
+            {
+                electrode.IsChannelConflict = conflictElectrodes.Contains(electrode);
+            }
+        }
 
 
     }

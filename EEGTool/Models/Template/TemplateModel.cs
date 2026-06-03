@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EEGTool.Models.Template
@@ -58,15 +59,26 @@ namespace EEGTool.Models.Template
     {
         public Action? UpdateChannelAction;
         public string Name { get; set; } = string.Empty;
+
+        private bool _isChannelConflict;
+
+        [JsonIgnore]
+        public bool IsChannelConflict
+        {
+            get => _isChannelConflict;
+            set => SetProperty(ref _isChannelConflict, value);
+        }
+
         private string _channel = string.Empty;
         public string Channel
         {
             get => _channel;
             set
             {
-                if (value != _channel)
+                if (SetProperty(ref _channel, value))
+                {
                     UpdateChannelAction?.Invoke();
-                SetProperty(ref _channel, value);
+                }
             }
         }
     }
