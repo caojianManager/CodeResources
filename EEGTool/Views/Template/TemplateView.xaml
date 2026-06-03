@@ -269,35 +269,41 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid Height="104" Margin="0,-1,0,0">
+                        <Grid Height="75" Margin="0,-1,0,0">
                             <Grid Margin="0,2" Cursor="">
                                 <Border BorderThickness="0,1,0,1" BorderBrush="LightGray"
                                         x:Name="STItemGrid" />
 
-                                <iconPacks:PackIconGameIcons Kind="BrainTentacle"  Width="35" Height="35"
+                                <iconPacks:PackIconGameIcons Kind="BrainTentacle"  Width="30" Height="30"
                                                              Margin="15,0,0,0"
                                                              HorizontalAlignment="Left"
-                                                             VerticalAlignment="Center"/>
+                                                             VerticalAlignment="Center"
+                                                             Foreground="#494D50"/>
 
                                 <StackPanel Orientation="Horizontal"
                                             VerticalAlignment="Center"
                                             HorizontalAlignment="Left"
-                                            Margin="65,-20,0,0">
-                                    <TextBlock Text="模板名称："   FontSize="16"/>
-                                    <TextBlock      FontSize="16"
+                                            Margin="65,0,0,0">
+                                    <TextBlock Text="模板名称："   FontSize="14" Foreground="#494D50"/>
+                                    <TextBlock      FontSize="14"
                                                     TextTrimming="CharacterEllipsis"
                                                     TextWrapping="NoWrap"
+                                                    Foreground="#494D50"
                                                     Text="{Binding Name}" 
                                     />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal"
-                                            VerticalAlignment="Center"
-                                            HorizontalAlignment="Left"
-                                            Margin="65,20,0,0">
-                                    <TextBlock Text="采集时长：" FontSize="12" Foreground="Gray"/>
+                                            VerticalAlignment="Bottom"
+                                            HorizontalAlignment="Right"
+                                            Margin="65,20,10,5">
+                                    <iconPacks:PackIconMaterial Kind="ClockTimeThreeOutline" 
+                                                                Foreground="#494D50" 
+                                                                VerticalAlignment="Center"
+                                                                Margin="0,0,10,0"
+                                                                Width="12" Height="12"/>
                                     <TextBlock      FontSize="12"
-                                                    Foreground="Gray"
+                                                    Foreground="#494D50"
                                                     TextTrimming="CharacterEllipsis"
                                                     TextWrapping="NoWrap"
                                                     Text="{Binding FormattedTime}"/>
