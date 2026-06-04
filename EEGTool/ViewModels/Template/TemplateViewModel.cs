@@ -25,6 +25,8 @@ namespace EEGTool.ViewModels.Template
         private bool _isElectrodeError;
         private string _electrodeErrorMessage = string.Empty;
         private TemplateInfoModel? _templateBeforeCreate;
+        private TemplateInfoModel? _editingTemplateSource;
+        private bool _isEditingTemplate;
 
         public bool IsShowCreateTemplateWindow
         {
@@ -121,6 +123,7 @@ namespace EEGTool.ViewModels.Template
         public ICommand? SureCreateTemplateCommand { get; set; }
         public ICommand? DeleteElectrodeCommand { get; set; }
         public ICommand? DeleteTemplateCommand { get; set; }
+        public ICommand? EditTemplateCommand { get; set; }
 
         public TemplateViewModel()
         {
@@ -187,6 +190,11 @@ namespace EEGTool.ViewModels.Template
                 DeleteTemplate();
             });
 
+            EditTemplateCommand = new RelayCommand((o) =>
+            {
+                EditTemplate();
+            });
+
             CancelCreateCommand = new RelayCommand((o) =>
             {
                 CancelCreateTemplate();
@@ -222,18 +230,21 @@ namespace EEGTool.ViewModels.Template
                 return;
             }
 
-            var templateId = TemplateFileManager.GetInstance().SaveTemplate(Template);
-            if (string.IsNullOrWhiteSpace(templateId))
+            if (_isEditingTemplate)
             {
-                return;
+                if (!SaveEditedTemplate())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (!SaveNewTemplate())
+                {
+                    return;
+                }
             }
 
-            if (!Templates.Contains(Template))
-            {
-                Templates.Add(Template);
-            }
-
-            SelectedTemplate = Template;
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
             IsCollectionDurationError = false;
@@ -242,6 +253,48 @@ namespace EEGTool.ViewModels.Template
             ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
             _templateBeforeCreate = null;
+            _editingTemplateSource = null;
+            _isEditingTemplate = false;
+        }
+
+        private bool SaveNewTemplate()
+        {
+            var templateId = TemplateFileManager.GetInstance().SaveTemplate(Template);
+            if (string.IsNullOrWhiteSpace(templateId))
+            {
+                return false;
+            }
+
+            if (!Templates.Contains(Template))
+            {
+                Templates.Add(Template);
+            }
+
+            SelectedTemplate = Template;
+            return true;
+        }
+
+        private bool SaveEditedTemplate()
+        {
+            if (_editingTemplateSource == null)
+            {
+                return false;
+            }
+
+            if (!TemplateFileManager.GetInstance().UpdateTemplate(Template))
+            {
+                MessageBox.Show("模板更新失败，请稍后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            _editingTemplateSource.Name = Template.Name;
+            _editingTemplateSource.Time = Template.Time;
+            _editingTemplateSource.EleDirectory = new ObservableCollection<Electrode>(
+                Template.EleDirectory.Select(CloneElectrode));
+            _editingTemplateSource.IsUpdateTemplate = false;
+            Template = _editingTemplateSource;
+            SelectedTemplate = _editingTemplateSource;
+            return true;
         }
 
         private void DeleteTemplate()
@@ -340,6 +393,8 @@ namespace EEGTool.ViewModels.Template
         private void CreateTemplate()
         {
             _templateBeforeCreate = SelectedTemplate;
+            _editingTemplateSource = null;
+            _isEditingTemplate = false;
             SelectedTemplate = null;
             Template = new TemplateInfoModel
             {
@@ -354,23 +409,74 @@ namespace EEGTool.ViewModels.Template
             IsShowCreateTemplateWindow = true;
         }
 
-        private void CancelCreateTemplate()
+        private void EditTemplate()
         {
-            IsShowCreateTemplateWindow = false;
-            SelectedTemplate = _templateBeforeCreate;
             if (SelectedTemplate == null)
             {
-                Template = Templates.FirstOrDefault() ?? new TemplateInfoModel();
-                SelectedTemplate = Templates.FirstOrDefault();
+                MessageBox.Show("请先选择要编辑的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
 
-            _templateBeforeCreate = null;
+            _templateBeforeCreate = SelectedTemplate;
+            _editingTemplateSource = SelectedTemplate;
+            _isEditingTemplate = true;
+            Template = CloneTemplate(SelectedTemplate);
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
             IsElectrodeError = false;
             ElectrodeErrorMessage = string.Empty;
+            IsShowCreateTemplateWindow = true;
+        }
+
+        private void CancelCreateTemplate()
+        {
+            IsShowCreateTemplateWindow = false;
+            if (_templateBeforeCreate != null)
+            {
+                SelectedTemplate = _templateBeforeCreate;
+                Template = _templateBeforeCreate;
+            }
+            else
+            {
+                Template = Templates.FirstOrDefault() ?? new TemplateInfoModel();
+                SelectedTemplate = Templates.FirstOrDefault();
+            }
+
+            _templateBeforeCreate = null;
+            _editingTemplateSource = null;
+            _isEditingTemplate = false;
+            IsTemplateNameError = false;
+            TemplateNameErrorMessage = string.Empty;
+            IsCollectionDurationError = false;
+            CollectionDurationErrorMessage = string.Empty;
+            IsElectrodeError = false;
+            ElectrodeErrorMessage = string.Empty;
+        }
+
+        private static TemplateInfoModel CloneTemplate(TemplateInfoModel source)
+        {
+            return new TemplateInfoModel
+            {
+                TemplateId = source.TemplateId,
+                Name = source.Name,
+                Time = source.Time,
+                EleDirectory = new ObservableCollection<Electrode>(
+                    source.EleDirectory.Select(CloneElectrode)),
+                IsSelected = source.IsSelected,
+                IsUpdateTemplate = source.IsUpdateTemplate
+            };
+        }
+
+        private static Electrode CloneElectrode(Electrode source)
+        {
+            return new Electrode
+            {
+                Name = source.Name,
+                Channel = source.Channel,
+                IsChannelConflict = source.IsChannelConflict
+            };
         }
 
         public void UpdateElectrodeSelection()

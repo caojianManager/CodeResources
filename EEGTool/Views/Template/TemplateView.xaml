@@ -494,8 +494,6 @@
                             Margin="0,0,0,50">
                     <Border CornerRadius="10"
                             BorderThickness="0.5"
-                            BorderBrush="LightGray"
-                            Background="White"
                             Margin="0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom">
@@ -509,6 +507,8 @@
                         <Button Style="{StaticResource EffectActionButtonStyle}"
                                 Width="80"
                                 Height="30"
+                                Background="#378CF3"
+                                Foreground="White"
                                 FontSize="12"
                                 Content="编辑"
                                 Command="{Binding EditTemplateCommand}" Cursor="Hand" />
@@ -516,8 +516,6 @@
 
                     <Border CornerRadius="10"
                             BorderThickness="0.5"
-                            BorderBrush="LightGray"
-                            Background="White"
                             Margin="20,0,0,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom">
