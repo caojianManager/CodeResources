@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace EEGTool.ViewModels.Template
@@ -118,6 +119,7 @@ namespace EEGTool.ViewModels.Template
         public ICommand? CancelCreateCommand { get; set; }
         public ICommand? SureCreateTemplateCommand { get; set; }
         public ICommand? DeleteElectrodeCommand { get; set; }
+        public ICommand? DeleteTemplateCommand { get; set; }
 
         public TemplateViewModel()
         {
@@ -179,6 +181,11 @@ namespace EEGTool.ViewModels.Template
                 DeleteElectrode(o);
             });
 
+            DeleteTemplateCommand = new RelayCommand((o) =>
+            {
+                DeleteTemplate();
+            });
+
             CancelCreateCommand = new RelayCommand((o) =>
             {
                 IsShowCreateTemplateWindow = false;
@@ -233,6 +240,48 @@ namespace EEGTool.ViewModels.Template
             IsElectrodeError = false;
             ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
+        }
+
+        private void DeleteTemplate()
+        {
+            if (SelectedTemplate == null || string.IsNullOrWhiteSpace(SelectedTemplate.TemplateId))
+            {
+                MessageBox.Show("请先选择要删除的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"确认删除模板“{SelectedTemplate.Name}”吗？",
+                "删除确认",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            var deleteIndex = Templates.IndexOf(SelectedTemplate);
+            if (!TemplateFileManager.GetInstance().DeleteTemplate(SelectedTemplate.TemplateId))
+            {
+                MessageBox.Show("模板删除失败，请稍后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            Templates.Remove(SelectedTemplate);
+            if (Templates.Count == 0)
+            {
+                SelectedTemplate = null;
+                Template = new TemplateInfoModel();
+                return;
+            }
+
+            if (deleteIndex >= Templates.Count)
+            {
+                deleteIndex = Templates.Count - 1;
+            }
+
+            SelectedTemplate = Templates[deleteIndex];
         }
 
         public void AddElectrode(string eleName)

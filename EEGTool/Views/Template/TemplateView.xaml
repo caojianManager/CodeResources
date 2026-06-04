@@ -488,7 +488,56 @@
                     </ListBox>
                 </Grid>
                 
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,50">
+                    <Border CornerRadius="10"
+                            BorderThickness="0.5"
+                            BorderBrush="LightGray"
+                            Background="White"
+                            Margin="0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="24"
+                                              ShadowDepth="3"
+                                              Direction="270"
+                                              Opacity="0.35"
+                                              Color="#66000000"/>
+                        </Border.Effect>
+                        <Button Style="{StaticResource EffectActionButtonStyle}"
+                                Width="80"
+                                Height="30"
+                                FontSize="12"
+                                Content="编辑"
+                                Command="{Binding EditTemplateCommand}" />
+                    </Border>
 
+                    <Border CornerRadius="10"
+                            BorderThickness="0.5"
+                            BorderBrush="LightGray"
+                            Background="White"
+                            Margin="20,0,0,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="24"
+                                              ShadowDepth="3"
+                                              Direction="270"
+                                              Opacity="0.35"
+                                              Color="#66000000"/>
+                        </Border.Effect>
+                        <Button Style="{StaticResource EffectActionButtonStyle}"
+                                Width="80"
+                                Height="30"
+                                FontSize="12"
+                                Background="#861B2D"
+                                Foreground="White"
+                                Content="删除"
+                                Command="{Binding DeleteTemplateCommand}" />
+                    </Border>
+                </StackPanel>
             </Grid>
         </Grid>
 
