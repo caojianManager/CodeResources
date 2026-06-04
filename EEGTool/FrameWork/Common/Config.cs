@@ -37,6 +37,9 @@ namespace FrameWork.Common
 
         public string InitSampleRate = "250Hz";            //采样率
         public int SampleRate = 500;            //采样率
+        public string CollectionSelectedSampleRate = "250Hz";
+        public string CollectionSelectedTemplate = string.Empty;
+        public bool CollectionIsVideoRecordYes = false;
         public int DefaultTimeWindowSec = 20;   //默认时间窗口大小
         public int ChannelCount = 16;           //通道数量
         public int GainNum = 6;                 //放大倍数

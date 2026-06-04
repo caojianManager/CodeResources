@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using BLETool;
 using EEGTool.Models.Template;
+using FrameWork.Common;
 using FrameWork.MVVM;
 using Framework.MVVM.Commands;
 
@@ -13,6 +14,7 @@ namespace EEGTool.ViewModels.Collection
     public class CollectionConfigViewModel : BindableBase
     {
         private readonly BleManager _ble;
+        private bool _isLoadingPreferences = true;
 
         public ObservableCollection<string> SampleRateItems { get; } = new()
         {
@@ -28,6 +30,7 @@ namespace EEGTool.ViewModels.Collection
             {
                 if (SetProperty(ref _selectedSampleRate, value))
                 {
+                    SaveCollectionPreferences();
                     OnPropertyChanged(nameof(CanCollection));
                 }
             }
@@ -43,6 +46,7 @@ namespace EEGTool.ViewModels.Collection
             {
                 if (SetProperty(ref _selectedTemplate, value))
                 {
+                    SaveCollectionPreferences();
                     OnPropertyChanged(nameof(CanCollection));
                 }
             }
@@ -64,6 +68,7 @@ namespace EEGTool.ViewModels.Collection
                     IsVideoRecordNo = false;
                 }
 
+                SaveCollectionPreferences();
                 OnPropertyChanged(nameof(CanCollection));
             }
         }
@@ -84,6 +89,7 @@ namespace EEGTool.ViewModels.Collection
                     IsVideoRecordYes = false;
                 }
 
+                SaveCollectionPreferences();
                 OnPropertyChanged(nameof(CanCollection));
             }
         }
@@ -126,6 +132,8 @@ namespace EEGTool.ViewModels.Collection
 
             CollectionCommand = new RelayCommand(_ => { });
             LoadTemplateItems();
+            LoadCollectionPreferences();
+            _isLoadingPreferences = false;
             SyncCurrentConnectedDeviceInfo();
         }
 
@@ -142,6 +150,36 @@ namespace EEGTool.ViewModels.Collection
             }
 
             SelectedTemplate = TemplateItems.FirstOrDefault();
+        }
+
+        private void LoadCollectionPreferences()
+        {
+            var config = Config.Instance;
+
+            SelectedSampleRate = SampleRateItems.Contains(config.CollectionSelectedSampleRate)
+                ? config.CollectionSelectedSampleRate
+                : SampleRateItems.FirstOrDefault() ?? string.Empty;
+
+            SelectedTemplate = TemplateItems.Contains(config.CollectionSelectedTemplate)
+                ? config.CollectionSelectedTemplate
+                : TemplateItems.FirstOrDefault();
+
+            IsVideoRecordYes = config.CollectionIsVideoRecordYes;
+            IsVideoRecordNo = !config.CollectionIsVideoRecordYes;
+        }
+
+        private void SaveCollectionPreferences()
+        {
+            if (_isLoadingPreferences)
+            {
+                return;
+            }
+
+            var config = Config.Instance;
+            config.CollectionSelectedSampleRate = SelectedSampleRate;
+            config.CollectionSelectedTemplate = SelectedTemplate ?? string.Empty;
+            config.CollectionIsVideoRecordYes = IsVideoRecordYes;
+            config.Save();
         }
 
         private void OnConnectionChanged(object? sender, BleConnectionChangedEventArgs e)
