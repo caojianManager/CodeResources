@@ -511,7 +511,7 @@
                                 Height="30"
                                 FontSize="12"
                                 Content="编辑"
-                                Command="{Binding EditTemplateCommand}" />
+                                Command="{Binding EditTemplateCommand}" Cursor="Hand" />
                     </Border>
 
                     <Border CornerRadius="10"

@@ -24,6 +24,7 @@ namespace EEGTool.ViewModels.Template
         private string _collectionDurationErrorMessage = string.Empty;
         private bool _isElectrodeError;
         private string _electrodeErrorMessage = string.Empty;
+        private TemplateInfoModel? _templateBeforeCreate;
 
         public bool IsShowCreateTemplateWindow
         {
@@ -188,7 +189,7 @@ namespace EEGTool.ViewModels.Template
 
             CancelCreateCommand = new RelayCommand((o) =>
             {
-                IsShowCreateTemplateWindow = false;
+                CancelCreateTemplate();
             });
         }
 
@@ -240,6 +241,7 @@ namespace EEGTool.ViewModels.Template
             IsElectrodeError = false;
             ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
+            _templateBeforeCreate = null;
         }
 
         private void DeleteTemplate()
@@ -337,6 +339,7 @@ namespace EEGTool.ViewModels.Template
 
         private void CreateTemplate()
         {
+            _templateBeforeCreate = SelectedTemplate;
             SelectedTemplate = null;
             Template = new TemplateInfoModel
             {
@@ -349,6 +352,25 @@ namespace EEGTool.ViewModels.Template
             IsElectrodeError = false;
             ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = true;
+        }
+
+        private void CancelCreateTemplate()
+        {
+            IsShowCreateTemplateWindow = false;
+            SelectedTemplate = _templateBeforeCreate;
+            if (SelectedTemplate == null)
+            {
+                Template = Templates.FirstOrDefault() ?? new TemplateInfoModel();
+                SelectedTemplate = Templates.FirstOrDefault();
+            }
+
+            _templateBeforeCreate = null;
+            IsTemplateNameError = false;
+            TemplateNameErrorMessage = string.Empty;
+            IsCollectionDurationError = false;
+            CollectionDurationErrorMessage = string.Empty;
+            IsElectrodeError = false;
+            ElectrodeErrorMessage = string.Empty;
         }
 
         public void UpdateElectrodeSelection()
