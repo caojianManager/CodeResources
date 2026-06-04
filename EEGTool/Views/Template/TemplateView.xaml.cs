@@ -1,6 +1,7 @@
 using EEGTool.Views.Common;
 using System.Windows.Controls;
 using EEGTool.ViewModels.Template;
+using System.Windows;
 
 namespace EEGTool.Views.Template
 {
@@ -14,11 +15,22 @@ namespace EEGTool.Views.Template
         public TemplateView()
         {
             InitializeComponent();
+            DataContextChanged += TemplateView_DataContextChanged;
+            Config();
+        }
+
+        private void TemplateView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
             Config();
         }
 
         private void Config()
         {
+            if (_viewModel != null)
+            {
+                _viewModel.UpdateElectrodeAction = null;
+            }
+
             _viewModel = this.DataContext as TemplateViewModel;
             if (_viewModel == null)
             {
@@ -26,14 +38,18 @@ namespace EEGTool.Views.Template
             }
 
             _viewModel.UpdateElectrodeAction = UpdateElectrode;
-            BrainAreaView.SelectElectrode += (eleName) =>
-            {
-                _viewModel.AddElectrode(eleName);
-            };
+            BrainAreaView.SelectElectrode = SelectElectrode;
+            _viewModel.UpdateElectrodeSelection();
+        }
+
+        private void SelectElectrode(string eleName)
+        {
+            _viewModel?.AddElectrode(eleName);
         }
 
         private void UpdateElectrode(List<string> electrodes)
         {
+            TemplateBrainAreaView.UpdateElectrode(electrodes);
             BrainAreaView.UpdateElectrode(electrodes);
         }
     }

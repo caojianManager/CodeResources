@@ -56,17 +56,13 @@ namespace EEGTool.ViewModels.Template
                     return;
                 }
 
-                if (_template != null)
-                {
-                    _template.PropertyChanged -= Template_PropertyChanged;
-                }
-
-                if (SetProperty(ref _template, newTemplate))
-                {
-                    newTemplate.PropertyChanged += Template_PropertyChanged;
-                    ConfigureElectrodeChannelUpdates();
-                    RefreshChannelConflicts();
-                }
+                _template.PropertyChanged -= Template_PropertyChanged;
+                _template = newTemplate;
+                OnPropertyChanged();
+                newTemplate.PropertyChanged += Template_PropertyChanged;
+                ConfigureElectrodeChannelUpdates();
+                RefreshChannelConflicts();
+                UpdateElectrodeSelection();
             }
         }
 
@@ -76,6 +72,20 @@ namespace EEGTool.ViewModels.Template
         {
             get => _templates;
             set => SetProperty(ref _templates, value);
+        }
+
+        private TemplateInfoModel? _selectedTemplate;
+
+        public TemplateInfoModel? SelectedTemplate
+        {
+            get => _selectedTemplate;
+            set
+            {
+                if (SetProperty(ref _selectedTemplate, value) && value != null)
+                {
+                    Template = value;
+                }
+            }
         }
 
         public bool IsCollectionDurationError
@@ -133,6 +143,8 @@ namespace EEGTool.ViewModels.Template
                     EleDirectory = new ObservableCollection<Electrode>(item.EleDirectory)
                 });
             }
+
+            SelectedTemplate = Templates.FirstOrDefault();
 
         }
 
@@ -205,6 +217,7 @@ namespace EEGTool.ViewModels.Template
             Template.EleDirectory.Add(newEle);
             Template.IsUpdateTemplate = true;
             RefreshChannelConflicts();
+            UpdateElectrodeSelection();
         }
 
         private void DeleteElectrode(object obj)
@@ -235,6 +248,7 @@ namespace EEGTool.ViewModels.Template
 
         private void CreateTemplate()
         {
+            SelectedTemplate = null;
             Template = new TemplateInfoModel
             {
                 Time = 120
@@ -244,6 +258,11 @@ namespace EEGTool.ViewModels.Template
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = true;
+        }
+
+        public void UpdateElectrodeSelection()
+        {
+            UpdateElectrodeAction?.Invoke(Template.EleDirectory.Select(e => e.Name).ToList());
         }
 
         private void ConfigureElectrodeChannelUpdates()

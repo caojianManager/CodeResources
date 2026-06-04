@@ -325,7 +325,7 @@
                             </Grid>
                         </Grid>
                         <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                 <Setter TargetName="STItemGrid" Property="Background" >
                                     <Setter.Value>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -336,12 +336,12 @@
                                     </Setter.Value>
                                 </Setter>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsSelected}" Value="False">
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False">
                                 <Setter TargetName="STItemGrid" Property="Background" Value="Transparent"/>
                             </DataTrigger>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsSelected}" Value="False"/>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False"/>
                                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
                                 </MultiDataTrigger.Conditions>
                                 <Setter TargetName="STItemGrid" Property="Background" Value="LightGray"/>
@@ -381,12 +381,117 @@
                   HorizontalAlignment="Right"></Grid>
         </Grid>
 
-        <Grid Grid.Column="1" Background="Transparent">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="17*"/>
-                <RowDefinition Height="7*"/>
-            </Grid.RowDefinitions>
+        <Grid Grid.Column="1" Background="WhiteSmoke">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="250"/>
+            </Grid.ColumnDefinitions>
+            <Grid Width="500" Height="500">
+                <br:BrainAreaView x:Name="TemplateBrainAreaView"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+            </Grid>
+
+            <Grid Grid.Column="1">
+                <Grid HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Margin="10,15,10,100">
+
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                Margin="0,10,0,0">
+                        <TextBlock Text="电极" FontSize="14" Foreground="Gray"/>
+                        <TextBlock Text="通道" Margin="128,0,0,0" FontSize="14" Foreground="Gray"/>
+                    </StackPanel>
+                    <Grid Height="1" HorizontalAlignment="Stretch"
+                          Background="LightGray"
+                          VerticalAlignment="Top"
+                          Margin="0,35,0,0"/>
+
+                    <ListBox ItemsSource="{Binding Template.EleDirectory}" Margin="0,35,0,150"
+                             BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             Background="Transparent"
+                             ScrollViewer.CanContentScroll="False"
+                             VirtualizingStackPanel.IsVirtualizing="False"
+                             SnapsToDevicePixels="True"
+                             UseLayoutRounding="True"
+                             Cursor="">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="RootBorder"
+                                            Margin="0"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                                <!-- ContentPresenter 别忘了 ContentSource -->
+                                                <ContentPresenter
+                                        ContentSource="Content"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="35"
+                                      Margin="0"
+                                      SnapsToDevicePixels="True"
+                                      UseLayoutRounding="True">
+                                    <Grid Margin="0" Cursor="">
+                                        <Border BorderThickness="0,0,0,1"
+                                        BorderBrush="LightGray"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding Name}" 
+                                                       FontSize="14" Foreground="Gray"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <iconPacks:PackIconUnicons Grid.Column="1" Kind="ArrowCircleRight" 
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="Gray"
+                                                                       Width="20" Height="20"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Channel}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                   FontSize="14" Foreground="Gray"/>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+                
+
+            </Grid>
         </Grid>
+
 
         <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsShowCreateTemplateWindow,Converter={StaticResource BooleanToVisibilityConverter}}">
          
