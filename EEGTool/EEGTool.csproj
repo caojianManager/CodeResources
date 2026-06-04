@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="FrameWork\BLE\" />
+    <Folder Include="Models\Impedance\" />
   </ItemGroup>
 
 </Project>

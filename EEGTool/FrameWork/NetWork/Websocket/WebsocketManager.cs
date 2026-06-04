@@ -20,7 +20,7 @@ namespace FrameWork.NetWork.Websocket
         private EventUtil<WebsocketEventEnum> _eventUtil = new EventUtil<WebsocketEventEnum>();
         public EventUtil<WebsocketEventEnum> EventUtil = new EventUtil<WebsocketEventEnum>();
 
-        private Uri _serverUri = new Uri($"ws://{Config.Instance.HTTP_IP}:{Config.Instance.HTTP_PORT}/winapp/ws");
+        private Uri _serverUri = new Uri($"ws://192.168.0.1:{8808}/winapp/ws");
         private WebsocketClient? _client;
         private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(100);
         private IDisposable? _subscription;
@@ -39,7 +39,7 @@ namespace FrameWork.NetWork.Websocket
         {
             try
             {
-                _serverUri = new Uri($"ws://{Config.Instance.HTTP_IP}:{Config.Instance.HTTP_PORT}/winapp/ws?token={HttpParameter.Authorization}");
+                _serverUri = new Uri($"ws://ip地址:端口/winapp/ws?token={HttpParameter.Authorization}");
             }
             catch (Exception ex)
             {

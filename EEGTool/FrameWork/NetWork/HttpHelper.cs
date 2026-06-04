@@ -27,7 +27,7 @@ namespace FrameWork.NetWork
         private static Dictionary<string,int> RetryCount = new Dictionary<string, int>();
         // TODO:caojian 重试流程(目前业务不需要屏蔽)
         private static int RetryMaxCount = 0;                                            //重试最大次数
-        private static readonly bool _isUseProxy = Config.Instance.IsUseProxy;
+        private static readonly bool _isUseProxy = false;
         private static readonly IFlurlClient _defaultClient = new FlurlClient();         // 不走代理
 
         public static void Init(string ip,int port)
@@ -39,7 +39,7 @@ namespace FrameWork.NetWork
 
         private static readonly IFlurlClient _proxyClient = new FlurlClient(new HttpClient(new HttpClientHandler
         {
-            Proxy = new WebProxy(Config.Instance.ProxyAddress),
+            Proxy = new WebProxy("192.168.0.0.1"),
             UseProxy = true,
             ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true // 仅调试用
         }));
