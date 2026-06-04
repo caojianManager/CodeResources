@@ -302,7 +302,7 @@
                             BorderBrush="LightGray"></Border>
 
 
-                    <Grid Margin="15">
+                    <Grid Margin="15" Cursor="">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="35"/>
                             <RowDefinition Height="35"/>
