@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using BLETool;
+using EEGTool.Models.Template;
 using FrameWork.MVVM;
 using Framework.MVVM.Commands;
 
@@ -124,7 +125,23 @@ namespace EEGTool.ViewModels.Collection
             _ble.ConnectionChanged += OnConnectionChanged;
 
             CollectionCommand = new RelayCommand(_ => { });
+            LoadTemplateItems();
             SyncCurrentConnectedDeviceInfo();
+        }
+
+        private void LoadTemplateItems()
+        {
+            TemplateItems.Clear();
+            TemplateFileManager.GetInstance().ReadAllTemplates();
+
+            foreach (var template in TemplateFileManager.GetInstance().AllTemplates)
+            {
+                TemplateItems.Add(string.IsNullOrWhiteSpace(template.Name)
+                    ? template.TemplateId
+                    : template.Name);
+            }
+
+            SelectedTemplate = TemplateItems.FirstOrDefault();
         }
 
         private void OnConnectionChanged(object? sender, BleConnectionChangedEventArgs e)

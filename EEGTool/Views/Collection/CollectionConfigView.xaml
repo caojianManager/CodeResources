@@ -325,7 +325,6 @@
                                   SelectedItem="{Binding SelectedSampleRate}"
                                   Style="{StaticResource RoundCornerComboBoxStyle}" Cursor=""/>
 
-
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="采样模板:" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
 
                         <ComboBox Grid.Row="1" Grid.Column="1" Width="150" Height="25"
