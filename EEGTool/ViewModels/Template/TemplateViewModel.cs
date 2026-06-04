@@ -21,6 +21,8 @@ namespace EEGTool.ViewModels.Template
         private string _templateNameErrorMessage = string.Empty;
         private bool _isCollectionDurationError;
         private string _collectionDurationErrorMessage = string.Empty;
+        private bool _isElectrodeError;
+        private string _electrodeErrorMessage = string.Empty;
 
         public bool IsShowCreateTemplateWindow
         {
@@ -98,6 +100,18 @@ namespace EEGTool.ViewModels.Template
         {
             get => _collectionDurationErrorMessage;
             set => SetProperty(ref _collectionDurationErrorMessage, value);
+        }
+
+        public bool IsElectrodeError
+        {
+            get => _isElectrodeError;
+            set => SetProperty(ref _isElectrodeError, value);
+        }
+
+        public string ElectrodeErrorMessage
+        {
+            get => _electrodeErrorMessage;
+            set => SetProperty(ref _electrodeErrorMessage, value);
         }
 
         public ICommand? CreateTemplateCommand { get; set; }
@@ -193,13 +207,32 @@ namespace EEGTool.ViewModels.Template
                 return;
             }
 
+            if (!Template.EleDirectory.Any())
+            {
+                IsElectrodeError = true;
+                ElectrodeErrorMessage = "电极为空，不能保存";
+                return;
+            }
+
+            var templateId = TemplateFileManager.GetInstance().SaveTemplate(Template);
+            if (string.IsNullOrWhiteSpace(templateId))
+            {
+                return;
+            }
+
+            if (!Templates.Contains(Template))
+            {
+                Templates.Add(Template);
+            }
+
+            SelectedTemplate = Template;
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
+            IsElectrodeError = false;
+            ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = false;
-
-            TemplateFileManager.GetInstance().SaveTemplate(Template);
         }
 
         public void AddElectrode(string eleName)
@@ -216,6 +249,8 @@ namespace EEGTool.ViewModels.Template
             };
             Template.EleDirectory.Add(newEle);
             Template.IsUpdateTemplate = true;
+            IsElectrodeError = false;
+            ElectrodeErrorMessage = string.Empty;
             RefreshChannelConflicts();
             UpdateElectrodeSelection();
         }
@@ -242,6 +277,11 @@ namespace EEGTool.ViewModels.Template
             }
             var eleList = Template.EleDirectory.Select(e => e.Name).ToList();
             UpdateElectrodeAction?.Invoke(eleList);
+            if (Template.EleDirectory.Any())
+            {
+                IsElectrodeError = false;
+                ElectrodeErrorMessage = string.Empty;
+            }
             RefreshChannelConflicts();
             //刷新电极
         }
@@ -251,12 +291,14 @@ namespace EEGTool.ViewModels.Template
             SelectedTemplate = null;
             Template = new TemplateInfoModel
             {
-                Time = 120
+                Time = 0
             };
             IsTemplateNameError = false;
             TemplateNameErrorMessage = string.Empty;
             IsCollectionDurationError = false;
             CollectionDurationErrorMessage = string.Empty;
+            IsElectrodeError = false;
+            ElectrodeErrorMessage = string.Empty;
             IsShowCreateTemplateWindow = true;
         }
 

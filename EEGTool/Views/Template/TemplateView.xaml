@@ -771,6 +771,14 @@
                             </ListBox.ItemContainerStyle>
                         </ListBox>
 
+                        <TextBlock Margin="12,0,0,100"
+                                   Foreground="Red"
+                                   FontSize="12"
+                                   Text="{Binding ElectrodeErrorMessage}"
+                                   Visibility="{Binding IsElectrodeError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Bottom"/>
+
                         <Grid HorizontalAlignment="Stretch"
                               VerticalAlignment="Bottom"
                               Height="100">
