@@ -1,13 +1,16 @@
+using BLETool;
+using EEGTool.Models.Collection;
+using EEGTool.Models.Template;
+using Framework.Event;
+using Framework.MVVM.Commands;
+using FrameWork.Common;
+using FrameWork.Event;
+using FrameWork.MVVM;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BLETool;
-using EEGTool.Models.Template;
-using FrameWork.Common;
-using FrameWork.MVVM;
-using Framework.MVVM.Commands;
 
 namespace EEGTool.ViewModels.Collection
 {
@@ -130,7 +133,20 @@ namespace EEGTool.ViewModels.Collection
             _ble = BleToolKit.Shared;
             _ble.ConnectionChanged += OnConnectionChanged;
 
-            CollectionCommand = new RelayCommand(_ => { });
+            CollectionCommand = new RelayCommand(_ =>
+            {
+                var template = TemplateFileManager.GetInstance().AllTemplates
+                    .Find(o => o.Name.Equals(SelectedTemplate));
+
+                CollectionInfoManager.GetInstance().UpdateInfo(new CollectionInfo()
+                {
+                    IsCaptureVideo = IsVideoRecordYes,
+                    SampleRate = int.Parse(SelectedSampleRate.Replace("Hz","")),
+                    Template = template ?? new TemplateModel()
+                });
+
+                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
+            });
             LoadTemplateItems();
             LoadCollectionPreferences();
             _isLoadingPreferences = false;
