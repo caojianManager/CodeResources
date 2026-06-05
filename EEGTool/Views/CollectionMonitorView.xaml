@@ -57,7 +57,14 @@
 
                     </StackPanel>
                 </Grid>
+
+
+                <Grid Grid.Row="1" x:Name="Monitor"
+                      Background="Red">
+
                 </Grid>
+            </Grid>
+
             </Grid>
        
     </DataTemplate>

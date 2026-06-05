@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using EEGTool.Models.Template;
 
@@ -62,6 +63,16 @@ namespace EEGTool.ViewModels
         {
             BackHomeCommand = new RelayCommand((o) =>
             {
+                var result = MessageBox.Show(
+                    $"确定要结束采集吗？",
+                    "结束采集",
+                    MessageBoxButton.OKCancel,
+                    MessageBoxImage.Warning);
+                if (result != MessageBoxResult.OK)
+                {
+                    return;
+                }
+
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
         }
