@@ -55,6 +55,8 @@
   <ItemGroup>
     <Content Remove="Resources\images\brain_area.png" />
     <Content Remove="Resources\images\collection.png" />
+    <Content Remove="Resources\images\eeg_auto_off.png" />
+    <Content Remove="Resources\images\eeg_auto_on.png" />
   </ItemGroup>
 
   <!-- 配置文件 -->

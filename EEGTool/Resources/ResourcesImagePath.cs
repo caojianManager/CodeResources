@@ -15,5 +15,8 @@ namespace Resources
         public static ImageSource PLAYBACK = Load("/Resources/images/playback.png");
         public static ImageSource TEMPLATE = Load("/Resources/images/template.png");
         public static ImageSource BRAIN_AREA = Load("/Resources/images/brain_area.png");
+
+        public static ImageSource EEG_AUTO_ON = Load("/Resources/images/eeg_auto_on.png");
+        public static ImageSource EEG_AUTO_OFF = Load("/Resources/images/eeg_auto_off.png");
     }
 }
