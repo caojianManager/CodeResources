@@ -310,178 +310,77 @@
                 Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition
-                        Width="1303*" />
+                        Width="200" />
                     <ColumnDefinition
-                        Width="616*" />
+                        Width="5*" />
                 </Grid.ColumnDefinitions>
 
-                <ContentControl
-                    Margin="108,0,20,20"
-                    Content="{Binding EegPlot, Mode=OneTime}"
-                    Grid.ColumnSpan="2" />
-                <Grid
-                    Width="126"
-                    HorizontalAlignment="Left"
-                    Panel.ZIndex="100">
-                    <ListBox
-                        ItemsSource="{Binding ChannelHeaders}"
-                        ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                        Margin="0,0,0,67"
-                        BorderThickness="0"
-                        VerticalAlignment="Stretch"
-                        Focusable="False"
-                        HorizontalAlignment="Stretch"
-                        Background="Transparent">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->
-                                <UniformGrid
-                                    Columns="1" />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
+                <Grid>
+                    <Canvas Width="110" ClipToBounds="True" Margin="0,10">
+                        <ItemsControl ItemsSource="{Binding WaveHeaderItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style>
+                                    <Setter Property="Canvas.Top" Value="{Binding ItemOffsetY}" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="25" Width="110" Opacity="{Binding OpacityValue}">
+                                        <Grid Height="25" Width="110" Canvas.Top="{Binding ItemOffsetY}">
+                                            <Button Margin="0"
+                                             Width="110"
+                                             Height="25"
+                                             Padding="0"
+                                             Background="Transparent"
+                                             BorderBrush="Transparent"
+                                             CommandParameter="{Binding}"
+                                             Command="{Binding DataContext.ClickWaveHeaderCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Grid Width="42" Height="23">
+                                                        <Border CornerRadius="4" Background="{Binding ImpedanceColor}"/>
+                                                        <TextBlock Text="{Binding ImpedanceValue}"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center"
+                                                            Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid Width="65" Height="23"
+                                                   Margin="1,0,0,0">
+                                                        <Border BorderThickness="1" BorderBrush="#108EFF" CornerRadius="4"/>
+                                                        <TextBlock
+                                                         Margin="0,0,3,0"
+                                                         HorizontalAlignment="Right"
+                                                         FontSize="12"
+                                                         VerticalAlignment="Center"
+                                                         Text="{Binding ElectrodeName}" Foreground="Black"/>
+                                                        <TextBlock
+                                                         Margin="3,0,0,0"
+                                                         HorizontalAlignment="Left"
+                                                         FontSize="12"
+                                                         VerticalAlignment="Center"
+                                                         Text="{Binding Channel}" Foreground="Black"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Button>
 
-                        <ListBox.ItemContainerStyle>
-                            <Style
-                                TargetType="ListBoxItem">
-                                <Setter
-                                    Property="Background"
-                                    Value="Transparent" />
-                                <Setter
-                                    Property="BorderThickness"
-                                    Value="0" />
-                                <Setter
-                                    Property="Focusable"
-                                    Value="False" />
-                                <Setter
-                                    Property="HorizontalContentAlignment"
-                                    Value="Stretch" />
-                                <Setter
-                                    Property="VerticalContentAlignment"
-                                    Value="Stretch" />
-                                <Setter
-                                    Property="Padding"
-                                    Value="0" />
-                                <Setter
-                                    Property="Margin"
-                                    Value="0" />
-                                <Setter
-                                    Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate
-                                            TargetType="ListBoxItem">
-                                            <Border
-                                                Background="Transparent"
-                                                BorderThickness="0">
-                                                <ContentPresenter
-                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
+                                        </Grid>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid
-                                    Opacity="{Binding OpacityValue}">
-                                    <Rectangle
-                                        Height="1"
-                                        Stroke="#858585"
-                                        StrokeThickness="1"
-                                        StrokeDashArray="5,6"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Top"
-                                        Margin="0,-1.2,0,0"
-                                        SnapsToDevicePixels="True" />
-                                    <Button
-                                        Width="116"
-                                        Height="25"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center"
-                                        Focusable="False"
-                                        CommandParameter="{Binding}"
-                                        Command="{Binding DataContext.ClickChannelHeaderCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                        <Button.Template>
-                                            <ControlTemplate
-                                                TargetType="Button">
-                                                <Border
-                                                    Background="{TemplateBinding Background}">
-                                                    <ContentPresenter
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center" />
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-
-                                        <StackPanel
-                                            Orientation="Horizontal"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center">
-                                            <Grid
-                                                Width="42"
-                                                Height="23">
-                                                <Border
-                                                    CornerRadius="3"
-                                                    Background="{Binding ImpedanceColor}" />
-                                                <TextBlock
-                                                    Text="{Binding ImpedanceValue}"
-                                                    Foreground="White"
-                                                    FontSize="11"
-                                                    FontWeight="SemiBold"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center" />
-                                            </Grid>
-
-                                            <Grid
-                                                Width="72"
-                                                Height="23"
-                                                Margin="1,0,0,0">
-                                                <Border
-                                                    BorderThickness="1"
-                                                    BorderBrush="#8DBEFF"
-                                                    CornerRadius="3"
-                                                    Background="#F9FCFF" />
-                                                <TextBlock
-                                                    Text="{Binding ChannelId}"
-                                                    Margin="3,0,0,0"
-                                                    Foreground="#3A4B63"
-                                                    FontSize="11"
-                                                    HorizontalAlignment="Left"
-                                                    VerticalAlignment="Center" />
-                                                <TextBlock
-                                                    Text="{Binding EleTag}"
-                                                    Margin="0,0,3,0"
-                                                    Foreground="#5E6A7A"
-                                                    FontSize="11"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Button>
-
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <Rectangle
-                        Height="1"
-                        Width="126"
-                        Margin="0,0,0,66.5"
-                        Stroke="#858585"
-                        StrokeThickness="1"
-                        StrokeDashArray="5,6"
-                        SnapsToDevicePixels="True"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Bottom" />
+                    </Canvas>
                 </Grid>
+
+                <ContentControl Grid.Column="1"
+           Margin="0"
+           HorizontalAlignment="Stretch"
+           VerticalAlignment="Stretch"
+           Content="{Binding EegPlot, Mode=OneTime}" />
             </Grid>
 
         </Grid>
