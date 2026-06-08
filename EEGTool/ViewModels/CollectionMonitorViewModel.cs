@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
 
 namespace EEGTool.ViewModels
@@ -78,6 +79,26 @@ namespace EEGTool.ViewModels
             });
         }
 
+        /// <summary>
+        /// 开始监测
+        /// </summary>
+        private void StartMonitor()
+        {
+            //1.获取采集配置信息
+            var cInfo = CollectionInfoManager.GetInstance().Info;
+
+
+        }
+
+
+        /// <summary>
+        /// 停止监测
+        /// </summary>
+        private void StopMonitor()
+        {
+
+        }
+
         private void ClickPlaybackBtn()
         {
 
@@ -95,7 +116,7 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
-     
+            StartMonitor();
         }
 
     }

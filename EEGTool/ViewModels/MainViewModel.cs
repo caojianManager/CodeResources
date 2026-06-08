@@ -70,10 +70,10 @@ namespace EEGTool.ViewModels
 
         private void ClickCollectionBtn()
         {
-            //EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionHomeViewModel));
+            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionHomeViewModel));
 
             //Todo:cajian-临时测试地方后面恢复
-            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
+            //EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
         }
 
         public void OnHide()

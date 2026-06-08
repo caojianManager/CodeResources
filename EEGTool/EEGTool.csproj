@@ -102,6 +102,7 @@
   <ItemGroup>
     <Folder Include="FrameWork\BLE\" />
     <Folder Include="Models\Impedance\" />
+    <Folder Include="ViewModels\BLE\" />
   </ItemGroup>
 
 </Project>
