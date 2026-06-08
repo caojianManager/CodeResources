@@ -153,11 +153,11 @@
             Margin="1">
             <Grid.RowDefinitions>
                 <RowDefinition
-                    Height="86" />
+                    Height="42" />
                 <RowDefinition
                     Height="*" />
             </Grid.RowDefinitions>
-            <Grid>
+            <Grid Background="WhiteSmoke">
                 <Border
                     BorderThickness="0,0,0,0"
                     BorderBrush="LightGray" />
