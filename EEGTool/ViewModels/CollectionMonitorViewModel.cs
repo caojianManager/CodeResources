@@ -12,6 +12,8 @@ using System.Windows;
 using System.Windows.Input;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
+using CommandManager = EEGTool.Models.BLE.CommandManager;
+using Logger = FrameWork.Log.Logger;
 
 namespace EEGTool.ViewModels
 {
@@ -87,6 +89,27 @@ namespace EEGTool.ViewModels
             //1.获取采集配置信息
             var cInfo = CollectionInfoManager.GetInstance().Info;
 
+            //2.配置采集指令-并发送给下位机(MCU);
+            var channelList = TemplateFileManager.GetInstance()
+                .GetCurrentChannelList(cInfo.Template)
+                .Where(channel => channel >= 1 && channel <= CommandManager.ChannelCount)
+                .Distinct()
+                .ToList();
+
+            if (channelList.Count == 0)
+            {
+                Logger.Info("[CollectionMonitorViewModel][StartMonitor]:当前模板没有有效通道，默认开启16通道采集");
+                channelList = Enumerable.Range(1, CommandManager.ChannelCount).ToList();
+            }
+            ushort channelMask = CommandManager.BuildChannelMask(channelList);
+            ushort sampleRate = cInfo.SampleRate > 0 ? (ushort)cInfo.SampleRate : (ushort)250;
+            ushort durationSeconds = cInfo.Template.Time > 0 ? (ushort)cInfo.Template.Time : (ushort)60;
+
+            byte[] command = CommandManager.BuildConfigureCollectionCommand(
+                channelMask,
+                sampleRate,
+                durationSeconds);
+            Logger.Info($"[CollectionMonitorViewModel][StartMonitor]:采集配置指令 {CommandManager.ToHexString(command)}");
 
         }
 
