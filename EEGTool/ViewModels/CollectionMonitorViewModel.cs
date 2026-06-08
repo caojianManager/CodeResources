@@ -34,6 +34,7 @@ namespace EEGTool.ViewModels
         }
 
         public ICommand? BackHomeCommand { get; set; }
+        public ICommand? StartRecordCommand { get; set; }
 
         private bool _isDeviceConnectTabSelected = true;
         public bool IsDeviceConnectTabSelected
