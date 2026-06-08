@@ -5,10 +5,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EEGTool.Views.Collection"
              xmlns:nu="clr-namespace:FrameWork.UserControls.NumericUpDown"
-             xmlns:rs="clr-namespace:Resources"
+             xmlns:vm="clr-namespace:EEGTool.ViewModels.Collection"
              xmlns:cv="clr-namespace:FrameWork.Converts"
              mc:Ignorable="d" 
              d:DesignHeight="1080" d:DesignWidth="1920">
+
+    <UserControl.DataContext>
+        <vm:EEGMonitorViewModel/>
+    </UserControl.DataContext>
+
     <UserControl.Resources>
         <cv:BoolToBrushConverter
             x:Key="IsEnableBrush"
@@ -16,10 +21,6 @@
             FalseBrush="#0D0D0D"></cv:BoolToBrushConverter>
         <cv:InverseBoolConverter
             x:Key="InverseBool" />
-        <cv:BoolToImageConverter
-            x:Key="EegAutoImage"
-            TrueImageSource="{x:Static rs:ResourcesImagePath.EEG_AUTO_ON}"
-            FalseImageSource="{x:Static rs:ResourcesImagePath.EEG_AUTO_OFF}" />
         <Style
             x:Key="ComboBoxStyle"
             TargetType="ComboBox">
@@ -160,195 +161,150 @@
                 <Border
                     BorderThickness="0,0,0,0"
                     BorderBrush="LightGray" />
-                <ComboBox
-                    Width="140"
-                    Height="36"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Margin="26,12,0,0"
-                    ItemsSource="{Binding ChartItems}"
-                    SelectedItem="{Binding SelectedChartItem,Mode=TwoWay}"
-                    Style="{StaticResource ComboBoxStyle}">
-                    <!-- 下拉列表样式 -->
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel
-                                Orientation="Horizontal"
-                                Margin="3,0,0,0"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Left">
-                                <Image
-                                    Width="42"
-                                    Height="30"
-                                    Source="{Binding ImgSource}" />
-                                <TextBlock
-                                    Text="{Binding Text}"
-                                    Margin="5,0,0,0"
-                                    FontSize="18"
-                                    VerticalAlignment="Center" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
 
-                <StackPanel
-                    Visibility="Collapsed"
-                    Orientation="Horizontal"
-                    Margin="0 0 530 0"
-                    HorizontalAlignment="Right">
-
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Margin="0,0,15,0">
                     <StackPanel
-                        Margin="10 0 ">
-
-                        <TextBox
-                            Margin="10 10 20 0"
-                            Width="70"
-                            Height="40"
-                            FontSize="18"
-                            FontFamily="Microsoft YaHei"
-                            Foreground="#333333"
-                            Background="White"
-                            BorderBrush="#D0D0D0"
-                            BorderThickness="1"
-                            IsReadOnly="False"
-                            VerticalContentAlignment="Center"
-                            HorizontalContentAlignment="Center"
-                            TextAlignment="Center"
-                            MaxLength="10"
-                            AcceptsReturn="False" />
-
-                        <Label
-                            VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Margin="0,0,15,0"
+                        Width="200"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                        <TextBlock
+                            FontSize="14"
+                            Margin="0,0,15,0"
                             HorizontalAlignment="Center"
-                            Height="40"
-                            FontSize="18"
-                            Content="时间常数">
-                        </Label>
-
-                    </StackPanel>
-
-                    <StackPanel>
-                        <ComboBox
-                            Margin="0 10 0 0"
-                            Width="135"
-                            Height="40"
-                            FontSize="18"
-                            SelectedIndex="0"
-                            SelectedItem="{Binding SelectedUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-
-
-                            <ComboBoxItem
-                                Content="不设置" />
-                            <ComboBoxItem
-                                Content="1uV/mm" />
-                            <ComboBoxItem
-                                Content="10uV/mm" />
-                            <ComboBoxItem
-                                Content="50uV/mm" />
-                            <ComboBoxItem
-                                Content="100uV/mm" />
-                            <ComboBoxItem
-                                Content="0.01mm/uV" />
-                            <ComboBoxItem
-                                Content="0.05mm/uV" />
-                            <ComboBoxItem
-                                Content="0.1mm/uV" />
-
-                        </ComboBox>
-
-                        <Label
                             VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                            Height="40"
-                            FontSize="18"
-                            Content="灵敏度（增益）">
-                        </Label>
-
-                    </StackPanel>
-
-
-
-
-
-                </StackPanel>
-
-
-
-                <StackPanel
-                    Orientation="Vertical"
-                    Margin="0,12,235,0"
-                    Width="100"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Top">
-                    <Grid
-                        Height="36">
+                            Text="窗口时间(秒)" />
                         <nu:BZNumericUpDown
                             Width="100"
-                            Height="35"
+                            Height="30"
                             MaxValue="15"
                             MinValue="1"
                             IsDecimal="False"
                             Value="{Binding WindowSec}"
                             Step="1" />
-                    </Grid>
-                    <TextBlock
-                        FontSize="12"
-                        Margin="0,5,0,0"
-                        HorizontalAlignment="Center"
-                        Text="窗口时间(秒)" />
-                </StackPanel>
+                    </StackPanel>
 
-                <StackPanel
-                    Orientation="Vertical"
-                    Margin="0,12,120,0"
-                    Width="100"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Top">
-                    <Grid
-                        Height="36">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,0,0"
+                        Width="260"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                        <TextBlock
+                            FontSize="14"
+                            Margin="0,5,15,0"
+                            HorizontalAlignment="Center"
+                            Text="垂直刻度uV/div"
+                            Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}" />
                         <nu:BZNumericUpDown
                             MaxValue="10000"
-                            Width="90"
-                            Height="35"
+                            Width="100"
+                            Height="30"
                             MinValue="1"
                             IsEnabled="{Binding IsAuto,Converter={StaticResource InverseBool}}"
                             IsDecimal="False"
                             Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}"
                             Value="{Binding VertScale}"
                             Step="10" />
-                    </Grid>
-                    <TextBlock
-                        FontSize="12"
-                        Margin="0,5,0,0"
-                        HorizontalAlignment="Center"
-                        Text="垂直刻度uV/div"
-                        Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}" />
-                </StackPanel>
 
-                <Button
-                    Width="100"
-                    Height="69"
-                    Margin="0,5,10,0"
-                    HorizontalAlignment="Right"
-                    BorderThickness="0"
-                    Padding="0"
-                    Background="Transparent"
-                    VerticalAlignment="Top"
-                    Command="{Binding EegAutoClickCommand}">
-                    <Grid>
-                        <Image
-                            Width="80"
-                            Height="59"
-                            Source="{Binding IsAuto,Converter={StaticResource EegAutoImage}}" />
+                    </StackPanel>
+
+
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
                         <TextBlock
                             Text="波形自适应"
                             Foreground="Black"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Bottom"
-                            Margin="0,0,0,5"
-                            FontSize="12" />
-                    </Grid>
-                </Button>
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0"
+                            FontSize="14" />
+                        <Button
+                            Width="50"
+                            Height="25"
+                            Padding="0"
+                            BorderThickness="0"
+                            Background="Transparent"
+                            Command="{Binding EegAutoClickCommand}">
+                            <Button.Template>
+                                <ControlTemplate
+                                    TargetType="Button">
+                                    <Grid
+                                        Width="50"
+                                        Height="25">
+                                        <Border
+                                            x:Name="SwitchTrack"
+                                            Background="#D6DCE5"
+                                            CornerRadius="12.5" />
+                                        <Border
+                                            x:Name="SwitchThumb"
+                                            Width="20"
+                                            Height="20"
+                                            Margin="3"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Background="White"
+                                            CornerRadius="20">
+                                            <TextBlock
+                                                x:Name="SwitchCheck"
+                                                Text="✓"
+                                                Foreground="#56A4F4"
+                                                FontSize="20"
+                                                FontWeight="Bold"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Visibility="Collapsed" />
+                                        </Border>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding IsAuto}"
+                                            Value="True">
+                                            <Setter
+                                                TargetName="SwitchTrack"
+                                                Property="Background"
+                                                Value="#56A4F4" />
+                                            <Setter
+                                                TargetName="SwitchThumb"
+                                                Property="HorizontalAlignment"
+                                                Value="Right" />
+                                            <Setter
+                                                TargetName="SwitchCheck"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                        </DataTrigger>
+                                        <Trigger
+                                            Property="IsMouseOver"
+                                            Value="True">
+                                            <Setter
+                                                TargetName="SwitchTrack"
+                                                Property="Opacity"
+                                                Value="0.9" />
+                                        </Trigger>
+                                        <Trigger
+                                            Property="IsPressed"
+                                            Value="True">
+                                            <Setter
+                                                TargetName="SwitchThumb"
+                                                Property="Opacity"
+                                                Value="0.85" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
+
+
             </Grid>
             <Grid
                 Grid.Row="1">
