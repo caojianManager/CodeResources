@@ -56,6 +56,13 @@
                              Width="1" Background="LightGray"
                              Margin="15,5"></Grid>
 
+                        <Button Style="{StaticResource ToolBarIconButtonStyle}"
+                                Margin="8,0,0,3"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Bottom"
+                                Command="{Binding BackHomeCommand}">
+                            <iconPacks:PackIconIonicons Kind="PlayCircleMD" Width="20" Height="20"/>
+                        </Button>
                     </StackPanel>
                 </Grid>
 
