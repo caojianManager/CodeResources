@@ -5,6 +5,7 @@ using FrameWork.Event;
 using FrameWork.MVVM;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -303,6 +304,16 @@ namespace EEGTool.ViewModels
             if (result.Response != null)
             {
                 Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到命令响应 {result.Response.CommandType}, Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
+                if (result.Response.CommandType == BleCommandType.ConfigureCollectionResponse)
+                {
+                    if (!result.Response.IsSuccess)
+                    {
+                        Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:配置采集失败 Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
+                        return;
+                    }
+
+                    _ = ReceivedConfigCollection();
+                }
             }
 
             if (result.Battery != null)
@@ -315,7 +326,16 @@ namespace EEGTool.ViewModels
                 Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到数据帧 {result.DataFrame.CommandType}, Channels={result.DataFrame.ChannelCount}, Samples={result.DataFrame.SampleCount}");
             }
 
-          
+        }
+
+        private async Task ReceivedConfigCollection()
+        {
+            //收到配置采集成功的回复
+            //1.开始采集指令-并发送给下位机(MCU);
+            byte[] command = CommandManager.BuildStartCollectionCommand();
+            Logger.Info($"[CollectionMonitorViewModel][ReceivedConfigCollection]:开始采集指令 {CommandManager.ToHexString(command)}");
+            await WriteDataToBLE(command);
+
         }
 
     }
