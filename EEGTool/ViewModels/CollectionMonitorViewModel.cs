@@ -304,16 +304,7 @@ namespace EEGTool.ViewModels
             if (result.Response != null)
             {
                 Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到命令响应 {result.Response.CommandType}, Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
-                if (result.Response.CommandType == BleCommandType.ConfigureCollectionResponse)
-                {
-                    if (!result.Response.IsSuccess)
-                    {
-                        Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:配置采集失败 Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
-                        return;
-                    }
-
-                    _ = ReceivedConfigCollection();
-                }
+                _ = HandleResponse(result.Response);
             }
 
             if (result.Battery != null)
@@ -324,14 +315,40 @@ namespace EEGTool.ViewModels
             if (result.DataFrame != null)
             {
                 Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到数据帧 {result.DataFrame.CommandType}, Channels={result.DataFrame.ChannelCount}, Samples={result.DataFrame.SampleCount}");
+                _ = ReceivedCollectionData(result.DataFrame);
             }
 
+        }
+
+        private async Task HandleResponse(CommandResponse response)
+        {
+            if (response.CommandType == BleCommandType.ConfigureCollectionResponse)
+            {
+                if (!response.IsSuccess)
+                {
+                    Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:配置采集失败 Status={response.StatusCode}, Detail={response.ErrorDetail}");
+                    return;
+                }
+                await ReceivedConfigCollection();
+                return;
+            }
+
+        }
+
+        /// <summary>
+        /// 接收采集数据
+        /// </summary>
+        /// <returns></returns>
+        private async Task ReceivedCollectionData(DataFrame dataFrame)
+        {
+            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:处理采集数据 Channels={dataFrame.ChannelCount}, Samples={dataFrame.SampleCount}, Battery={dataFrame.ElectricityQuantity}");
+            await Task.CompletedTask;
         }
 
         private async Task ReceivedConfigCollection()
         {
             //收到配置采集成功的回复
-            //1.开始采集指令-并发送给下位机(MCU);
+            //开始采集指令-并发送给下位机(MCU);
             byte[] command = CommandManager.BuildStartCollectionCommand();
             Logger.Info($"[CollectionMonitorViewModel][ReceivedConfigCollection]:开始采集指令 {CommandManager.ToHexString(command)}");
             await WriteDataToBLE(command);
