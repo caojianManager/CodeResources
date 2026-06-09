@@ -191,7 +191,7 @@
                     <StackPanel
                         Orientation="Horizontal"
                         Margin="0,0,0,0"
-                        Width="260"
+                        Width="235"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
                         <TextBlock
@@ -216,6 +216,7 @@
 
 
                     <StackPanel
+                        Background="Transparent"
                         Orientation="Horizontal"
                         Margin="0"
                         HorizontalAlignment="Right"
