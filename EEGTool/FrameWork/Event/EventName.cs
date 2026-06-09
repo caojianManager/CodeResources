@@ -6,5 +6,7 @@ namespace Framework.Event
         //根据Type切换页面
         SWITCH_PAGE_WITH_TYPE =1,
 
+        RECEVIED_COLLECTION_DATA = 2,
+
     }
 }
