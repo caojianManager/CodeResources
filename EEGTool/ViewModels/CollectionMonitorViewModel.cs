@@ -42,6 +42,7 @@ namespace EEGTool.ViewModels
         private readonly Guid TargetServiceUuid = Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
         private BleGattCharacteristicInfo _writeCharacteristic, _notifyCharacteristic;
         private readonly BleCommandStreamParser _commandStreamParser = new();
+        private bool _isNotifySubscribed;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -99,6 +100,8 @@ namespace EEGTool.ViewModels
         /// <param name="e"></param>
         private void DataReceived(object? sender, BleDataReceivedEventArgs e)
         {
+            Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到原始数据 {CommandManager.ToHexString(e.Data)}");
+
             var results = _commandStreamParser.Push(e.Data);
             foreach (var result in results)
             {
@@ -109,7 +112,7 @@ namespace EEGTool.ViewModels
         /// <summary>
         /// 开始监测
         /// </summary>
-        private void StartMonitor()
+        private async Task StartMonitor()
         {
             //1.获取采集配置信息
             var cInfo = CollectionInfoManager.GetInstance().Info;
@@ -135,7 +138,7 @@ namespace EEGTool.ViewModels
                 sampleRate,
                 durationSeconds);
             Logger.Info($"[CollectionMonitorViewModel][StartMonitor]:采集配置指令 {CommandManager.ToHexString(command)}");
-            _=WriteDataToBLE(command);
+            await WriteDataToBLE(command);
         }
 
 
@@ -164,20 +167,45 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
-            GetGattProfile();
-            StartMonitor();
+            _ = OnShowAsync();
         }
 
-        private async Task GetGattProfile()
+        private async Task OnShowAsync()
         {
-            if (_ble == null ||(_writeCharacteristic != null && _notifyCharacteristic != null))
-                return;
+            try
+            {
+                if (!await GetGattProfile())
+                {
+                    return;
+                }
+
+                await StartMonitor();
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][OnShowAsync]:启动采集监测失败 {ex.Message}");
+            }
+        }
+
+        private async Task<bool> GetGattProfile()
+        {
+            if (_ble == null)
+            {
+                Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:蓝牙管理器为空~");
+                return false;
+            }
+
+            if (_writeCharacteristic != null && _notifyCharacteristic != null && _isNotifySubscribed)
+            {
+                return true;
+            }
+
             var gatt = await _ble.GetGattProfileAsync();
             var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
             if (targetService == null)
             {
-                // 没找到目标服务
-                return;
+                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:没有找到目标服务 {TargetServiceUuid}");
+                return false;
             }
             
             var characteristics = targetService.Characteristics;
@@ -188,23 +216,31 @@ namespace EEGTool.ViewModels
             if (_writeCharacteristic == null)
             {
                 Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到写入数据特征~");
-                return;
+                return false;
             }
 
             if (_notifyCharacteristic == null)
             {
                 Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到通知特征~");
-                return;
+                return false;
             }
 
-            _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
+            await _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
+            _isNotifySubscribed = true;
+            Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
+            return true;
         }
 
         private async Task WriteDataToBLE(byte[] data)
         {
-            if(_ble == null || _writeCharacteristic == null)
+            if (_ble == null || _writeCharacteristic == null)
+            {
+                Logger.Debug("[CollectionMonitorViewModel][WriteDataToBLE]:蓝牙或写入特征为空，发送失败~");
                 return;
+            }
+
             await _ble.WriteAsync(_writeCharacteristic.ServiceUuid, _writeCharacteristic.Uuid, data);
+            Logger.Info($"[CollectionMonitorViewModel][WriteDataToBLE]:发送成功 {CommandManager.ToHexString(data)}");
         }
 
         private void HandleCommandResult(CommandParseResult result)
