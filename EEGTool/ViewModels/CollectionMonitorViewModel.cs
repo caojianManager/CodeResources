@@ -433,10 +433,9 @@ namespace EEGTool.ViewModels
                 _latestProcessingResult = _dataProcessor.Process();
                 result = _latestProcessingResult;
                 bufferCount = _dataBuffer.Count;
-
-                EventUtilManager.EventUitl.OnEvent<DataProcessingResult>(EventName.RECEVIED_COLLECTION_DATA,_latestProcessingResult);
             }
 
+            EventUtilManager.EventUitl.OnEvent<DataProcessingResult>(EventName.RECEVIED_COLLECTION_DATA, result);
             Logger.Debug($"[CollectionMonitorViewModel][OnMonitorTimerTick]:定时获取数据完成 Tick={tick.TickIndex}, Drift={tick.Drift.TotalMilliseconds:F3}ms, BufferCount={bufferCount}, ReferenceChannel={result.ReferenceChannel}");
         }
 

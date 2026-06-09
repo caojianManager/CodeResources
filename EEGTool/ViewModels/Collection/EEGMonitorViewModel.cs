@@ -1,21 +1,35 @@
-﻿using Framework.Event;
+using EEGTool.Models.Collection;
+using Framework.Event;
 using Framework.MVVM.Commands;
+using FrameWork.Common;
 using FrameWork.Event;
 using FrameWork.MVVM;
 using ScottPlot;
+using ScottPlot.DataSources;
+using ScottPlot.Plottables;
 using ScottPlot.WPF;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace EEGTool.ViewModels.Collection
 {
     public class EEGMonitorViewModel : BindableBase
     {
+        private const double ChannelHeight = 100;
+        private const double ChannelCenterOffset = 50;
+        private readonly object _onDataLock = new();
+        private readonly Dictionary<int, SignalXY> _signalPlotsCaches = new();
+        private readonly Dictionary<int, int> _autoValues = new();
+        private float[][] _currentFrameData = Array.Empty<float[]>();
+        private long _latestWindowUpdateVersion;
+        private int _sampleRate = 250;
+
         public WpfPlot EegPlot { get; } = new();
+        public ObservableCollection<WaveHeaderItem> WaveHeaderItems { get; } = new();
 
         private bool _isAuto = false;
         public bool IsAuto
@@ -24,7 +38,22 @@ namespace EEGTool.ViewModels.Collection
             set => SetProperty(ref _isAuto, value);
         }
 
+        private int _windowSec = 5;
+        public int WindowSec
+        {
+            get => _windowSec;
+            set => SetProperty(ref _windowSec, Math.Max(1, value));
+        }
+
+        private int _vertScale = 100;
+        public int VertScale
+        {
+            get => _vertScale;
+            set => SetProperty(ref _vertScale, Math.Max(1, value));
+        }
+
         public ICommand? EegAutoClickCommand { get; set; }
+        public ICommand? ClickWaveHeaderCommand { get; set; }
 
         public EEGMonitorViewModel()
         {
@@ -38,19 +67,212 @@ namespace EEGTool.ViewModels.Collection
             {
                 IsAuto = !IsAuto;
             });
+            ClickWaveHeaderCommand = new RelayCommand((o) =>
+            {
+                if (o is WaveHeaderItem item)
+                {
+                    item.IsSelected = !item.IsSelected;
+                }
+            });
 
             EventUtilManager.EventUitl.AddEvent<DataProcessingResult>(EventName.RECEVIED_COLLECTION_DATA,
-                (o) => { ReceivedCollectionData(o);});
+                (o) => { ReceivedCollectionData(o); });
         }
 
         private void ReceivedCollectionData(DataProcessingResult result)
         {
+            if (result == null)
+            {
+                return;
+            }
 
+            float[][] dataCopy;
+            long updateVersion;
+
+            lock (_onDataLock)
+            {
+                updateVersion = ++_latestWindowUpdateVersion;
+                dataCopy = CopyData(result.DisplayWindowByChannel);
+                if (dataCopy.Length == 0)
+                {
+                    dataCopy = CopyData(result.FilteredByChannel);
+                }
+
+                _currentFrameData = dataCopy;
+                _sampleRate = Math.Max(1, CollectionInfoManager.GetInstance().Info.SampleRate);
+            }
+
+            var renderData = BuildPlotData(dataCopy);
+
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                if (updateVersion < _latestWindowUpdateVersion)
+                {
+                    return;
+                }
+
+                EnsureWaveHeaderItems(dataCopy.Length);
+                ApplyPlot(renderData);
+            });
         }
 
-        /// <summary>
-        /// 配置图表基础配置
-        /// </summary>
+        private static float[][] CopyData(float[][] data)
+        {
+            if (data == null)
+            {
+                return Array.Empty<float[]>();
+            }
+
+            return data
+                .Where(channelData => channelData != null && channelData.Length > 0)
+                .Select(channelData => channelData.ToArray())
+                .ToArray();
+        }
+
+        private List<(double[] xs, double[] ys, int ch)> BuildPlotData(float[][] data)
+        {
+            var result = new List<(double[], double[], int)>();
+            if (data == null || data.Length == 0)
+            {
+                return result;
+            }
+
+            int sampleRate = Math.Max(1, _sampleRate);
+            int maxCount = Math.Max(1, WindowSec * sampleRate);
+
+            for (int ch = 0; ch < data.Length; ch++)
+            {
+                float[] eegData = TakeLast(data[ch], maxCount);
+                if (eegData.Length == 0)
+                {
+                    continue;
+                }
+
+                double centerY = ch * ChannelHeight + ChannelCenterOffset;
+                double mean = eegData.Average();
+                double[] centered = eegData.Select(v => (double)v - mean).ToArray();
+                double[] xs = Enumerable.Range(0, centered.Length).Select(i => (double)i).ToArray();
+                double[] ys;
+
+                if (IsAuto)
+                {
+                    double maxAbs = centered.Max(v => Math.Abs(v));
+                    if (maxAbs < 1e-3)
+                    {
+                        maxAbs = 1;
+                    }
+
+                    double scale = (ChannelHeight / 2.0) / maxAbs;
+                    ys = centered.Select(v => centerY - v * scale).ToArray();
+                    _autoValues[ch] = (int)Math.Ceiling(maxAbs);
+                }
+                else
+                {
+                    double uvToY = (ChannelHeight / 2.0) / VertScale;
+                    ys = centered.Select(v => centerY - v * uvToY).ToArray();
+                }
+
+                result.Add((xs, ys, ch));
+            }
+
+            return result;
+        }
+
+        private static float[] TakeLast(float[] data, int count)
+        {
+            if (data == null || data.Length == 0 || count <= 0)
+            {
+                return Array.Empty<float>();
+            }
+
+            int actual = Math.Min(data.Length, count);
+            var result = new float[actual];
+            Array.Copy(data, data.Length - actual, result, 0, actual);
+            return result;
+        }
+
+        private void ApplyPlot(List<(double[] xs, double[] ys, int ch)> renderData)
+        {
+            var plot = EegPlot.Plot;
+
+            foreach (var (xs, ys, ch) in renderData)
+            {
+                if (xs.Length != ys.Length || xs.Length == 0)
+                {
+                    continue;
+                }
+
+                if (!_signalPlotsCaches.TryGetValue(ch, out SignalXY? signal))
+                {
+                    signal = plot.Add.SignalXY(xs, ys);
+                    signal.LineWidth = 1;
+                    signal.Color = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
+                    _signalPlotsCaches[ch] = signal;
+                }
+                else
+                {
+                    signal.Data = new SignalXYSourceGenericArray<double, double>(xs, ys);
+                }
+            }
+
+            RemoveStalePlots(renderData.Select(item => item.ch).ToHashSet());
+            ConfigSecondTicks();
+            UpdatePlotVertTextLabel();
+            EegPlot.Refresh();
+        }
+
+        private void RemoveStalePlots(HashSet<int> activeChannels)
+        {
+            var staleChannels = _signalPlotsCaches.Keys
+                .Where(ch => !activeChannels.Contains(ch))
+                .ToList();
+
+            foreach (int ch in staleChannels)
+            {
+                EegPlot.Plot.Remove(_signalPlotsCaches[ch]);
+                _signalPlotsCaches.Remove(ch);
+            }
+        }
+
+        private void ConfigSecondTicks()
+        {
+            int sampleRate = Math.Max(1, _sampleRate);
+            int xMax = Math.Max(sampleRate, WindowSec * sampleRate);
+            var plot = EegPlot.Plot;
+
+            plot.Axes.Rules.Clear();
+            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
+            plot.Axes.SetLimitsX(0, xMax);
+        }
+
+        private void UpdatePlotVertTextLabel()
+        {
+            int channelCount = Math.Max(1, WaveHeaderItems.Count);
+            double yMax = channelCount * ChannelHeight;
+            EegPlot.Plot.Axes.SetLimitsY(0, yMax);
+        }
+
+        private void EnsureWaveHeaderItems(int channelCount)
+        {
+            if (channelCount <= 0 || WaveHeaderItems.Count == channelCount)
+            {
+                return;
+            }
+
+            WaveHeaderItems.Clear();
+            for (int i = 0; i < channelCount; i++)
+            {
+                string channelName = i < Constants.ChannelList.Count ? Constants.ChannelList[i] : $"Ch{i + 1}";
+                WaveHeaderItems.Add(new WaveHeaderItem
+                {
+                    Channel = channelName,
+                    ElectrodeName = channelName,
+                    ImpedanceValue = "--",
+                    ItemOffsetY = i * ChannelHeight + 37
+                });
+            }
+        }
+
         private void ConfigPlot()
         {
             var plot = EegPlot.Plot;
@@ -61,10 +283,8 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Rules.Clear();
             plot.Axes.Rules.Add(rule);
             plot.Axes.AutoScale(false);
-            //隐藏小刻度
             plot.Grid.MajorLineWidth = 0;
 
-            //改成虚线
             plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
             plot.Axes.Right.FrameLineStyle.Width = 1;
             plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
@@ -78,7 +298,6 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Top.FrameLineStyle.Width = 1;
             plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
 
-            //隐藏左刻度-底下刻度
             plot.Axes.Left.TickLabelStyle.IsVisible = false;
             plot.Axes.Left.TickLabelStyle.FontSize = 0;
             plot.Axes.Left.MajorTickStyle.Length = 0;
@@ -86,9 +305,32 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
             plot.Axes.Bottom.MinorTickStyle.Length = 0;
 
-            //禁止显示FPS
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
+        }
+    }
+
+    public class WaveHeaderItem : BindableBase
+    {
+        private bool _isSelected = true;
+
+        public string Channel { get; set; } = string.Empty;
+        public string ElectrodeName { get; set; } = string.Empty;
+        public string ImpedanceValue { get; set; } = "--";
+        public string ImpedanceColor { get; set; } = "#56A4F4";
+        public double ItemOffsetY { get; set; }
+        public double OpacityValue => IsSelected ? 1.0 : 0.35;
+
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (SetProperty(ref _isSelected, value))
+                {
+                    OnPropertyChanged(nameof(OpacityValue));
+                }
+            }
         }
     }
 }
