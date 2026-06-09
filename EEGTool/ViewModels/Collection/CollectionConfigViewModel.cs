@@ -18,6 +18,7 @@ namespace EEGTool.ViewModels.Collection
     {
         private readonly BleManager _ble;
         private bool _isLoadingPreferences = true;
+        private bool _isSubscribedToBleEvents;
 
         public ObservableCollection<string> SampleRateItems { get; } = new()
         {
@@ -131,7 +132,7 @@ namespace EEGTool.ViewModels.Collection
         public CollectionConfigViewModel()
         {
             _ble = BleToolKit.Shared;
-            _ble.ConnectionChanged += OnConnectionChanged;
+            SubscribeBleEvents();
 
             CollectionCommand = new RelayCommand(_ =>
             {
@@ -203,9 +204,51 @@ namespace EEGTool.ViewModels.Collection
             RunOnUI(SyncCurrentConnectedDeviceInfo);
         }
 
+        private void OnDeviceDiscoveredOrUpdated(object? sender, BleDeviceInfo e)
+        {
+            RunOnUI(SyncCurrentConnectedDeviceInfo);
+        }
+
+        public void OnViewLoaded()
+        {
+            SubscribeBleEvents();
+            SyncCurrentConnectedDeviceInfo();
+        }
+
+        public void OnViewUnloaded()
+        {
+            UnsubscribeBleEvents();
+        }
+
+        private void SubscribeBleEvents()
+        {
+            if (_isSubscribedToBleEvents)
+            {
+                return;
+            }
+
+            _ble.DeviceDiscovered += OnDeviceDiscoveredOrUpdated;
+            _ble.DeviceUpdated += OnDeviceDiscoveredOrUpdated;
+            _ble.ConnectionChanged += OnConnectionChanged;
+            _isSubscribedToBleEvents = true;
+        }
+
+        private void UnsubscribeBleEvents()
+        {
+            if (!_isSubscribedToBleEvents)
+            {
+                return;
+            }
+
+            _ble.DeviceDiscovered -= OnDeviceDiscoveredOrUpdated;
+            _ble.DeviceUpdated -= OnDeviceDiscoveredOrUpdated;
+            _ble.ConnectionChanged -= OnConnectionChanged;
+            _isSubscribedToBleEvents = false;
+        }
+
         private void SyncCurrentConnectedDeviceInfo()
         {
-            var connectedDevice = _ble.GetDiscoveredDevices().FirstOrDefault(d => d.IsConnected);
+            var connectedDevice = _ble.GetCurrentConnectedDevice();
             if (connectedDevice == null)
             {
                 CurrentDeviceName = "--";

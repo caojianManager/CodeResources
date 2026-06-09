@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using EEGTool.ViewModels.Collection;
 
 namespace EEGTool.Views.Collection
 {
@@ -23,6 +24,24 @@ namespace EEGTool.Views.Collection
         public CollectionConfigView()
         {
             InitializeComponent();
+            Loaded += CollectionConfigView_Loaded;
+            Unloaded += CollectionConfigView_Unloaded;
+        }
+
+        private void CollectionConfigView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is CollectionConfigViewModel vm)
+            {
+                vm.OnViewLoaded();
+            }
+        }
+
+        private void CollectionConfigView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is CollectionConfigViewModel vm)
+            {
+                vm.OnViewUnloaded();
+            }
         }
     }
 }

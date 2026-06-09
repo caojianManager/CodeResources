@@ -313,6 +313,35 @@ public sealed class BleManager : IDisposable
         return devices.Select(device => device.Clone()).ToList();
     }
 
+    public BleDeviceInfo? GetCurrentConnectedDevice()
+    {
+        if (!string.IsNullOrWhiteSpace(_connectedDeviceId)
+            && _devicesById.TryGetValue(_connectedDeviceId, out BleDeviceInfo? currentDevice)
+            && currentDevice.IsConnected)
+        {
+            return currentDevice.Clone();
+        }
+
+        var discoveredConnectedDevice = _devicesById.Values.FirstOrDefault(device => device.IsConnected);
+        if (discoveredConnectedDevice != null)
+        {
+            return discoveredConnectedDevice.Clone();
+        }
+
+        if (_device?.ConnectionStatus == BluetoothConnectionStatus.Connected)
+        {
+            return new BleDeviceInfo
+            {
+                DeviceId = _device.DeviceId,
+                Name = _device.Name ?? string.Empty,
+                Address = FormatBluetoothAddress(_device.BluetoothAddress),
+                IsConnected = true
+            };
+        }
+
+        return null;
+    }
+
     public async Task<bool> PairAsync(string deviceId)
     {
         var deviceInfo = await DeviceInformation.CreateFromIdAsync(deviceId)
@@ -389,12 +418,27 @@ public sealed class BleManager : IDisposable
 
     public bool IsConnected => _device?.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
-    public async Task<IReadOnlyList<BleGattServiceInfo>> GetGattProfileAsync(CancellationToken cancellationToken = default)
+    public async Task EnsureConnectedAsync(CancellationToken cancellationToken = default)
     {
-        if (_device == null)
+        ThrowIfDisposed();
+
+        if (_device?.ConnectionStatus == BluetoothConnectionStatus.Connected)
+        {
+            return;
+        }
+
+        var connectedDevice = GetCurrentConnectedDevice();
+        if (connectedDevice == null || string.IsNullOrWhiteSpace(connectedDevice.DeviceId))
         {
             throw new BleException("设备未连接");
         }
+
+        await ConnectAsync(connectedDevice.DeviceId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<BleGattServiceInfo>> GetGattProfileAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureConnectedAsync(cancellationToken);
 
         var servicesResult = await _device.GetGattServicesAsync(BluetoothCacheMode.Uncached);
         if (servicesResult.Status != GattCommunicationStatus.Success)
@@ -444,6 +488,8 @@ public sealed class BleManager : IDisposable
 
     public async Task WriteAsync(Guid serviceUuid, Guid characteristicUuid, byte[] data)
     {
+        await EnsureConnectedAsync();
+
         var characteristic = await GetCharacteristicAsync(serviceUuid, characteristicUuid);
 
         GattWriteResult result;

@@ -183,7 +183,7 @@ namespace EEGTool.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Debug($"[CollectionMonitorViewModel][OnShowAsync]:启动采集监测失败 {ex.Message}");
+                Logger.Debug($"[CollectionMonitorViewModel][OnShowAsync]:启动采集监测失败 {ex}");
             }
         }
 
@@ -201,6 +201,8 @@ namespace EEGTool.ViewModels
             }
 
             var gatt = await _ble.GetGattProfileAsync();
+            LogGattProfile(gatt);
+
             var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
             if (targetService == null)
             {
@@ -209,9 +211,12 @@ namespace EEGTool.ViewModels
             }
             
             var characteristics = targetService.Characteristics;
+            var allCharacteristics = gatt.SelectMany(s => s.Characteristics).ToList();
 
-            _writeCharacteristic = characteristics.FirstOrDefault(c => c.SupportsWrite);
-            _notifyCharacteristic = characteristics.FirstOrDefault(c => c.SupportsNotify);
+            _writeCharacteristic = characteristics.FirstOrDefault(c => c.SupportsWrite)
+                ?? allCharacteristics.FirstOrDefault(c => c.SupportsWrite);
+            _notifyCharacteristic = characteristics.FirstOrDefault(c => c.SupportsNotify)
+                ?? allCharacteristics.FirstOrDefault(c => c.SupportsNotify);
 
             if (_writeCharacteristic == null)
             {
@@ -225,10 +230,33 @@ namespace EEGTool.ViewModels
                 return false;
             }
 
-            await _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
-            _isNotifySubscribed = true;
-            Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
+            try
+            {
+                await _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
+                _isNotifySubscribed = true;
+                Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _isNotifySubscribed = false;
+                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅无权限，继续尝试写入采集配置。Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}, Properties={_notifyCharacteristic.Properties}, Error={ex}");
+            }
+
+            Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Write特征 Service={_writeCharacteristic.ServiceUuid}, Characteristic={_writeCharacteristic.Uuid}, Properties={_writeCharacteristic.Properties}");
             return true;
+        }
+
+        private static void LogGattProfile(IReadOnlyList<BleGattServiceInfo> gatt)
+        {
+            Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:GATT服务数量 {gatt.Count}");
+            foreach (var service in gatt)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Service={service.Uuid}, Characteristics={service.Characteristics.Count}");
+                foreach (var characteristic in service.Characteristics)
+                {
+                    Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:  Characteristic={characteristic.Uuid}, Properties={characteristic.Properties}, SupportsWrite={characteristic.SupportsWrite}, SupportsNotify={characteristic.SupportsNotify}");
+                }
+            }
         }
 
         private async Task WriteDataToBLE(byte[] data)
@@ -239,8 +267,16 @@ namespace EEGTool.ViewModels
                 return;
             }
 
-            await _ble.WriteAsync(_writeCharacteristic.ServiceUuid, _writeCharacteristic.Uuid, data);
-            Logger.Info($"[CollectionMonitorViewModel][WriteDataToBLE]:发送成功 {CommandManager.ToHexString(data)}");
+            try
+            {
+                await _ble.WriteAsync(_writeCharacteristic.ServiceUuid, _writeCharacteristic.Uuid, data);
+                Logger.Info($"[CollectionMonitorViewModel][WriteDataToBLE]:发送成功 {CommandManager.ToHexString(data)}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][WriteDataToBLE]:写入无权限。Service={_writeCharacteristic.ServiceUuid}, Characteristic={_writeCharacteristic.Uuid}, Properties={_writeCharacteristic.Properties}, Data={CommandManager.ToHexString(data)}, Error={ex}");
+                throw;
+            }
         }
 
         private void HandleCommandResult(CommandParseResult result)
