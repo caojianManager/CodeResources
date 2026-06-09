@@ -96,7 +96,7 @@ namespace EEGTool.Models.BLE
                     return 0;
                 }
 
-                ushort length = (ushort)((_buffer[2] << 8) | _buffer[3]);
+                ushort length = (ushort)(_buffer[2] | (_buffer[3] << 8));
                 return length + 3;
             }
 

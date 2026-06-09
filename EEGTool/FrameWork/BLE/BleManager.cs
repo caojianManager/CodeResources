@@ -449,7 +449,7 @@ public sealed class BleManager : IDisposable
         GattWriteResult result;
         if (characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Write))
         {
-            result = await characteristic.WriteValueWithResultAsync(data.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+            result = await characteristic.WriteValueWithResultAsync(data.AsBuffer());
         }
         else if (characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.WriteWithoutResponse))
         {

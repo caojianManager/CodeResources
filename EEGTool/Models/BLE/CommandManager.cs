@@ -530,12 +530,12 @@ namespace EEGTool.Models.BLE
 
         private static byte[] WriteUInt16(ushort value)
         {
-            return new[] { (byte)(value >> 8), (byte)(value & 0xFF) };
+            return new[] { (byte)(value & 0xFF), (byte)(value >> 8) };
         }
 
         private static ushort ReadUInt16(IReadOnlyList<byte> data, int offset)
         {
-            return (ushort)((data[offset] << 8) | data[offset + 1]);
+            return (ushort)(data[offset] | (data[offset + 1] << 8));
         }
 
         private static int[][] ParseThreeByteSamples(byte[] rawData, int channelCount, int sampleCount)
