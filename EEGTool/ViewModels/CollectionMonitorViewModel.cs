@@ -170,7 +170,7 @@ namespace EEGTool.ViewModels
 
         private async Task GetGattProfile()
         {
-            if (_ble == null)
+            if (_ble == null ||(_writeCharacteristic != null && _notifyCharacteristic != null))
                 return;
             var gatt = await _ble.GetGattProfileAsync();
             var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
@@ -197,6 +197,7 @@ namespace EEGTool.ViewModels
                 return;
             }
 
+            _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
         }
 
         private async Task WriteDataToBLE(byte[] data)
