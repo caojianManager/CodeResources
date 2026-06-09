@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BLETool;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
 using CommandManager = EEGTool.Models.BLE.CommandManager;
@@ -79,6 +80,8 @@ namespace EEGTool.ViewModels
 
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
+
+            
         }
 
         /// <summary>
@@ -110,7 +113,6 @@ namespace EEGTool.ViewModels
                 sampleRate,
                 durationSeconds);
             Logger.Info($"[CollectionMonitorViewModel][StartMonitor]:采集配置指令 {CommandManager.ToHexString(command)}");
-
         }
 
 

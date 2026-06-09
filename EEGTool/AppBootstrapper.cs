@@ -1,4 +1,4 @@
-ï»¿using EEGTool.ViewModels;
+using EEGTool.ViewModels;
 using FrameWork.Common;
 using log4net;
 using log4net.Repository;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using EEGTool.Models.Template;
 
 namespace EEGTool
-{ //APP ç»Ÿä¸€å…¥å£
+{ //APP Í³Ò»Èë¿Ú
     public class AppBootstrapper : Singleton<AppBootstrapper>
     {
         public void OnStartUp()
@@ -23,10 +23,10 @@ namespace EEGTool
             Config.Instance.Init();
             SystemConfig.GetInstance().LoadConfig();
 
-            //åˆå§‹åŒ–æ¨¡æ¿æ–‡ä»¶
+            //³õÊ¼»¯Ä£°åÎÄ¼ş
             TemplateFileManager.GetInstance().Init();       
 
-            //log4net æ—¥å¿—å¼€å…³
+            //log4net ÈÕÖ¾¿ª¹Ø
 #if DEBUG
             ILoggerRepository repository = LogManager.GetRepository();
             repository.Threshold = log4net.Core.Level.All;
