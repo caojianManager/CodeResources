@@ -316,7 +316,7 @@ public sealed class BleManager : IDisposable
     public async Task<bool> PairAsync(string deviceId)
     {
         var deviceInfo = await DeviceInformation.CreateFromIdAsync(deviceId)
-            ?? throw new BleException($"鏃犳硶鎵惧埌璁惧: {deviceId}");
+            ?? throw new BleException($"无法找到设备: {deviceId}");
 
         if (deviceInfo.Pairing.IsPaired)
         {
@@ -326,7 +326,7 @@ public sealed class BleManager : IDisposable
 
         if (!deviceInfo.Pairing.CanPair)
         {
-            throw new BleException($"璁惧涓嶆敮鎸侀厤瀵? {deviceInfo.Name} ({deviceId})");
+            throw new BleException($"设备不支持配对: {deviceInfo.Name} ({deviceId})");
         }
 
         DevicePairingResult result = await TryPairWithCustomFlowAsync(deviceInfo);
@@ -336,13 +336,13 @@ public sealed class BleManager : IDisposable
             return true;
         }
 
-        throw new BleException($"閰嶅澶辫触锛岀姸鎬? {result.Status}");
+        throw new BleException($"配对失败，状态: {result.Status}");
     }
 
     public async Task<bool> UnpairAsync(string deviceId)
     {
         var deviceInfo = await DeviceInformation.CreateFromIdAsync(deviceId)
-            ?? throw new BleException($"鏃犳硶鎵惧埌璁惧: {deviceId}");
+            ?? throw new BleException($"无法找到设备: {deviceId}");
 
         if (!deviceInfo.Pairing.IsPaired)
         {
@@ -371,7 +371,7 @@ public sealed class BleManager : IDisposable
 
         _autoReconnect = true;
         _device = await BluetoothLEDevice.FromIdAsync(deviceId)
-            ?? throw new BleException($"鏃犳硶鎵惧埌璁惧: {deviceId}");
+            ?? throw new BleException($"无法找到设备: {deviceId}");
 
         _connectedDeviceId = deviceId;
         _device.ConnectionStatusChanged += OnConnectionStatusChanged;
@@ -393,13 +393,13 @@ public sealed class BleManager : IDisposable
     {
         if (_device == null)
         {
-            throw new BleException("璁惧鏈繛鎺?");
+            throw new BleException("设备未连接");
         }
 
         var servicesResult = await _device.GetGattServicesAsync(BluetoothCacheMode.Uncached);
         if (servicesResult.Status != GattCommunicationStatus.Success)
         {
-            throw new BleException($"璇诲彇 GATT 鏈嶅姟澶辫触: {servicesResult.Status}");
+            throw new BleException($"读取 GATT 服务失败: {servicesResult.Status}");
         }
 
         var services = new List<BleGattServiceInfo>();
@@ -457,12 +457,12 @@ public sealed class BleManager : IDisposable
         }
         else
         {
-            throw new BleException("璇ョ壒寰佷笉鏀寔鍐欏叆");
+            throw new BleException("该特征不支持写入");
         }
 
         if (result.Status != GattCommunicationStatus.Success)
         {
-            throw new BleException($"鍐欏叆澶辫触: {result.Status}");
+            throw new BleException($"写入失败: {result.Status}");
         }
     }
 
@@ -471,13 +471,13 @@ public sealed class BleManager : IDisposable
         var characteristic = await GetCharacteristicAsync(serviceUuid, characteristicUuid);
         if (!characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
         {
-            throw new BleException("璇ョ壒寰佷笉鏀寔璇诲彇");
+            throw new BleException("该特征不支持读取");
         }
 
         var result = await characteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
         if (result.Status != GattCommunicationStatus.Success)
         {
-            throw new BleException($"璇诲彇澶辫触: {result.Status}");
+            throw new BleException($"读取失败: {result.Status}");
         }
 
         return result.Value.ToArray();
@@ -504,13 +504,13 @@ public sealed class BleManager : IDisposable
         }
         else
         {
-            throw new BleException("璇ョ壒寰佷笉鏀寔 Notify/Indicate");
+            throw new BleException("该特征不支持 Notify/Indicate");
         }
 
         var status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(descriptorValue);
         if (status != GattCommunicationStatus.Success)
         {
-            throw new BleException($"璁㈤槄澶辫触: {status}");
+            throw new BleException($"订阅失败: {status}");
         }
 
         characteristic.ValueChanged += OnCharacteristicValueChanged;
@@ -559,7 +559,7 @@ public sealed class BleManager : IDisposable
     {
         if (string.IsNullOrWhiteSpace(_connectedDeviceId))
         {
-            throw new BleException("娌℃湁璁板綍涓婃杩炴帴鐨勮澶?ID");
+            throw new BleException("没有记录上次连接的设备 ID");
         }
 
         await ReconnectLoopAsync(_connectedDeviceId);
@@ -645,7 +645,7 @@ public sealed class BleManager : IDisposable
     {
         if (_device == null)
         {
-            throw new BleException("璁惧鏈繛鎺?");
+            throw new BleException("设备未连接");
         }
 
         for (int attempt = 0; attempt < retries; attempt++)
@@ -661,7 +661,7 @@ public sealed class BleManager : IDisposable
             await Task.Delay(300, cancellationToken);
         }
 
-        throw new BleException("杩炴帴澶辫触锛屾棤娉曡幏鍙?GATT 鏈嶅姟");
+        throw new BleException("连接失败，无法获取 GATT 服务");
     }
 
     private async Task UnsubscribeAllAsync()
@@ -751,7 +751,7 @@ public sealed class BleManager : IDisposable
             {
                 DeviceId = deviceId,
                 IsConnected = false,
-                Reason = "鑷姩閲嶈繛宸插仠姝?"
+                Reason = "自动重连已停止"
             });
         }
         finally
@@ -764,20 +764,20 @@ public sealed class BleManager : IDisposable
     {
         if (_device == null)
         {
-            throw new BleException("璁惧鏈繛鎺?");
+            throw new BleException("设备未连接");
         }
 
         var servicesResult = await _device.GetGattServicesForUuidAsync(serviceUuid, BluetoothCacheMode.Cached);
         if (servicesResult.Status != GattCommunicationStatus.Success || !servicesResult.Services.Any())
         {
-            throw new BleException($"鏈壘鍒版湇鍔? {serviceUuid}");
+            throw new BleException($"未找到服务: {serviceUuid}");
         }
 
         GattDeviceService service = servicesResult.Services.First();
         var charsResult = await service.GetCharacteristicsForUuidAsync(characteristicUuid, BluetoothCacheMode.Cached);
         if (charsResult.Status != GattCommunicationStatus.Success || !charsResult.Characteristics.Any())
         {
-            throw new BleException($"鏈壘鍒扮壒寰? {characteristicUuid}");
+            throw new BleException($"未找到特征: {characteristicUuid}");
         }
 
         return charsResult.Characteristics.First();
