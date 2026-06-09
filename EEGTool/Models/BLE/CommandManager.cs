@@ -392,7 +392,7 @@ namespace EEGTool.Models.BLE
 
         private static byte[] BuildPayloadCommand(BleCommandType commandType, byte[] payload)
         {
-            byte length = checked((byte)payload.Length);
+            byte length = checked((byte)(payload.Length + 2));
             return BuildCommand(commandType, length, payload, CalculateChecksum(new[] { length }.Concat(payload)));
         }
 

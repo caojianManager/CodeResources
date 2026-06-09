@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BLETool;
+using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
 using CommandManager = EEGTool.Models.BLE.CommandManager;
@@ -36,6 +37,11 @@ namespace EEGTool.ViewModels
             get => _isInit;
             set => SetProperty(ref _isInit, value);
         }
+
+        private BleManager _ble;
+        private readonly Guid TargetServiceUuid = Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
+        private BleGattCharacteristicInfo _writeCharacteristic, _notifyCharacteristic;
+        private readonly BleCommandStreamParser _commandStreamParser = new();
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -66,6 +72,8 @@ namespace EEGTool.ViewModels
 
         private void Config()
         {
+            _ble = BleToolKit.Shared;
+            _ble.DataReceived += DataReceived;
             BackHomeCommand = new RelayCommand((o) =>
             {
                 var result = MessageBox.Show(
@@ -82,6 +90,20 @@ namespace EEGTool.ViewModels
             });
 
             
+        }
+
+        /// <summary>
+        /// 蓝牙接收到数据
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DataReceived(object? sender, BleDataReceivedEventArgs e)
+        {
+            var results = _commandStreamParser.Push(e.Data);
+            foreach (var result in results)
+            {
+                HandleCommandResult(result);
+            }
         }
 
         /// <summary>
@@ -113,6 +135,7 @@ namespace EEGTool.ViewModels
                 sampleRate,
                 durationSeconds);
             Logger.Info($"[CollectionMonitorViewModel][StartMonitor]:采集配置指令 {CommandManager.ToHexString(command)}");
+            _=WriteDataToBLE(command);
         }
 
 
@@ -141,7 +164,72 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
+            GetGattProfile();
             StartMonitor();
+        }
+
+        private async Task GetGattProfile()
+        {
+            if (_ble == null)
+                return;
+            var gatt = await _ble.GetGattProfileAsync();
+            var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
+            if (targetService == null)
+            {
+                // 没找到目标服务
+                return;
+            }
+            
+            var characteristics = targetService.Characteristics;
+
+            _writeCharacteristic = characteristics.FirstOrDefault(c => c.SupportsWrite);
+            _notifyCharacteristic = characteristics.FirstOrDefault(c => c.SupportsNotify);
+
+            if (_writeCharacteristic == null)
+            {
+                Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到写入数据特征~");
+                return;
+            }
+
+            if (_notifyCharacteristic == null)
+            {
+                Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到通知特征~");
+                return;
+            }
+
+        }
+
+        private async Task WriteDataToBLE(byte[] data)
+        {
+            if(_ble == null || _writeCharacteristic == null)
+                return;
+            await _ble.WriteAsync(_writeCharacteristic.ServiceUuid, _writeCharacteristic.Uuid, data);
+        }
+
+        private void HandleCommandResult(CommandParseResult result)
+        {
+            if (!result.IsSuccess)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:解析失败 {result.Status} {result.Message}");
+                return;
+            }
+
+            if (result.Response != null)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到命令响应 {result.Response.CommandType}, Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
+                return;
+            }
+
+            if (result.Battery != null)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到电量 {result.Battery.ElectricityQuantity}");
+                return;
+            }
+
+            if (result.DataFrame != null)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到数据帧 {result.DataFrame.CommandType}, Channels={result.DataFrame.ChannelCount}, Samples={result.DataFrame.SampleCount}");
+            }
         }
 
     }
