@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BLETool;
+using EEGTool.Models;
 using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
@@ -44,6 +45,9 @@ namespace EEGTool.ViewModels
         private BleGattCharacteristicInfo _writeCharacteristic, _notifyCharacteristic;
         private readonly BleCommandStreamParser _commandStreamParser = new();
         private bool _isNotifySubscribed;
+        private MultiChannelRingBuffer? _dataBuffer;
+        private DataProcessor? _dataProcessor;
+        private DataProcessingResult? _latestProcessingResult;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -342,7 +346,114 @@ namespace EEGTool.ViewModels
         private async Task ReceivedCollectionData(DataFrame dataFrame)
         {
             Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:处理采集数据 Channels={dataFrame.ChannelCount}, Samples={dataFrame.SampleCount}, Battery={dataFrame.ElectricityQuantity}");
+            EnsureDataProcessor(dataFrame);
+
+            if (_dataBuffer == null || _dataProcessor == null)
+            {
+                Logger.Debug("[CollectionMonitorViewModel][ReceivedCollectionData]:数据处理器初始化失败");
+                return;
+            }
+
+            var samples = ConvertDataFrameSamples(dataFrame);
+            _dataBuffer.AddBlock(samples);
+            _latestProcessingResult = _dataProcessor.Process();
+
+            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:数据处理完成 BufferCount={_dataBuffer.Count}, ReferenceChannel={_latestProcessingResult.ReferenceChannel}");
             await Task.CompletedTask;
+        }
+
+        private void EnsureDataProcessor(DataFrame dataFrame)
+        {
+            int channelCount = dataFrame.ChannelCount > 0 ? dataFrame.ChannelCount : 16;
+            int sampleRate = CollectionInfoManager.GetInstance().Info.SampleRate > 0
+                ? CollectionInfoManager.GetInstance().Info.SampleRate
+                : 250;
+
+            if (_dataBuffer != null &&
+                _dataProcessor != null &&
+                _dataBuffer.ChannelCount == channelCount &&
+                _dataBuffer.SampleRate == sampleRate)
+            {
+                return;
+            }
+
+            _dataBuffer = new MultiChannelRingBuffer(channelCount, sampleRate);
+            _dataProcessor = new DataProcessor(
+                _dataBuffer,
+                new PassthroughSignalFilter(),
+                new ZeroFftProcessor(),
+                new DataProcessorSettings(channelCount, sampleRate));
+
+            Logger.Info($"[CollectionMonitorViewModel][EnsureDataProcessor]:初始化数据处理器 Channels={channelCount}, SampleRate={sampleRate}");
+        }
+
+        private static float[][] ConvertDataFrameSamples(DataFrame dataFrame)
+        {
+            int channelCount = dataFrame.Samples.Count;
+            int sampleCount = dataFrame.SampleCount;
+            var samples = new float[sampleCount][];
+
+            for (int sample = 0; sample < sampleCount; sample++)
+            {
+                samples[sample] = new float[channelCount];
+                for (int channel = 0; channel < channelCount; channel++)
+                {
+                    uint adcValue = (uint)dataFrame.Samples[channel][sample] & 0x00FFFFFF;
+                    samples[sample][channel] = CalculateAdcMicrovolts(adcValue);
+                }
+            }
+
+            return samples;
+        }
+
+        private static float CalculateAdcMicrovolts(uint value)
+        {
+            double referenceVoltage = FrameWork.Common.Config.Instance.ReferenceVoltage;
+            double gain = FrameWork.Common.Config.Instance.GainNum;
+            if (gain <= 0)
+            {
+                gain = 1;
+            }
+
+            double microvolts;
+            if ((value & 0x00800000) != 0)
+            {
+                microvolts = -1 * ((16777216 - (double)value) * referenceVoltage / 0x7FFFFF * 1000 / gain * 1000);
+            }
+            else
+            {
+                microvolts = (double)value * referenceVoltage / 0x7FFFFF * 1000 / gain * 1000;
+            }
+
+            return (float)Math.Round(microvolts, 6);
+        }
+
+        private sealed class PassthroughSignalFilter : ISignalFilter
+        {
+            public void BandPass(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type)
+            {
+            }
+
+            public void BandStop(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type)
+            {
+            }
+
+            public void RemoveEnvironmentalNoise(double[] data, int sampleRate, int noiseHz)
+            {
+            }
+        }
+
+        private sealed class ZeroFftProcessor : IFftProcessor
+        {
+            public float[] ComputeAmplitudeSpectrum(float[] timeData, int sampleRate)
+            {
+                if (timeData == null || timeData.Length == 0)
+                {
+                    return Array.Empty<float>();
+                }
+
+                return new float[(timeData.Length / 2) + 1];
+            }
         }
 
         private async Task ReceivedConfigCollection()

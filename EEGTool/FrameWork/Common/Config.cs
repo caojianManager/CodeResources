@@ -29,6 +29,8 @@ namespace FrameWork.Common
         public string CollectionSelectedSampleRate = "250Hz";
         public string CollectionSelectedTemplate = string.Empty;
         public bool CollectionIsVideoRecordYes = false;
+        public double ReferenceVoltage = 4.5;
+        public int GainNum = 24;
 
         public void Init()
         {
