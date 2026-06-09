@@ -111,7 +111,7 @@ namespace EEGTool.ViewModels.Collection
                     return;
                 }
 
-                EnsureWaveHeaderItems(dataCopy.Length);
+                //EnsureWaveHeaderItems(dataCopy.Length);
                 ApplyPlot(renderData);
             });
         }
@@ -282,7 +282,7 @@ namespace EEGTool.ViewModels.Collection
 
             plot.Axes.Rules.Clear();
             plot.Axes.Rules.Add(rule);
-            plot.Axes.AutoScale(false);
+            plot.Axes.AutoScale(true);
             plot.Grid.MajorLineWidth = 0;
 
             plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
