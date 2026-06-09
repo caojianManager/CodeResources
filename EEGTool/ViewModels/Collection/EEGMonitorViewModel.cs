@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Framework.Event;
+using FrameWork.Event;
 using FrameWork.MVVM;
 using Framework.MVVM.Commands;
 
@@ -31,6 +33,14 @@ namespace EEGTool.ViewModels.Collection
             {
                 IsAuto = !IsAuto;
             });
+
+            EventUtilManager.EventUitl.AddEvent<DataProcessingResult>(EventName.RECEVIED_COLLECTION_DATA,
+                (o) => { ReceviedCollectionData(o);});
+        }
+
+        private void ReceviedCollectionData(DataProcessingResult result)
+        {
+
         }
     }
 }
