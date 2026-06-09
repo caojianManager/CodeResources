@@ -303,19 +303,19 @@ namespace EEGTool.ViewModels
             if (result.Response != null)
             {
                 Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到命令响应 {result.Response.CommandType}, Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
-                return;
             }
 
             if (result.Battery != null)
             {
                 Logger.Info($"[CollectionMonitorViewModel][DataReceived]:收到电量 {result.Battery.ElectricityQuantity}");
-                return;
             }
 
             if (result.DataFrame != null)
             {
                 Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到数据帧 {result.DataFrame.CommandType}, Channels={result.DataFrame.ChannelCount}, Samples={result.DataFrame.SampleCount}");
             }
+
+          
         }
 
     }

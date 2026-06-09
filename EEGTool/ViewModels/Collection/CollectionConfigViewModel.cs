@@ -215,12 +215,11 @@ namespace EEGTool.ViewModels.Collection
                     Template = template ?? new TemplateModel()
                 };
 
-                if (!await TrySendCollectionConfigureCommandAsync(collectionInfo))
+                if (!await VerifyBleWriteAccessForCollectionAsync())
                 {
                     return;
                 }
 
-                collectionInfo.ConfigureCommandSent = true;
                 CollectionInfoManager.GetInstance().UpdateInfo(collectionInfo);
 
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
@@ -232,7 +231,7 @@ namespace EEGTool.ViewModels.Collection
             }
         }
 
-        private async Task<bool> TrySendCollectionConfigureCommandAsync(CollectionInfo collectionInfo)
+        private async Task<bool> VerifyBleWriteAccessForCollectionAsync()
         {
             if (_ble.GetCurrentConnectedDevice() == null)
             {
@@ -277,7 +276,7 @@ namespace EEGTool.ViewModels.Collection
                 return false;
             }
 
-            byte[] command = CollectionCommandBuilder.BuildConfigureCommand(collectionInfo);
+            byte[] command = EEGTool.Models.BLE.CommandManager.BuildQueryBatteryCommand();
 
             try
             {
