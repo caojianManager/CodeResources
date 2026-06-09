@@ -3,9 +3,9 @@ using Framework.Event;
 using Framework.MVVM.Commands;
 using FrameWork.Event;
 using FrameWork.MVVM;
+using FrameWork.Tools;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,6 +48,9 @@ namespace EEGTool.ViewModels
         private MultiChannelRingBuffer? _dataBuffer;
         private DataProcessor? _dataProcessor;
         private DataProcessingResult? _latestProcessingResult;
+        private readonly object _dataProcessingLock = new();
+        private HighPrecisionTimer? _monitorTimer;
+        private const int MonitorTimerIntervalMilliseconds = 40;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -139,7 +142,7 @@ namespace EEGTool.ViewModels
         /// </summary>
         private void StopMonitor()
         {
-
+            StopMonitorTimer();
         }
 
         private void ClickPlaybackBtn()
@@ -154,7 +157,7 @@ namespace EEGTool.ViewModels
 
         public void OnHide()
         {
-
+            StopMonitorTimer();
         }
 
         public void OnShow()
@@ -355,10 +358,12 @@ namespace EEGTool.ViewModels
             }
 
             var samples = ConvertDataFrameSamples(dataFrame);
-            _dataBuffer.AddBlock(samples);
-            _latestProcessingResult = _dataProcessor.Process();
+            lock (_dataProcessingLock)
+            {
+                _dataBuffer.AddBlock(samples);
+            }
 
-            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:数据处理完成 BufferCount={_dataBuffer.Count}, ReferenceChannel={_latestProcessingResult.ReferenceChannel}");
+            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:采集数据已写入缓冲 BufferCount={_dataBuffer.Count}");
             await Task.CompletedTask;
         }
 
@@ -385,6 +390,52 @@ namespace EEGTool.ViewModels
                 new DataProcessorSettings(channelCount, sampleRate));
 
             Logger.Info($"[CollectionMonitorViewModel][EnsureDataProcessor]:初始化数据处理器 Channels={channelCount}, SampleRate={sampleRate}");
+        }
+
+        private void StartMonitorTimer()
+        {
+            if (_monitorTimer?.IsRunning == true)
+            {
+                return;
+            }
+
+            _monitorTimer ??= new HighPrecisionTimer(
+                TimeSpan.FromMilliseconds(MonitorTimerIntervalMilliseconds),
+                OnMonitorTimerTick,
+                ex => Logger.Debug($"[CollectionMonitorViewModel][StartMonitorTimer]:监测定时器异常 {ex}"));
+            _monitorTimer.Start();
+
+            Logger.Info($"[CollectionMonitorViewModel][StartMonitorTimer]:启动监测定时器 Interval={MonitorTimerIntervalMilliseconds}ms");
+        }
+
+        private void StopMonitorTimer()
+        {
+            if (_monitorTimer == null)
+            {
+                return;
+            }
+
+            _monitorTimer.Stop();
+            Logger.Info("[CollectionMonitorViewModel][StopMonitorTimer]:停止监测定时器");
+        }
+
+        private void OnMonitorTimerTick(HighPrecisionTimerTick tick)
+        {
+            DataProcessingResult? result = null;
+            int bufferCount = 0;
+            lock (_dataProcessingLock)
+            {
+                if (_dataBuffer == null || _dataProcessor == null || _dataBuffer.Count == 0)
+                {
+                    return;
+                }
+
+                _latestProcessingResult = _dataProcessor.Process();
+                result = _latestProcessingResult;
+                bufferCount = _dataBuffer.Count;
+            }
+
+            Logger.Debug($"[CollectionMonitorViewModel][OnMonitorTimerTick]:定时获取数据完成 Tick={tick.TickIndex}, Drift={tick.Drift.TotalMilliseconds:F3}ms, BufferCount={bufferCount}, ReferenceChannel={result.ReferenceChannel}");
         }
 
         private static float[][] ConvertDataFrameSamples(DataFrame dataFrame)
@@ -463,7 +514,7 @@ namespace EEGTool.ViewModels
             byte[] command = CommandManager.BuildStartCollectionCommand();
             Logger.Info($"[CollectionMonitorViewModel][ReceivedConfigCollection]:开始采集指令 {CommandManager.ToHexString(command)}");
             await WriteDataToBLE(command);
-
+            StartMonitorTimer();
         }
 
     }
