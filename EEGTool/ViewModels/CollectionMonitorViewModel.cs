@@ -116,27 +116,14 @@ namespace EEGTool.ViewModels
         {
             //1.获取采集配置信息
             var cInfo = CollectionInfoManager.GetInstance().Info;
+            if (cInfo.ConfigureCommandSent)
+            {
+                Logger.Info("[CollectionMonitorViewModel][StartMonitor]:采集配置指令已在采集配置页发送，跳过重复发送");
+                return;
+            }
 
             //2.配置采集指令-并发送给下位机(MCU);
-            var channelList = TemplateFileManager.GetInstance()
-                .GetCurrentChannelList(cInfo.Template)
-                .Where(channel => channel >= 1 && channel <= CommandManager.ChannelCount)
-                .Distinct()
-                .ToList();
-
-            if (channelList.Count == 0)
-            {
-                Logger.Info("[CollectionMonitorViewModel][StartMonitor]:当前模板没有有效通道，默认开启16通道采集");
-                channelList = Enumerable.Range(1, CommandManager.ChannelCount).ToList();
-            }
-            ushort channelMask = CommandManager.BuildChannelMask(channelList);
-            ushort sampleRate = cInfo.SampleRate > 0 ? (ushort)cInfo.SampleRate : (ushort)250;
-            ushort durationSeconds = cInfo.Template.Time > 0 ? (ushort)cInfo.Template.Time : (ushort)60;
-
-            byte[] command = CommandManager.BuildConfigureCollectionCommand(
-                channelMask,
-                sampleRate,
-                durationSeconds);
+            byte[] command = CollectionCommandBuilder.BuildConfigureCommand(cInfo);
             Logger.Info($"[CollectionMonitorViewModel][StartMonitor]:采集配置指令 {CommandManager.ToHexString(command)}");
             await WriteDataToBLE(command);
         }
@@ -184,6 +171,14 @@ namespace EEGTool.ViewModels
             catch (Exception ex)
             {
                 Logger.Debug($"[CollectionMonitorViewModel][OnShowAsync]:启动采集监测失败 {ex}");
+                if (IsBleAccessDenied(ex))
+                {
+                    MessageBox.Show(
+                        "当前蓝牙设备已连接，但本软件没有读取或写入权限，可能被其他软件持有。\n\n请关闭第三方蓝牙工具，或在系统蓝牙中断开后，回到本软件的蓝牙连接页面重新连接。",
+                        "蓝牙设备被占用",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
         }
 
@@ -236,6 +231,11 @@ namespace EEGTool.ViewModels
                 _isNotifySubscribed = true;
                 Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
             }
+            catch (BleAccessDeniedException ex)
+            {
+                _isNotifySubscribed = false;
+                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅访问被拒绝，继续尝试写入采集配置。Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}, Properties={_notifyCharacteristic.Properties}, Error={ex}");
+            }
             catch (UnauthorizedAccessException ex)
             {
                 _isNotifySubscribed = false;
@@ -272,11 +272,24 @@ namespace EEGTool.ViewModels
                 await _ble.WriteAsync(_writeCharacteristic.ServiceUuid, _writeCharacteristic.Uuid, data);
                 Logger.Info($"[CollectionMonitorViewModel][WriteDataToBLE]:发送成功 {CommandManager.ToHexString(data)}");
             }
+            catch (BleAccessDeniedException ex)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][WriteDataToBLE]:写入访问被拒绝。Service={_writeCharacteristic.ServiceUuid}, Characteristic={_writeCharacteristic.Uuid}, Properties={_writeCharacteristic.Properties}, Data={CommandManager.ToHexString(data)}, Error={ex}");
+                throw;
+            }
             catch (UnauthorizedAccessException ex)
             {
                 Logger.Debug($"[CollectionMonitorViewModel][WriteDataToBLE]:写入无权限。Service={_writeCharacteristic.ServiceUuid}, Characteristic={_writeCharacteristic.Uuid}, Properties={_writeCharacteristic.Properties}, Data={CommandManager.ToHexString(data)}, Error={ex}");
                 throw;
             }
+        }
+
+        private static bool IsBleAccessDenied(Exception ex)
+        {
+            return ex is BleAccessDeniedException
+                || ex is UnauthorizedAccessException
+                || (ex is BleException && ex.Message.Contains("AccessDenied", StringComparison.OrdinalIgnoreCase))
+                || (ex.InnerException != null && IsBleAccessDenied(ex.InnerException));
         }
 
         private void HandleCommandResult(CommandParseResult result)

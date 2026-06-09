@@ -1,4 +1,5 @@
 using BLETool;
+using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
 using Framework.Event;
@@ -17,8 +18,10 @@ namespace EEGTool.ViewModels.Collection
     public class CollectionConfigViewModel : BindableBase
     {
         private readonly BleManager _ble;
+        private readonly Guid TargetServiceUuid = Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
         private bool _isLoadingPreferences = true;
         private bool _isSubscribedToBleEvents;
+        private bool _isStartingCollection;
 
         public ObservableCollection<string> SampleRateItems { get; } = new()
         {
@@ -121,6 +124,7 @@ namespace EEGTool.ViewModels.Collection
 
         public bool CanCollection =>
             IsDeviceConnected &&
+            !_isStartingCollection &&
             !string.IsNullOrWhiteSpace(SelectedSampleRate) &&
             !string.IsNullOrWhiteSpace(SelectedTemplate) &&
             (IsVideoRecordYes || IsVideoRecordNo);
@@ -136,17 +140,7 @@ namespace EEGTool.ViewModels.Collection
 
             CollectionCommand = new RelayCommand(_ =>
             {
-                var template = TemplateFileManager.GetInstance().AllTemplates
-                    .Find(o => o.Name.Equals(SelectedTemplate));
-
-                CollectionInfoManager.GetInstance().UpdateInfo(new CollectionInfo()
-                {
-                    IsCaptureVideo = IsVideoRecordYes,
-                    SampleRate = int.Parse(SelectedSampleRate.Replace("Hz","")),
-                    Template = template ?? new TemplateModel()
-                });
-
-                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
+                _ = StartCollectionAsync();
             });
             LoadTemplateItems();
             LoadCollectionPreferences();
@@ -197,6 +191,129 @@ namespace EEGTool.ViewModels.Collection
             config.CollectionSelectedTemplate = SelectedTemplate ?? string.Empty;
             config.CollectionIsVideoRecordYes = IsVideoRecordYes;
             config.Save();
+        }
+
+        private async Task StartCollectionAsync()
+        {
+            if (_isStartingCollection)
+            {
+                return;
+            }
+
+            _isStartingCollection = true;
+            OnPropertyChanged(nameof(CanCollection));
+
+            try
+            {
+                var template = TemplateFileManager.GetInstance().AllTemplates
+                    .Find(o => o.Name.Equals(SelectedTemplate));
+
+                var collectionInfo = new CollectionInfo()
+                {
+                    IsCaptureVideo = IsVideoRecordYes,
+                    SampleRate = int.Parse(SelectedSampleRate.Replace("Hz","")),
+                    Template = template ?? new TemplateModel()
+                };
+
+                if (!await TrySendCollectionConfigureCommandAsync(collectionInfo))
+                {
+                    return;
+                }
+
+                collectionInfo.ConfigureCommandSent = true;
+                CollectionInfoManager.GetInstance().UpdateInfo(collectionInfo);
+
+                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
+            }
+            finally
+            {
+                _isStartingCollection = false;
+                OnPropertyChanged(nameof(CanCollection));
+            }
+        }
+
+        private async Task<bool> TrySendCollectionConfigureCommandAsync(CollectionInfo collectionInfo)
+        {
+            if (_ble.GetCurrentConnectedDevice() == null)
+            {
+                MessageBox.Show("请先连接蓝牙设备。", "蓝牙未连接", MessageBoxButton.OK, MessageBoxImage.Information);
+                SyncCurrentConnectedDeviceInfo();
+                return false;
+            }
+
+            IReadOnlyList<BleGattServiceInfo> gatt;
+            try
+            {
+                gatt = await _ble.GetGattProfileAsync();
+            }
+            catch (BleAccessDeniedException)
+            {
+                ShowBleHeldByOtherSoftwareMessage();
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                ShowBleHeldByOtherSoftwareMessage();
+                return false;
+            }
+            catch (BleException ex)
+            {
+                MessageBox.Show(ex.Message, "蓝牙连接异常", MessageBoxButton.OK, MessageBoxImage.Warning);
+                SyncCurrentConnectedDeviceInfo();
+                return false;
+            }
+
+            var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
+            var writeCharacteristic = targetService?.Characteristics.FirstOrDefault(c => c.SupportsWrite)
+                ?? gatt.SelectMany(s => s.Characteristics).FirstOrDefault(c => c.SupportsWrite);
+
+            if (writeCharacteristic == null)
+            {
+                MessageBox.Show(
+                    "当前蓝牙设备已连接，但没有找到可写入的数据特征。请确认连接的是采集设备，并尝试断开后在本软件内重新连接。",
+                    "蓝牙不可写入",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return false;
+            }
+
+            byte[] command = CollectionCommandBuilder.BuildConfigureCommand(collectionInfo);
+
+            try
+            {
+                await _ble.WriteAsync(writeCharacteristic.ServiceUuid, writeCharacteristic.Uuid, command);
+            }
+            catch (BleAccessDeniedException)
+            {
+                ShowBleHeldByOtherSoftwareMessage();
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                ShowBleHeldByOtherSoftwareMessage();
+                return false;
+            }
+            catch (BleException ex) when (ex.Message.Contains("AccessDenied", StringComparison.OrdinalIgnoreCase))
+            {
+                ShowBleHeldByOtherSoftwareMessage();
+                return false;
+            }
+            catch (BleException ex)
+            {
+                MessageBox.Show(ex.Message, "蓝牙写入失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ShowBleHeldByOtherSoftwareMessage()
+        {
+            MessageBox.Show(
+                "当前蓝牙设备已连接，但本软件没有读取或写入权限，可能被其他软件持有。\n\n请关闭第三方蓝牙工具，或在系统蓝牙中断开后，回到本软件的蓝牙连接页面重新连接。",
+                "蓝牙设备被占用",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
 
         private void OnConnectionChanged(object? sender, BleConnectionChangedEventArgs e)

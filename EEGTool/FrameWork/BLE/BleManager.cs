@@ -190,13 +190,24 @@ public sealed class BleConnectionChangedEventArgs : EventArgs
     public string Reason { get; init; } = string.Empty;
 }
 
-public sealed class BleException : Exception
+public class BleException : Exception
 {
     public BleException(string message) : base(message)
     {
     }
 
     public BleException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+}
+
+public sealed class BleAccessDeniedException : BleException
+{
+    public BleAccessDeniedException(string message) : base(message)
+    {
+    }
+
+    public BleAccessDeniedException(string message, Exception innerException) : base(message, innerException)
     {
     }
 }
@@ -441,6 +452,11 @@ public sealed class BleManager : IDisposable
         await EnsureConnectedAsync(cancellationToken);
 
         var servicesResult = await _device.GetGattServicesAsync(BluetoothCacheMode.Uncached);
+        if (servicesResult.Status == GattCommunicationStatus.AccessDenied)
+        {
+            throw new BleAccessDeniedException("蓝牙访问被拒绝，当前设备可能被其他软件持有");
+        }
+
         if (servicesResult.Status != GattCommunicationStatus.Success)
         {
             throw new BleException($"读取 GATT 服务失败: {servicesResult.Status}");
@@ -508,6 +524,11 @@ public sealed class BleManager : IDisposable
 
         if (result.Status != GattCommunicationStatus.Success)
         {
+            if (result.Status == GattCommunicationStatus.AccessDenied)
+            {
+                throw new BleAccessDeniedException("蓝牙写入被拒绝，当前设备可能被其他软件持有");
+            }
+
             throw new BleException($"写入失败: {result.Status}");
         }
     }
@@ -521,6 +542,11 @@ public sealed class BleManager : IDisposable
         }
 
         var result = await characteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+        if (result.Status == GattCommunicationStatus.AccessDenied)
+        {
+            throw new BleAccessDeniedException("蓝牙读取被拒绝，当前设备可能被其他软件持有");
+        }
+
         if (result.Status != GattCommunicationStatus.Success)
         {
             throw new BleException($"读取失败: {result.Status}");
@@ -554,6 +580,11 @@ public sealed class BleManager : IDisposable
         }
 
         var status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(descriptorValue);
+        if (status == GattCommunicationStatus.AccessDenied)
+        {
+            throw new BleAccessDeniedException("蓝牙通知订阅被拒绝，当前设备可能被其他软件持有");
+        }
+
         if (status != GattCommunicationStatus.Success)
         {
             throw new BleException($"订阅失败: {status}");
@@ -699,6 +730,11 @@ public sealed class BleManager : IDisposable
             cancellationToken.ThrowIfCancellationRequested();
 
             var result = await _device.GetGattServicesAsync(BluetoothCacheMode.Uncached);
+            if (result.Status == GattCommunicationStatus.AccessDenied)
+            {
+                throw new BleAccessDeniedException("蓝牙访问被拒绝，当前设备可能被其他软件持有");
+            }
+
             if (result.Status == GattCommunicationStatus.Success)
             {
                 return;
@@ -814,6 +850,11 @@ public sealed class BleManager : IDisposable
         }
 
         var servicesResult = await _device.GetGattServicesForUuidAsync(serviceUuid, BluetoothCacheMode.Cached);
+        if (servicesResult.Status == GattCommunicationStatus.AccessDenied)
+        {
+            throw new BleAccessDeniedException("蓝牙访问服务被拒绝，当前设备可能被其他软件持有");
+        }
+
         if (servicesResult.Status != GattCommunicationStatus.Success || !servicesResult.Services.Any())
         {
             throw new BleException($"未找到服务: {serviceUuid}");
@@ -821,6 +862,11 @@ public sealed class BleManager : IDisposable
 
         GattDeviceService service = servicesResult.Services.First();
         var charsResult = await service.GetCharacteristicsForUuidAsync(characteristicUuid, BluetoothCacheMode.Cached);
+        if (charsResult.Status == GattCommunicationStatus.AccessDenied)
+        {
+            throw new BleAccessDeniedException("蓝牙访问特征被拒绝，当前设备可能被其他软件持有");
+        }
+
         if (charsResult.Status != GattCommunicationStatus.Success || !charsResult.Characteristics.Any())
         {
             throw new BleException($"未找到特征: {characteristicUuid}");

@@ -15,6 +15,7 @@ namespace EEGTool.Models.Collection
         public int SampleRate { get; set; } = 0;
         public TemplateModel Template { get; set; } = new TemplateModel();
         public bool IsCaptureVideo { get; set; } = false;
+        public bool ConfigureCommandSent { get; set; } = false;
     }
 
 
