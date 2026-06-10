@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using BLETool;
@@ -49,8 +50,13 @@ namespace EEGTool.ViewModels
         private DataProcessor? _dataProcessor;
         private DataProcessingResult? _latestProcessingResult;
         private readonly object _dataProcessingLock = new();
+        private readonly Queue<float[]> _pendingSamples = new();
         private HighPrecisionTimer? _monitorTimer;
+        private CancellationTokenSource? _samplePumpCts;
+        private Task? _samplePumpTask;
+        private double _samplePumpRemainder;
         private const int MonitorTimerIntervalMilliseconds = 40;
+        private const int SamplePumpIntervalMilliseconds = 10;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -360,10 +366,15 @@ namespace EEGTool.ViewModels
             var samples = ConvertDataFrameSamples(dataFrame);
             lock (_dataProcessingLock)
             {
-                _dataBuffer.AddBlock(samples);
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    _pendingSamples.Enqueue(samples[i]);
+                }
+
+                EnsureSamplePumpRunning();
             }
 
-            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:采集数据已写入缓冲 BufferCount={_dataBuffer.Count}");
+            Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:采集数据已进入平滑队列 Pending={_pendingSamples.Count}, BufferCount={_dataBuffer.Count}");
             await Task.CompletedTask;
         }
 
@@ -388,6 +399,8 @@ namespace EEGTool.ViewModels
                 new PassthroughSignalFilter(),
                 new ZeroFftProcessor(),
                 new DataProcessorSettings(channelCount, sampleRate));
+            _pendingSamples.Clear();
+            _samplePumpRemainder = 0;
 
             Logger.Info($"[CollectionMonitorViewModel][EnsureDataProcessor]:初始化数据处理器 Channels={channelCount}, SampleRate={sampleRate}");
         }
@@ -416,7 +429,64 @@ namespace EEGTool.ViewModels
             }
 
             _monitorTimer.Stop();
+            StopSamplePump();
             Logger.Info("[CollectionMonitorViewModel][StopMonitorTimer]:停止监测定时器");
+        }
+
+        private void EnsureSamplePumpRunning()
+        {
+            if (_samplePumpTask?.IsCompleted == false)
+            {
+                return;
+            }
+
+            _samplePumpCts?.Dispose();
+            _samplePumpCts = new CancellationTokenSource();
+            _samplePumpTask = Task.Run(() => PumpSamplesAsync(_samplePumpCts.Token));
+        }
+
+        private void StopSamplePump()
+        {
+            _samplePumpCts?.Cancel();
+            _samplePumpCts?.Dispose();
+            _samplePumpCts = null;
+            _samplePumpTask = null;
+            _samplePumpRemainder = 0;
+
+            lock (_dataProcessingLock)
+            {
+                _pendingSamples.Clear();
+            }
+        }
+
+        private async Task PumpSamplesAsync(CancellationToken cancellationToken)
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(SamplePumpIntervalMilliseconds));
+
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                lock (_dataProcessingLock)
+                {
+                    if (_dataBuffer == null || _pendingSamples.Count == 0)
+                    {
+                        return;
+                    }
+
+                    double samplesPerTick = _dataBuffer.SampleRate * SamplePumpIntervalMilliseconds / 1000.0;
+                    _samplePumpRemainder += samplesPerTick;
+                    int samplesToWrite = Math.Min(_pendingSamples.Count, (int)_samplePumpRemainder);
+                    if (samplesToWrite <= 0)
+                    {
+                        continue;
+                    }
+
+                    _samplePumpRemainder -= samplesToWrite;
+                    for (int i = 0; i < samplesToWrite; i++)
+                    {
+                        _dataBuffer.AddSample(_pendingSamples.Dequeue());
+                    }
+                }
+            }
         }
 
         private void OnMonitorTimerTick(HighPrecisionTimerTick tick)
