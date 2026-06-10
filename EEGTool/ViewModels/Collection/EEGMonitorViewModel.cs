@@ -28,6 +28,9 @@ namespace EEGTool.ViewModels.Collection
 
         private const double ChannelHeight = 100;
         private const double ChannelCenterOffset = 50;
+        private const double WaveHeaderItemHeight = 25;
+        private const double MinVisibleChannelCount = 1;
+        private const double MaxVisibleChannelPadding = 0.5;
         private const double WipeBlankFraction = 0.000001;
         private readonly object _onDataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
@@ -151,7 +154,6 @@ namespace EEGTool.ViewModels.Collection
                     return;
                 }
 
-                //EnsureWaveHeaderItems(dataCopy.Length);
                 QueuePlotData(renderData);
             });
         }
@@ -188,7 +190,7 @@ namespace EEGTool.ViewModels.Collection
                     continue;
                 }
 
-                double centerY = ch * ChannelHeight + ChannelCenterOffset;
+                double centerY = GetChannelPlotCenterY(ch, data.Length);
                 double mean = eegData.Average();
                 double[] centered = eegData.Select(v => (double)v - mean).ToArray();
                 double[] xs = Enumerable.Range(0, centered.Length).Select(i => (double)i).ToArray();
@@ -303,7 +305,7 @@ namespace EEGTool.ViewModels.Collection
 
             for (int ch = 0; ch < channelCount; ch++)
             {
-                double centerY = ch * ChannelHeight + ChannelCenterOffset;
+                double centerY = GetChannelPlotCenterY(ch, channelCount);
                 DataStreamer streamer = EegPlot.Plot.Add.DataStreamer(capacity);
                 streamer.LineWidth = 1;
                 streamer.LineColor = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
@@ -392,9 +394,58 @@ namespace EEGTool.ViewModels.Collection
         {
             if (_streamers.Values.Any(streamer => streamer.HasNewData))
             {
+                EnsureWaveHeaderItems(_streamers.Count);
+                ClampYAxisZoom();
                 UpdateWipeLine();
                 EegPlot.Refresh();
             }
+        }
+
+        private void ClampYAxisZoom()
+        {
+            if (_lastAxisChannelCount <= 0)
+            {
+                return;
+            }
+
+            double fullHeight = GetMaxVisiblePlotY();
+            double minVisibleHeight = Math.Min(fullHeight, MinVisibleChannelCount * ChannelHeight) / 5;
+            double maxVisibleHeight = (fullHeight + MaxVisibleChannelPadding * ChannelHeight) * 3;
+            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
+            double currentHeight = Math.Abs(limits.Top - limits.Bottom);
+            double targetHeight = Math.Clamp(currentHeight, minVisibleHeight, maxVisibleHeight);
+
+            if (Math.Abs(targetHeight - currentHeight) < 0.001)
+            {
+                return;
+            }
+
+            double centerY = (limits.Top + limits.Bottom) / 2.0;
+            double minY = centerY - targetHeight / 2.0;
+            double maxY = centerY + targetHeight / 2.0;
+
+            if (targetHeight <= fullHeight)
+            {
+                if (minY < 0)
+                {
+                    maxY -= minY;
+                    minY = 0;
+                }
+
+                if (maxY > fullHeight)
+                {
+                    minY -= maxY - fullHeight;
+                    maxY = fullHeight;
+                }
+            }
+            else
+            {
+                double padding = (targetHeight - fullHeight) / 2.0;
+                minY = -padding;
+                maxY = fullHeight + padding;
+            }
+
+            EegPlot.Plot.Axes.SetLimitsY(minY, maxY);
         }
 
         private void UpdateWipeLine()
@@ -427,8 +478,7 @@ namespace EEGTool.ViewModels.Collection
 
             _lastAxisSampleRate = sampleRate;
             _lastAxisWindowSec = WindowSec;
-            plot.Axes.Rules.Clear();
-            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
+            ApplyAxisRules(plot, xMax);
             plot.Axes.SetLimitsX(0, xMax);
         }
 
@@ -441,7 +491,8 @@ namespace EEGTool.ViewModels.Collection
             }
 
             _lastAxisChannelCount = channelCount;
-            double yMax = channelCount * ChannelHeight;
+            double yMax = GetMaxVisiblePlotY();
+            ApplyAxisRules(EegPlot.Plot, GetCurrentXMax());
             EegPlot.Plot.Axes.SetLimitsY(0, yMax);
         }
 
@@ -461,43 +512,68 @@ namespace EEGTool.ViewModels.Collection
                     Channel = channelName,
                     ElectrodeName = channelName,
                     ImpedanceValue = "--",
-                    ItemOffsetY = i * ChannelHeight + 37
+                    ItemOffsetY = GetWaveHeaderItemOffsetY(i)
                 });
             }
+        }
+
+        private static double GetChannelPlotCenterY(int channelIndex, int channelCount)
+        {
+            return Math.Max(0, channelCount - channelIndex - 1) * ChannelHeight + ChannelCenterOffset;
+        }
+
+        private static double GetWaveHeaderItemOffsetY(int channelIndex)
+        {
+            return channelIndex * ChannelHeight + ChannelCenterOffset - WaveHeaderItemHeight / 2.0;
+        }
+
+        private double GetMaxVisiblePlotY()
+        {
+            return Math.Max(1, _lastAxisChannelCount) * ChannelHeight;
+        }
+
+        private int GetCurrentXMax()
+        {
+            return Math.Max(Math.Max(1, _sampleRate), Math.Max(1, WindowSec) * Math.Max(1, _sampleRate));
+        }
+
+        private void ApplyAxisRules(Plot plot, int xMax)
+        {
+            plot.Axes.Rules.Clear();
+            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
         }
 
         private void ConfigPlot()
         {
             var plot = EegPlot.Plot;
 
-            plot.Axes.Rules.Clear();
-            int xMax = Math.Max(1, WindowSec) * Math.Max(1, _sampleRate);
-            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
+            int xMax = GetCurrentXMax();
+            ApplyAxisRules(plot, xMax);
             plot.Axes.SetLimitsX(0, xMax);
             plot.Axes.SetLimitsY(0, ChannelHeight);
             plot.Grid.MajorLineWidth = 0;
             _wipeLine = plot.Add.VerticalLine(0, 2, ScottPlot.Colors.Red);
             _wipeLine.IsVisible = false;
 
-            plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            plot.Axes.Right.FrameLineStyle.Width = 1;
-            plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            plot.Axes.Bottom.FrameLineStyle.Width = 1;
-            plot.Axes.Bottom.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            plot.Axes.Left.FrameLineStyle.Width = 1;
-            plot.Axes.Left.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            plot.Axes.Top.FrameLineStyle.Width = 1;
-            plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            //plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            //plot.Axes.Right.FrameLineStyle.Width = 1;
+            //plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            //plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            //plot.Axes.Bottom.FrameLineStyle.Width = 1;
+            //plot.Axes.Bottom.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            //plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            //plot.Axes.Left.FrameLineStyle.Width = 1;
+            //plot.Axes.Left.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            //plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            //plot.Axes.Top.FrameLineStyle.Width = 1;
+            //plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
 
-            plot.Axes.Left.TickLabelStyle.IsVisible = false;
-            plot.Axes.Left.TickLabelStyle.FontSize = 0;
-            plot.Axes.Left.MajorTickStyle.Length = 0;
-            plot.Axes.Left.MinorTickStyle.Length = 0;
-            plot.Axes.Bottom.MajorTickStyle.Length = 0;
-            plot.Axes.Bottom.MinorTickStyle.Length = 0;
+            //plot.Axes.Left.TickLabelStyle.IsVisible = false;
+            //plot.Axes.Left.TickLabelStyle.FontSize = 0;
+            //plot.Axes.Left.MajorTickStyle.Length = 0;
+            //plot.Axes.Left.MinorTickStyle.Length = 0;
+            //plot.Axes.Bottom.MajorTickStyle.Length = 0;
+            //plot.Axes.Bottom.MinorTickStyle.Length = 0;
 
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
