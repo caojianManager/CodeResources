@@ -303,6 +303,94 @@
                         </Button>
                     </StackPanel>
 
+                    <StackPanel
+                     Background="Transparent"
+                     Orientation="Horizontal"
+                     Margin="20,0,0,0"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Center">
+                        <TextBlock
+                                 Text="模式切换(Wipe/Scroll)"
+                                 Foreground="Black"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,10,0"
+                                 FontSize="14" />
+                        <Button
+                                 Width="50"
+                                 Height="25"
+                                 Padding="0"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Command="{Binding ScrollModeClickCommand}">
+                            <Button.Template>
+                                <ControlTemplate
+                     TargetType="Button">
+                                    <Grid
+                         Width="50"
+                         Height="25">
+                                        <Border
+                             x:Name="SwitchTrack"
+                             Background="#D6DCE5"
+                             CornerRadius="12.5" />
+                                        <Border
+                             x:Name="SwitchThumb"
+                             Width="20"
+                             Height="20"
+                             Margin="3"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Center"
+                             Background="White"
+                             CornerRadius="20">
+                                            <TextBlock
+                                 x:Name="SwitchCheck"
+                                 Text="✓"
+                                 Foreground="#56A4F4"
+                                 FontSize="20"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Visibility="Collapsed" />
+                                        </Border>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger
+                             Binding="{Binding ScrollMode}"
+                             Value="True">
+                                            <Setter
+                                 TargetName="SwitchTrack"
+                                 Property="Background"
+                                 Value="#56A4F4" />
+                                            <Setter
+                                 TargetName="SwitchThumb"
+                                 Property="HorizontalAlignment"
+                                 Value="Right" />
+                                            <Setter
+                                 TargetName="SwitchCheck"
+                                 Property="Visibility"
+                                 Value="Visible" />
+                                        </DataTrigger>
+                                        <Trigger
+                             Property="IsMouseOver"
+                             Value="True">
+                                            <Setter
+                                 TargetName="SwitchTrack"
+                                 Property="Opacity"
+                                 Value="0.9" />
+                                        </Trigger>
+                                        <Trigger
+                             Property="IsPressed"
+                             Value="True">
+                                            <Setter
+                                 TargetName="SwitchThumb"
+                                 Property="Opacity"
+                                 Value="0.85" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+
                 </StackPanel>
 
 

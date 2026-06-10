@@ -42,7 +42,8 @@ namespace EEGTool.ViewModels.Collection
         private int _lastAxisSampleRate;
         private int _lastAxisWindowSec;
         private int _lastAxisChannelCount;
-        private StreamerViewMode _streamerViewMode = StreamerViewMode.Scroll;
+        private bool _scrollMode;
+        private StreamerViewMode _streamerViewMode = StreamerViewMode.Wipe;
         private VerticalLine? _wipeLine;
 
         public WpfPlot EegPlot { get; } = new();
@@ -71,12 +72,23 @@ namespace EEGTool.ViewModels.Collection
 
         public ICommand? EegAutoClickCommand { get; set; }
         public ICommand? ClickWaveHeaderCommand { get; set; }
+        public ICommand? ScrollModeClickCommand { get; set; }
+
+        public bool ScrollMode
+        {
+            get => _scrollMode;
+            set
+            {
+                if (SetProperty(ref _scrollMode, value))
+                {
+                    SetStreamerViewMode(value ? StreamerViewMode.Scroll : StreamerViewMode.Wipe);
+                }
+            }
+        }
 
         public EEGMonitorViewModel()
         {
             Config();
-
-            SetStreamerViewMode(StreamerViewMode.Wipe);
         }
 
         private void Config()
@@ -90,6 +102,10 @@ namespace EEGTool.ViewModels.Collection
             EegAutoClickCommand = new RelayCommand((o) =>
             {
                 IsAuto = !IsAuto;
+            });
+            ScrollModeClickCommand = new RelayCommand((o) =>
+            {
+                ScrollMode = !ScrollMode;
             });
             ClickWaveHeaderCommand = new RelayCommand((o) =>
             {
@@ -307,6 +323,13 @@ namespace EEGTool.ViewModels.Collection
             }
 
             _streamerViewMode = mode;
+            bool scrollMode = mode == StreamerViewMode.Scroll;
+            if (_scrollMode != scrollMode)
+            {
+                _scrollMode = scrollMode;
+                OnPropertyChanged(nameof(ScrollMode));
+            }
+
             ApplyStreamerViewMode();
             EegPlot.Refresh();
         }
