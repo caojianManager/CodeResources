@@ -470,6 +470,10 @@
            HorizontalAlignment="Stretch"
            VerticalAlignment="Stretch"
            PreviewMouseWheel="EegPlot_PreviewMouseWheel"
+           PreviewMouseLeftButtonDown="EegPlot_PreviewMouseLeftButtonDown"
+           PreviewMouseLeftButtonUp="EegPlot_PreviewMouseLeftButtonUp"
+           PreviewMouseMove="EegPlot_PreviewMouseMove"
+           LostMouseCapture="EegPlot_LostMouseCapture"
            Content="{Binding EegPlot, Mode=OneTime}" />
             </Grid>
 

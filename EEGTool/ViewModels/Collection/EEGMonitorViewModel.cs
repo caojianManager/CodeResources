@@ -108,6 +108,21 @@ namespace EEGTool.ViewModels.Collection
             EegPlot.Refresh();
         }
 
+        public void PanYAxisByPixels(double deltaYPixels, double plotHeightPixels)
+        {
+            if (_lastAxisChannelCount <= 0 || Math.Abs(deltaYPixels) < 0.001 || plotHeightPixels <= 1)
+            {
+                return;
+            }
+
+            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
+            double visibleHeight = Math.Abs(limits.Top - limits.Bottom);
+            double deltaY = deltaYPixels * visibleHeight / plotHeightPixels;
+
+            SetConstrainedYAxisLimits(limits.Bottom + deltaY, limits.Top + deltaY, force: true);
+            EegPlot.Refresh();
+        }
+
         public EEGMonitorViewModel()
         {
             Config();
@@ -116,6 +131,7 @@ namespace EEGTool.ViewModels.Collection
         private void Config()
         {
             ConfigPlot();
+            EegPlot.UserInputProcessor.Disable();
             _addNewDataTimer.Tick += (_, _) => AddPendingPlotSamples();
             _updatePlotTimer.Tick += (_, _) => RefreshStreamPlot();
             _addNewDataTimer.Start();

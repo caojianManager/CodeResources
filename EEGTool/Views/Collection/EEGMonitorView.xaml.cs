@@ -21,6 +21,9 @@ namespace EEGTool.Views.Collection
     /// </summary>
     public partial class EEGMonitorView : UserControl
     {
+        private bool _isDraggingPlot;
+        private Point _lastDragPoint;
+
         public EEGMonitorView()
         {
             InitializeComponent();
@@ -32,6 +35,58 @@ namespace EEGTool.Views.Collection
             {
                 viewModel.ZoomYAxisByWheel(e.Delta);
                 e.Handled = true;
+            }
+        }
+
+        private void EegPlot_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not FrameworkElement element)
+            {
+                return;
+            }
+
+            _isDraggingPlot = true;
+            _lastDragPoint = e.GetPosition(element);
+            element.CaptureMouse();
+            e.Handled = true;
+        }
+
+        private void EegPlot_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingPlot || e.LeftButton != MouseButtonState.Pressed || sender is not FrameworkElement element)
+            {
+                return;
+            }
+
+            Point currentPoint = e.GetPosition(element);
+            double deltaY = currentPoint.Y - _lastDragPoint.Y;
+            _lastDragPoint = currentPoint;
+
+            if (DataContext is EEGMonitorViewModel viewModel)
+            {
+                viewModel.PanYAxisByPixels(deltaY, element.ActualHeight);
+            }
+
+            e.Handled = true;
+        }
+
+        private void EegPlot_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            EndPlotDrag(sender as FrameworkElement);
+            e.Handled = true;
+        }
+
+        private void EegPlot_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            _isDraggingPlot = false;
+        }
+
+        private void EndPlotDrag(FrameworkElement? element)
+        {
+            _isDraggingPlot = false;
+            if (element?.IsMouseCaptured == true)
+            {
+                element.ReleaseMouseCapture();
             }
         }
     }
