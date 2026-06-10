@@ -27,6 +27,9 @@ namespace EEGTool.ViewModels.Collection
         private float[][] _currentFrameData = Array.Empty<float[]>();
         private long _latestWindowUpdateVersion;
         private int _sampleRate = 250;
+        private int _lastAxisSampleRate;
+        private int _lastAxisWindowSec;
+        private int _lastAxisChannelCount;
 
         public WpfPlot EegPlot { get; } = new();
         public ObservableCollection<WaveHeaderItem> WaveHeaderItems { get; } = new();
@@ -217,7 +220,7 @@ namespace EEGTool.ViewModels.Collection
 
             RemoveStalePlots(renderData.Select(item => item.ch).ToHashSet());
             ConfigSecondTicks();
-            UpdatePlotVertTextLabel();
+            UpdatePlotVertTextLabel(renderData.Select(item => item.ch).Distinct().Count());
             EegPlot.Refresh();
         }
 
@@ -240,14 +243,27 @@ namespace EEGTool.ViewModels.Collection
             int xMax = Math.Max(sampleRate, WindowSec * sampleRate);
             var plot = EegPlot.Plot;
 
+            if (_lastAxisSampleRate == sampleRate && _lastAxisWindowSec == WindowSec)
+            {
+                return;
+            }
+
+            _lastAxisSampleRate = sampleRate;
+            _lastAxisWindowSec = WindowSec;
             plot.Axes.Rules.Clear();
             plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
             plot.Axes.SetLimitsX(0, xMax);
         }
 
-        private void UpdatePlotVertTextLabel()
+        private void UpdatePlotVertTextLabel(int channelCount)
         {
-            int channelCount = Math.Max(1, WaveHeaderItems.Count);
+            channelCount = Math.Max(1, channelCount);
+            if (_lastAxisChannelCount == channelCount)
+            {
+                return;
+            }
+
+            _lastAxisChannelCount = channelCount;
             double yMax = channelCount * ChannelHeight;
             EegPlot.Plot.Axes.SetLimitsY(0, yMax);
         }
@@ -277,12 +293,11 @@ namespace EEGTool.ViewModels.Collection
         {
             var plot = EegPlot.Plot;
 
-            ScottPlot.AxisRules.LockedHorizontal rule =
-                new(plot.Axes.Bottom, 0, 1000);
-
             plot.Axes.Rules.Clear();
-            plot.Axes.Rules.Add(rule);
-            plot.Axes.AutoScale(true);
+            int xMax = Math.Max(1, WindowSec) * Math.Max(1, _sampleRate);
+            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
+            plot.Axes.SetLimitsX(0, xMax);
+            plot.Axes.SetLimitsY(0, ChannelHeight);
             plot.Grid.MajorLineWidth = 0;
 
             plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
@@ -298,10 +313,10 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Top.FrameLineStyle.Width = 1;
             plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
 
-            plot.Axes.Left.TickLabelStyle.IsVisible = false;
-            plot.Axes.Left.TickLabelStyle.FontSize = 0;
-            plot.Axes.Left.MajorTickStyle.Length = 0;
-            plot.Axes.Left.MinorTickStyle.Length = 0;
+            //plot.Axes.Left.TickLabelStyle.IsVisible = false;
+            //plot.Axes.Left.TickLabelStyle.FontSize = 0;
+            //plot.Axes.Left.MajorTickStyle.Length = 0;
+            //plot.Axes.Left.MinorTickStyle.Length = 0;
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
             plot.Axes.Bottom.MinorTickStyle.Length = 0;
 
