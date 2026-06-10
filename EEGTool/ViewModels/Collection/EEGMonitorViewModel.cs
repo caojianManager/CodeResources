@@ -89,6 +89,25 @@ namespace EEGTool.ViewModels.Collection
             }
         }
 
+        public void ZoomYAxisByWheel(int wheelDelta)
+        {
+            if (_lastAxisChannelCount <= 0 || wheelDelta == 0)
+            {
+                return;
+            }
+
+            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
+            double centerY = (limits.Top + limits.Bottom) / 2.0;
+            double currentHeight = Math.Abs(limits.Top - limits.Bottom);
+            double zoomFactor = wheelDelta > 0 ? 0.85 : 1.0 / 0.85;
+            double targetHeight = currentHeight * zoomFactor;
+            double minY = centerY - targetHeight / 2.0;
+            double maxY = centerY + targetHeight / 2.0;
+
+            SetConstrainedYAxisLimits(minY, maxY, force: true);
+            EegPlot.Refresh();
+        }
+
         public EEGMonitorViewModel()
         {
             Config();
@@ -408,19 +427,19 @@ namespace EEGTool.ViewModels.Collection
                 return;
             }
 
+            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
+            SetConstrainedYAxisLimits(limits.Bottom, limits.Top, force: false);
+        }
+
+        private void SetConstrainedYAxisLimits(double desiredMinY, double desiredMaxY, bool force)
+        {
             double fullHeight = GetMaxVisiblePlotY();
             double minVisibleHeight = Math.Min(fullHeight, MinVisibleChannelCount * ChannelHeight) / 5;
             double maxVisibleHeight = (fullHeight + MaxVisibleChannelPadding * ChannelHeight) * 3;
-            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
-            double currentHeight = Math.Abs(limits.Top - limits.Bottom);
+            double currentHeight = Math.Abs(desiredMaxY - desiredMinY);
             double targetHeight = Math.Clamp(currentHeight, minVisibleHeight, maxVisibleHeight);
 
-            if (Math.Abs(targetHeight - currentHeight) < 0.001)
-            {
-                return;
-            }
-
-            double centerY = (limits.Top + limits.Bottom) / 2.0;
+            double centerY = (desiredMaxY + desiredMinY) / 2.0;
             double minY = centerY - targetHeight / 2.0;
             double maxY = centerY + targetHeight / 2.0;
 
@@ -443,6 +462,14 @@ namespace EEGTool.ViewModels.Collection
                 double padding = (targetHeight - fullHeight) / 2.0;
                 minY = -padding;
                 maxY = fullHeight + padding;
+            }
+
+            AxisLimits limits = EegPlot.Plot.Axes.GetLimits();
+            if (!force &&
+                Math.Abs(limits.Bottom - minY) < 0.001 &&
+                Math.Abs(limits.Top - maxY) < 0.001)
+            {
+                return;
             }
 
             EegPlot.Plot.Axes.SetLimitsY(minY, maxY);

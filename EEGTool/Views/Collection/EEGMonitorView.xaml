@@ -469,6 +469,7 @@
            Margin="0"
            HorizontalAlignment="Stretch"
            VerticalAlignment="Stretch"
+           PreviewMouseWheel="EegPlot_PreviewMouseWheel"
            Content="{Binding EegPlot, Mode=OneTime}" />
             </Grid>
 

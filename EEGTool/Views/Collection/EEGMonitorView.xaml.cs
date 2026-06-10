@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using EEGTool.ViewModels.Collection;
 
 namespace EEGTool.Views.Collection
 {
@@ -23,6 +24,15 @@ namespace EEGTool.Views.Collection
         public EEGMonitorView()
         {
             InitializeComponent();
+        }
+
+        private void EegPlot_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (DataContext is EEGMonitorViewModel viewModel)
+            {
+                viewModel.ZoomYAxisByWheel(e.Delta);
+                e.Handled = true;
+            }
         }
     }
 }

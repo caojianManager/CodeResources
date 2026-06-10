@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace EegAcquisitionSystem
+namespace EEGTool
 {
     /// <summary>
     /// App.xaml 的交互逻辑
