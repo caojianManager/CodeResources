@@ -14,22 +14,36 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace EEGTool.ViewModels.Collection
 {
     public class EEGMonitorViewModel : BindableBase
     {
+        private enum StreamerViewMode
+        {
+            Scroll,
+            Wipe
+        }
+
         private const double ChannelHeight = 100;
         private const double ChannelCenterOffset = 50;
+        private const double WipeBlankFraction = 0.000001;
         private readonly object _onDataLock = new();
-        private readonly Dictionary<int, SignalXY> _signalPlotsCaches = new();
+        private readonly Dictionary<int, DataStreamer> _streamers = new();
         private readonly Dictionary<int, int> _autoValues = new();
+        private readonly Queue<double[]> _pendingPlotSamples = new();
+        private readonly DispatcherTimer _addNewDataTimer = new() { Interval = TimeSpan.FromMilliseconds(10) };
+        private readonly DispatcherTimer _updatePlotTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
         private float[][] _currentFrameData = Array.Empty<float[]>();
         private long _latestWindowUpdateVersion;
+        private DateTime _lastPlotDataTime = DateTime.MinValue;
         private int _sampleRate = 250;
         private int _lastAxisSampleRate;
         private int _lastAxisWindowSec;
         private int _lastAxisChannelCount;
+        private StreamerViewMode _streamerViewMode = StreamerViewMode.Scroll;
+        private VerticalLine? _wipeLine;
 
         public WpfPlot EegPlot { get; } = new();
         public ObservableCollection<WaveHeaderItem> WaveHeaderItems { get; } = new();
@@ -61,11 +75,18 @@ namespace EEGTool.ViewModels.Collection
         public EEGMonitorViewModel()
         {
             Config();
+
+            SetStreamerViewMode(StreamerViewMode.Wipe);
         }
 
         private void Config()
         {
             ConfigPlot();
+            _addNewDataTimer.Tick += (_, _) => AddPendingPlotSamples();
+            _updatePlotTimer.Tick += (_, _) => RefreshStreamPlot();
+            _addNewDataTimer.Start();
+            _updatePlotTimer.Start();
+
             EegAutoClickCommand = new RelayCommand((o) =>
             {
                 IsAuto = !IsAuto;
@@ -115,7 +136,7 @@ namespace EEGTool.ViewModels.Collection
                 }
 
                 //EnsureWaveHeaderItems(dataCopy.Length);
-                ApplyPlot(renderData);
+                QueuePlotData(renderData);
             });
         }
 
@@ -194,47 +215,180 @@ namespace EEGTool.ViewModels.Collection
             return result;
         }
 
-        private void ApplyPlot(List<(double[] xs, double[] ys, int ch)> renderData)
+        private void QueuePlotData(List<(double[] xs, double[] ys, int ch)> renderData)
         {
-            var plot = EegPlot.Plot;
-
-            foreach (var (xs, ys, ch) in renderData)
+            if (renderData.Count == 0)
             {
-                if (xs.Length != ys.Length || xs.Length == 0)
-                {
-                    continue;
-                }
-
-                if (!_signalPlotsCaches.TryGetValue(ch, out SignalXY? signal))
-                {
-                    signal = plot.Add.SignalXY(xs, ys);
-                    signal.LineWidth = 1;
-                    signal.Color = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
-                    _signalPlotsCaches[ch] = signal;
-                }
-                else
-                {
-                    signal.Data = new SignalXYSourceGenericArray<double, double>(xs, ys);
-                }
+                return;
             }
 
-            RemoveStalePlots(renderData.Select(item => item.ch).ToHashSet());
+            int channelCount = renderData.Select(item => item.ch).Distinct().Count();
+            EnsureStreamers(channelCount);
             ConfigSecondTicks();
-            UpdatePlotVertTextLabel(renderData.Select(item => item.ch).Distinct().Count());
+            UpdatePlotVertTextLabel(channelCount);
+
+            int availableSamples = renderData.Min(item => item.ys.Length);
+            int newSampleCount = GetNewPlotSampleCount(availableSamples);
+            if (newSampleCount <= 0)
+            {
+                return;
+            }
+
+            for (int i = availableSamples - newSampleCount; i < availableSamples; i++)
+            {
+                var sample = new double[channelCount];
+                foreach (var (_, ys, ch) in renderData)
+                {
+                    if (ch < sample.Length && i < ys.Length)
+                    {
+                        sample[ch] = ys[i];
+                    }
+                }
+
+                _pendingPlotSamples.Enqueue(sample);
+            }
+        }
+
+        private int GetNewPlotSampleCount(int availableSamples)
+        {
+            if (availableSamples <= 0)
+            {
+                return 0;
+            }
+
+            DateTime now = DateTime.UtcNow;
+            if (_lastPlotDataTime == DateTime.MinValue)
+            {
+                _lastPlotDataTime = now;
+                return Math.Min(availableSamples, Math.Max(1, WindowSec * _sampleRate));
+            }
+
+            double elapsedSeconds = Math.Max(0.001, (now - _lastPlotDataTime).TotalSeconds);
+            _lastPlotDataTime = now;
+            int expectedSamples = Math.Max(1, (int)Math.Round(elapsedSeconds * Math.Max(1, _sampleRate)));
+            return Math.Min(availableSamples, expectedSamples);
+        }
+
+        private void EnsureStreamers(int channelCount)
+        {
+            int sampleRate = Math.Max(1, _sampleRate);
+            int capacity = Math.Max(sampleRate, WindowSec * sampleRate);
+            if (_streamers.Count == channelCount &&
+                _lastAxisSampleRate == sampleRate &&
+                _lastAxisWindowSec == WindowSec)
+            {
+                return;
+            }
+
+            EegPlot.Plot.Remove<DataStreamer>();
+            _streamers.Clear();
+            _pendingPlotSamples.Clear();
+            _lastPlotDataTime = DateTime.MinValue;
+
+            for (int ch = 0; ch < channelCount; ch++)
+            {
+                double centerY = ch * ChannelHeight + ChannelCenterOffset;
+                DataStreamer streamer = EegPlot.Plot.Add.DataStreamer(capacity);
+                streamer.LineWidth = 1;
+                streamer.LineColor = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
+                streamer.ManageAxisLimits = false;
+                streamer.Clear(centerY);
+                _streamers[ch] = streamer;
+            }
+
+            ApplyStreamerViewMode();
+        }
+
+        private void SetStreamerViewMode(StreamerViewMode mode)
+        {
+            if (_streamerViewMode == mode)
+            {
+                return;
+            }
+
+            _streamerViewMode = mode;
+            ApplyStreamerViewMode();
             EegPlot.Refresh();
         }
 
-        private void RemoveStalePlots(HashSet<int> activeChannels)
+        private void ApplyStreamerViewMode()
         {
-            var staleChannels = _signalPlotsCaches.Keys
-                .Where(ch => !activeChannels.Contains(ch))
-                .ToList();
-
-            foreach (int ch in staleChannels)
+            foreach (DataStreamer streamer in _streamers.Values)
             {
-                EegPlot.Plot.Remove(_signalPlotsCaches[ch]);
-                _signalPlotsCaches.Remove(ch);
+                switch (_streamerViewMode)
+                {
+                    case StreamerViewMode.Scroll:
+                        streamer.ViewScrollLeft();
+                        break;
+                    case StreamerViewMode.Wipe:
+                        streamer.ViewWipeRight(WipeBlankFraction);
+                        break;
+                    default:
+                        throw new NotSupportedException(_streamerViewMode.ToString());
+                }
             }
+
+            if (_wipeLine != null)
+            {
+                _wipeLine.IsVisible = _streamerViewMode == StreamerViewMode.Wipe;
+            }
+        }
+
+        private void AddPendingPlotSamples()
+        {
+            if (_pendingPlotSamples.Count == 0 || _streamers.Count == 0)
+            {
+                return;
+            }
+
+            int count = Math.Max(1, (int)Math.Round(Math.Max(1, _sampleRate) * _addNewDataTimer.Interval.TotalSeconds));
+            var samplesByChannel = _streamers.Keys.ToDictionary(ch => ch, _ => new List<double>(count));
+
+            for (int i = 0; i < count && _pendingPlotSamples.Count > 0; i++)
+            {
+                double[] sample = _pendingPlotSamples.Dequeue();
+                foreach (int ch in samplesByChannel.Keys)
+                {
+                    if (ch < sample.Length)
+                    {
+                        samplesByChannel[ch].Add(sample[ch]);
+                    }
+                }
+            }
+
+            foreach (var (ch, values) in samplesByChannel)
+            {
+                if (values.Count > 0 && _streamers.TryGetValue(ch, out DataStreamer? streamer))
+                {
+                    streamer.AddRange(values);
+                }
+            }
+        }
+
+        private void RefreshStreamPlot()
+        {
+            if (_streamers.Values.Any(streamer => streamer.HasNewData))
+            {
+                UpdateWipeLine();
+                EegPlot.Refresh();
+            }
+        }
+
+        private void UpdateWipeLine()
+        {
+            if (_wipeLine == null || _streamerViewMode != StreamerViewMode.Wipe)
+            {
+                return;
+            }
+
+            DataStreamer? streamer = _streamers.Values.FirstOrDefault();
+            if (streamer == null)
+            {
+                return;
+            }
+
+            _wipeLine.Position = streamer.Data.NextIndex * streamer.Data.SamplePeriod + streamer.Data.OffsetX;
+            _wipeLine.IsVisible = true;
         }
 
         private void ConfigSecondTicks()
@@ -299,6 +453,8 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.SetLimitsX(0, xMax);
             plot.Axes.SetLimitsY(0, ChannelHeight);
             plot.Grid.MajorLineWidth = 0;
+            _wipeLine = plot.Add.VerticalLine(0, 2, ScottPlot.Colors.Red);
+            _wipeLine.IsVisible = false;
 
             plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
             plot.Axes.Right.FrameLineStyle.Width = 1;
@@ -313,10 +469,10 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Top.FrameLineStyle.Width = 1;
             plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
 
-            //plot.Axes.Left.TickLabelStyle.IsVisible = false;
-            //plot.Axes.Left.TickLabelStyle.FontSize = 0;
-            //plot.Axes.Left.MajorTickStyle.Length = 0;
-            //plot.Axes.Left.MinorTickStyle.Length = 0;
+            plot.Axes.Left.TickLabelStyle.IsVisible = false;
+            plot.Axes.Left.TickLabelStyle.FontSize = 0;
+            plot.Axes.Left.MajorTickStyle.Length = 0;
+            plot.Axes.Left.MinorTickStyle.Length = 0;
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
             plot.Axes.Bottom.MinorTickStyle.Length = 0;
 
