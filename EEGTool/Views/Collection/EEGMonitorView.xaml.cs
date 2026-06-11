@@ -81,6 +81,17 @@ namespace EEGTool.Views.Collection
             _isDraggingPlot = false;
         }
 
+        private void EegPlot_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (DataContext is EEGMonitorViewModel viewModel)
+                {
+                    viewModel.UpdateWaveHeaderItemPositions();
+                }
+            }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
         private void EndPlotDrag(FrameworkElement? element)
         {
             _isDraggingPlot = false;

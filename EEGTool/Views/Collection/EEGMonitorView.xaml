@@ -405,7 +405,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Grid>
-                    <Canvas Width="110" ClipToBounds="True" Margin="0,10">
+                    <Canvas Width="110" ClipToBounds="True">
                         <ItemsControl ItemsSource="{Binding WaveHeaderItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -420,7 +420,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Height="25" Width="110" Opacity="{Binding OpacityValue}">
-                                        <Grid Height="25" Width="110" Canvas.Top="{Binding ItemOffsetY}">
+                                        <Grid Height="25" Width="110">
                                             <Button Margin="0"
                                              Width="110"
                                              Height="25"
@@ -474,6 +474,7 @@
            PreviewMouseLeftButtonUp="EegPlot_PreviewMouseLeftButtonUp"
            PreviewMouseMove="EegPlot_PreviewMouseMove"
            LostMouseCapture="EegPlot_LostMouseCapture"
+           SizeChanged="EegPlot_SizeChanged"
            Content="{Binding EegPlot, Mode=OneTime}" />
             </Grid>
 

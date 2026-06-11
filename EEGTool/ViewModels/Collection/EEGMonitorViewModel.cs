@@ -37,7 +37,7 @@ namespace EEGTool.ViewModels.Collection
         private readonly Dictionary<int, int> _autoValues = new();
         private readonly Queue<double[]> _pendingPlotSamples = new();
         private readonly DispatcherTimer _addNewDataTimer = new() { Interval = TimeSpan.FromMilliseconds(10) };
-        private readonly DispatcherTimer _updatePlotTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+        private readonly DispatcherTimer _updatePlotTimer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(50) };
         private float[][] _currentFrameData = Array.Empty<float[]>();
         private long _latestWindowUpdateVersion;
         private DateTime _lastPlotDataTime = DateTime.MinValue;
@@ -46,6 +46,7 @@ namespace EEGTool.ViewModels.Collection
         private int _lastAxisWindowSec;
         private int _lastAxisChannelCount;
         private bool _scrollMode;
+        private bool _axisRefreshPending;
         private StreamerViewMode _streamerViewMode = StreamerViewMode.Wipe;
         private VerticalLine? _wipeLine;
 
@@ -105,7 +106,7 @@ namespace EEGTool.ViewModels.Collection
             double maxY = centerY + targetHeight / 2.0;
 
             SetConstrainedYAxisLimits(minY, maxY, force: true);
-            EegPlot.Refresh();
+            _axisRefreshPending = true;
         }
 
         public void PanYAxisByPixels(double deltaYPixels, double plotHeightPixels)
@@ -120,7 +121,7 @@ namespace EEGTool.ViewModels.Collection
             double deltaY = deltaYPixels * visibleHeight / plotHeightPixels;
 
             SetConstrainedYAxisLimits(limits.Bottom + deltaY, limits.Top + deltaY, force: true);
-            EegPlot.Refresh();
+            _axisRefreshPending = true;
         }
 
         public EEGMonitorViewModel()
@@ -427,12 +428,15 @@ namespace EEGTool.ViewModels.Collection
 
         private void RefreshStreamPlot()
         {
-            if (_streamers.Values.Any(streamer => streamer.HasNewData))
+            bool hasNewData = _streamers.Values.Any(streamer => streamer.HasNewData);
+            if (hasNewData || _axisRefreshPending)
             {
                 EnsureWaveHeaderItems(_streamers.Count);
                 ClampYAxisZoom();
                 UpdateWipeLine();
                 EegPlot.Refresh();
+                UpdateWaveHeaderItemPositions();
+                _axisRefreshPending = false;
             }
         }
 
@@ -554,20 +558,35 @@ namespace EEGTool.ViewModels.Collection
                 {
                     Channel = channelName,
                     ElectrodeName = channelName,
-                    ImpedanceValue = "--",
-                    ItemOffsetY = GetWaveHeaderItemOffsetY(i)
+                    ImpedanceValue = "--"
                 });
+            }
+        }
+
+        public void UpdateWaveHeaderItemPositions()
+        {
+            if (WaveHeaderItems.Count == 0)
+            {
+                return;
+            }
+
+            PixelRect dataRect = EegPlot.Plot.RenderManager.LastRender.DataRect;
+            if (dataRect.Height <= 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < WaveHeaderItems.Count; i++)
+            {
+                double channelCenterY = GetChannelPlotCenterY(i, WaveHeaderItems.Count);
+                float centerPixelY = EegPlot.Plot.Axes.Left.GetPixel(channelCenterY, dataRect);
+                WaveHeaderItems[i].ItemOffsetY = centerPixelY - WaveHeaderItemHeight / 2.0;
             }
         }
 
         private static double GetChannelPlotCenterY(int channelIndex, int channelCount)
         {
             return Math.Max(0, channelCount - channelIndex - 1) * ChannelHeight + ChannelCenterOffset;
-        }
-
-        private static double GetWaveHeaderItemOffsetY(int channelIndex)
-        {
-            return channelIndex * ChannelHeight + ChannelCenterOffset - WaveHeaderItemHeight / 2.0;
         }
 
         private double GetMaxVisiblePlotY()
@@ -598,25 +617,25 @@ namespace EEGTool.ViewModels.Collection
             _wipeLine = plot.Add.VerticalLine(0, 2, ScottPlot.Colors.Red);
             _wipeLine.IsVisible = false;
 
-            //plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            //plot.Axes.Right.FrameLineStyle.Width = 1;
-            //plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            //plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            //plot.Axes.Bottom.FrameLineStyle.Width = 1;
-            //plot.Axes.Bottom.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            //plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            //plot.Axes.Left.FrameLineStyle.Width = 1;
-            //plot.Axes.Left.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
-            //plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
-            //plot.Axes.Top.FrameLineStyle.Width = 1;
-            //plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            plot.Axes.Right.FrameLineStyle.Width = 1;
+            plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            plot.Axes.Bottom.FrameLineStyle.Width = 1;
+            plot.Axes.Bottom.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            plot.Axes.Left.FrameLineStyle.Width = 1;
+            plot.Axes.Left.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
+            plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#E3E3E3");
+            plot.Axes.Top.FrameLineStyle.Width = 1;
+            plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.DenselyDashed;
 
-            //plot.Axes.Left.TickLabelStyle.IsVisible = false;
-            //plot.Axes.Left.TickLabelStyle.FontSize = 0;
-            //plot.Axes.Left.MajorTickStyle.Length = 0;
-            //plot.Axes.Left.MinorTickStyle.Length = 0;
-            //plot.Axes.Bottom.MajorTickStyle.Length = 0;
-            //plot.Axes.Bottom.MinorTickStyle.Length = 0;
+            plot.Axes.Left.TickLabelStyle.IsVisible = false;
+            plot.Axes.Left.TickLabelStyle.FontSize = 0;
+            plot.Axes.Left.MajorTickStyle.Length = 0;
+            plot.Axes.Left.MinorTickStyle.Length = 0;
+            plot.Axes.Bottom.MajorTickStyle.Length = 0;
+            plot.Axes.Bottom.MinorTickStyle.Length = 0;
 
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
@@ -626,12 +645,17 @@ namespace EEGTool.ViewModels.Collection
     public class WaveHeaderItem : BindableBase
     {
         private bool _isSelected = true;
+        private double _itemOffsetY;
 
         public string Channel { get; set; } = string.Empty;
         public string ElectrodeName { get; set; } = string.Empty;
         public string ImpedanceValue { get; set; } = "--";
         public string ImpedanceColor { get; set; } = "#56A4F4";
-        public double ItemOffsetY { get; set; }
+        public double ItemOffsetY
+        {
+            get => _itemOffsetY;
+            set => SetProperty(ref _itemOffsetY, value);
+        }
         public double OpacityValue => IsSelected ? 1.0 : 0.35;
 
         public bool IsSelected
