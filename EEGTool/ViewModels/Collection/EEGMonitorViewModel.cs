@@ -279,11 +279,18 @@ namespace EEGTool.ViewModels.Collection
             }
 
             int channelCount = renderData.Select(item => item.ch).Distinct().Count();
-            EnsureStreamers(channelCount);
+            bool streamersRebuilt = EnsureStreamers(channelCount);
             ConfigSecondTicks();
             UpdatePlotVertTextLabel(channelCount);
 
             int availableSamples = renderData.Min(item => item.ys.Length);
+            if (streamersRebuilt)
+            {
+                FillStreamersFromCurrentWindow(renderData, availableSamples);
+                _lastPlotDataTime = DateTime.UtcNow;
+                return;
+            }
+
             int newSampleCount = GetNewPlotSampleCount(availableSamples);
             if (newSampleCount <= 0)
             {
@@ -343,7 +350,7 @@ namespace EEGTool.ViewModels.Collection
                 Math.Max(1, _sampleRate) * _updatePlotTimer.Interval.TotalSeconds));
         }
 
-        private void EnsureStreamers(int channelCount)
+        private bool EnsureStreamers(int channelCount)
         {
             int sampleRate = Math.Max(1, _sampleRate);
             int capacity = Math.Max(sampleRate, WindowSec * sampleRate);
@@ -351,7 +358,7 @@ namespace EEGTool.ViewModels.Collection
                 _lastAxisSampleRate == sampleRate &&
                 _lastAxisWindowSec == WindowSec)
             {
-                return;
+                return false;
             }
 
             EegPlot.Plot.Remove<DataStreamer>();
@@ -371,6 +378,28 @@ namespace EEGTool.ViewModels.Collection
             }
 
             ApplyStreamerViewMode();
+            return true;
+        }
+
+        private void FillStreamersFromCurrentWindow(
+            List<(double[] xs, double[] ys, int ch)> renderData,
+            int availableSamples)
+        {
+            if (availableSamples <= 0)
+            {
+                return;
+            }
+
+            foreach (var (_, ys, ch) in renderData)
+            {
+                if (!_streamers.TryGetValue(ch, out DataStreamer? streamer))
+                {
+                    continue;
+                }
+
+                int startIndex = Math.Max(0, ys.Length - availableSamples);
+                streamer.AddRange(ys.Skip(startIndex));
+            }
         }
 
         private void SetStreamerViewMode(StreamerViewMode mode)
