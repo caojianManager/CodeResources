@@ -55,8 +55,12 @@ namespace EEGTool.ViewModels
         private CancellationTokenSource? _samplePumpCts;
         private Task? _samplePumpTask;
         private double _samplePumpRemainder;
+        private long _samplesWrittenVersion;
+        private long _lastProcessedSamplesVersion;
         private const int MonitorTimerIntervalMilliseconds = 40;
         private const int SamplePumpIntervalMilliseconds = 10;
+        private const int TargetPendingLatencyMilliseconds = 100;
+        private const int MaxPendingLatencyMilliseconds = 500;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
@@ -364,6 +368,7 @@ namespace EEGTool.ViewModels
             }
 
             var samples = ConvertDataFrameSamples(dataFrame);
+            int droppedSamples = 0;
             lock (_dataProcessingLock)
             {
                 for (int i = 0; i < samples.Length; i++)
@@ -371,7 +376,20 @@ namespace EEGTool.ViewModels
                     _pendingSamples.Enqueue(samples[i]);
                 }
 
+                int maxPendingSamples = Math.Max(1,
+                    _dataBuffer.SampleRate * MaxPendingLatencyMilliseconds / 1000);
+                while (_pendingSamples.Count > maxPendingSamples)
+                {
+                    _pendingSamples.Dequeue();
+                    droppedSamples++;
+                }
+
                 EnsureSamplePumpRunning();
+            }
+
+            if (droppedSamples > 0)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][ReceivedCollectionData]:平滑队列超出实时延迟上限，丢弃旧样本 Count={droppedSamples}");
             }
 
             Logger.Debug($"[CollectionMonitorViewModel][ReceivedCollectionData]:采集数据已进入平滑队列 Pending={_pendingSamples.Count}, BufferCount={_dataBuffer.Count}");
@@ -401,6 +419,8 @@ namespace EEGTool.ViewModels
                 new DataProcessorSettings(channelCount, sampleRate));
             _pendingSamples.Clear();
             _samplePumpRemainder = 0;
+            _samplesWrittenVersion = 0;
+            _lastProcessedSamplesVersion = 0;
 
             Logger.Info($"[CollectionMonitorViewModel][EnsureDataProcessor]:初始化数据处理器 Channels={channelCount}, SampleRate={sampleRate}");
         }
@@ -474,16 +494,23 @@ namespace EEGTool.ViewModels
 
                     double samplesPerTick = _dataBuffer.SampleRate * SamplePumpIntervalMilliseconds / 1000.0;
                     _samplePumpRemainder += samplesPerTick;
-                    int samplesToWrite = Math.Min(_pendingSamples.Count, (int)_samplePumpRemainder);
+                    int targetPendingSamples = Math.Max(1,
+                        _dataBuffer.SampleRate * TargetPendingLatencyMilliseconds / 1000);
+                    int catchUpSamples = Math.Max(0, _pendingSamples.Count - targetPendingSamples);
+                    int samplesToWrite = Math.Min(
+                        _pendingSamples.Count,
+                        (int)_samplePumpRemainder + catchUpSamples);
                     if (samplesToWrite <= 0)
                     {
                         continue;
                     }
 
-                    _samplePumpRemainder -= samplesToWrite;
+                    int scheduledSamples = Math.Min(samplesToWrite, (int)_samplePumpRemainder);
+                    _samplePumpRemainder -= scheduledSamples;
                     for (int i = 0; i < samplesToWrite; i++)
                     {
                         _dataBuffer.AddSample(_pendingSamples.Dequeue());
+                        _samplesWrittenVersion++;
                     }
                 }
             }
@@ -495,7 +522,10 @@ namespace EEGTool.ViewModels
             int bufferCount = 0;
             lock (_dataProcessingLock)
             {
-                if (_dataBuffer == null || _dataProcessor == null || _dataBuffer.Count == 0)
+                if (_dataBuffer == null ||
+                    _dataProcessor == null ||
+                    _dataBuffer.Count == 0 ||
+                    _samplesWrittenVersion == _lastProcessedSamplesVersion)
                 {
                     return;
                 }
@@ -503,6 +533,7 @@ namespace EEGTool.ViewModels
                 _latestProcessingResult = _dataProcessor.Process();
                 result = _latestProcessingResult;
                 bufferCount = _dataBuffer.Count;
+                _lastProcessedSamplesVersion = _samplesWrittenVersion;
             }
 
             EventUtilManager.EventUitl.OnEvent<DataProcessingResult>(EventName.RECEVIED_COLLECTION_DATA, result);

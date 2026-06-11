@@ -441,6 +441,7 @@
                                                                 VerticalAlignment="Center">
                                                         <TextBlock
                                                             FontSize="8"
+                                                            HorizontalAlignment="Center"
                                                             Text="{Binding ElectrodeName}" Foreground="Black"/>
                                                         <Grid Background="Gray" Height="1"
                                                               Margin="0,0"></Grid>
