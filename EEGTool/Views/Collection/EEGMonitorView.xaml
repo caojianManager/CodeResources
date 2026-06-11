@@ -399,13 +399,13 @@
                 Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition
-                        Width="80" />
+                        Width="60" />
                     <ColumnDefinition
                         Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Grid>
-                    <Canvas Width="60" ClipToBounds="True">
+                    <Canvas Width="60" ClipToBounds="True" Margin="15,0,0,0">
                         <ItemsControl ItemsSource="{Binding WaveHeaderItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>

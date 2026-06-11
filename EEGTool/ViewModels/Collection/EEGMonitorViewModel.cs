@@ -651,6 +651,7 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Left.MinorTickStyle.Length = 0;
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
             plot.Axes.Bottom.MinorTickStyle.Length = 0;
+            plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
 
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
