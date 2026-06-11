@@ -399,13 +399,13 @@
                 Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition
-                        Width="200" />
+                        Width="80" />
                     <ColumnDefinition
-                        Width="5*" />
+                        Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Grid>
-                    <Canvas Width="110" ClipToBounds="True">
+                    <Canvas Width="60" ClipToBounds="True">
                         <ItemsControl ItemsSource="{Binding WaveHeaderItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -419,41 +419,34 @@
                             </ItemsControl.ItemContainerStyle>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Height="25" Width="110" Opacity="{Binding OpacityValue}">
-                                        <Grid Height="25" Width="110">
+                                    <Grid Height="50" Width="50" Opacity="{Binding OpacityValue}">
+                                        <Grid Height="39" Width="39">
                                             <Button Margin="0"
-                                             Width="110"
-                                             Height="25"
+                                             Width="38"
+                                             Height="38"
                                              Padding="0"
                                              Background="Transparent"
                                              BorderBrush="Transparent"
                                              CommandParameter="{Binding}"
                                              Command="{Binding DataContext.ClickWaveHeaderCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Grid Width="42" Height="23">
-                                                        <Border CornerRadius="4" Background="{Binding ImpedanceColor}"/>
-                                                        <TextBlock Text="{Binding ImpedanceValue}"
-                                                            VerticalAlignment="Center"
-                                                            HorizontalAlignment="Center"
-                                                            Foreground="White"/>
-                                                    </Grid>
-                                                    <Grid Width="65" Height="23"
-                                                   Margin="1,0,0,0">
-                                                        <Border BorderThickness="1" BorderBrush="#108EFF" CornerRadius="4"/>
+                                                <Grid Width="36" Height="36"
+                                                      Margin="0,0,0,0">
+                                                    <Border BorderThickness="1" BorderBrush="#108EFF" CornerRadius="25"/>
+                                                 
+                                                    <StackPanel Orientation="Vertical"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center">
                                                         <TextBlock
-                                                         Margin="0,0,3,0"
-                                                         HorizontalAlignment="Right"
-                                                         FontSize="12"
-                                                         VerticalAlignment="Center"
-                                                         Text="{Binding ElectrodeName}" Foreground="Black"/>
+                                                            FontSize="8"
+                                                            Text="{Binding ElectrodeName}" Foreground="Black"/>
+                                                        <Grid Background="Gray" Height="1"
+                                                              Margin="0,0"></Grid>
                                                         <TextBlock
-                                                         Margin="3,0,0,0"
-                                                         HorizontalAlignment="Left"
-                                                         FontSize="12"
-                                                         VerticalAlignment="Center"
-                                                         Text="{Binding Channel}" Foreground="Black"/>
-                                                    </Grid>
-                                                </StackPanel>
+                                                            FontSize="8"
+                                                            Text="{Binding Channel}" Foreground="Black"/>
+                                                    </StackPanel>
+                                                    
+                                                </Grid>
                                             </Button>
 
                                         </Grid>
