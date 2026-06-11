@@ -368,12 +368,10 @@ namespace EEGTool.ViewModels.Collection
 
             for (int ch = 0; ch < channelCount; ch++)
             {
-                double centerY = GetChannelPlotCenterY(ch, channelCount);
                 DataStreamer streamer = EegPlot.Plot.Add.DataStreamer(capacity);
                 streamer.LineWidth = 1;
                 streamer.LineColor = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
                 streamer.ManageAxisLimits = false;
-                streamer.Clear(centerY);
                 _streamers[ch] = streamer;
             }
 
