@@ -1,4 +1,5 @@
 using EEGTool.Models.Collection;
+using EEGTool.Models.Template;
 using Framework.Event;
 using Framework.MVVM.Commands;
 using FrameWork.Common;
@@ -28,7 +29,7 @@ namespace EEGTool.ViewModels.Collection
 
         private const double ChannelHeight = 100;
         private const double ChannelCenterOffset = 50;
-        private const double WaveHeaderItemHeight = 25;
+        private const double WaveHeaderItemHeight = 50;
         private const double MinVisibleChannelCount = 1;
         private const double MaxVisibleChannelPadding = 0.5;
         private const double WipeBlankFraction = 0.000001;
@@ -550,14 +551,28 @@ namespace EEGTool.ViewModels.Collection
                 return;
             }
 
+            var template = CollectionInfoManager.GetInstance().Info.Template;
+            List<int> enabledChannels = TemplateFileManager.GetInstance()
+                .GetCurrentChannelList(template)
+                .Where(channel => channel >= 1 && channel <= EEGTool.Models.BLE.CommandManager.ChannelCount)
+                .Distinct()
+                .OrderBy(channel => channel)
+                .ToList();
+
+            if (enabledChannels.Count != channelCount)
+            {
+                enabledChannels = Enumerable.Range(1, channelCount).ToList();
+            }
+
             WaveHeaderItems.Clear();
             for (int i = 0; i < channelCount; i++)
             {
-                string channelName = i < Constants.ChannelList.Count ? Constants.ChannelList[i] : $"Ch{i + 1}";
+                string channelName = $"Ch{enabledChannels[i]}";
+                string electrodeName = TemplateFileManager.GetInstance().GetChannelName(channelName, template);
                 WaveHeaderItems.Add(new WaveHeaderItem
                 {
                     Channel = channelName,
-                    ElectrodeName = channelName,
+                    ElectrodeName = string.IsNullOrWhiteSpace(electrodeName) ? "--" : electrodeName,
                     ImpedanceValue = "--"
                 });
             }

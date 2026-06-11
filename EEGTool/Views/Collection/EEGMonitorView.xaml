@@ -420,7 +420,10 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Height="50" Width="50" Opacity="{Binding OpacityValue}">
-                                        <Grid Height="39" Width="39">
+                                        <Grid Height="39"
+                                              Width="39"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center">
                                             <Button Margin="0"
                                              Width="38"
                                              Height="38"
