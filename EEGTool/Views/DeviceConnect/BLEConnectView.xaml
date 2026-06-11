@@ -96,10 +96,17 @@
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                <DataTrigger Binding="{Binding IsConnectedByCurrentApp}" Value="True">
                     <Setter Property="Background" Value="#D83A3A" />
                     <Setter Property="BorderBrush" Value="#D83A3A" />
                     <Setter Property="Content" Value="断开连接" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsOccupiedByOther}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                    <Setter Property="Background" Value="#A8B0B8" />
+                    <Setter Property="BorderBrush" Value="#A8B0B8" />
+                    <Setter Property="Foreground" Value="#F4F4F4" />
+                    <Setter Property="Content" Value="已被占用" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DataContext.IsConnecting, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                     <Setter Property="IsEnabled" Value="False" />

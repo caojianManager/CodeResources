@@ -50,6 +50,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
     private short _rssi;
     private bool _isPaired;
     private bool _isConnected;
+    private bool _isConnectedByCurrentApp;
+    private bool _hasConnectableAdvertisement;
+    private bool _isConnectableAdvertisement;
     private bool _isConnecting;
     private string _advertisementType = "N/A";
     private IReadOnlyList<BleAdvertisementSection> _advertisementSections = Array.Empty<BleAdvertisementSection>();
@@ -87,8 +90,53 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
     public bool IsConnected
     {
         get => _isConnected;
-        set => SetField(ref _isConnected, value);
+        set
+        {
+            if (SetField(ref _isConnected, value))
+            {
+                OnConnectionOwnershipChanged();
+            }
+        }
     }
+
+    public bool IsConnectedByCurrentApp
+    {
+        get => _isConnectedByCurrentApp;
+        set
+        {
+            if (SetField(ref _isConnectedByCurrentApp, value))
+            {
+                OnConnectionOwnershipChanged();
+            }
+        }
+    }
+
+    public bool HasConnectableAdvertisement
+    {
+        get => _hasConnectableAdvertisement;
+        set
+        {
+            if (SetField(ref _hasConnectableAdvertisement, value))
+            {
+                OnConnectionOwnershipChanged();
+            }
+        }
+    }
+
+    public bool IsConnectableAdvertisement
+    {
+        get => _isConnectableAdvertisement;
+        set
+        {
+            if (SetField(ref _isConnectableAdvertisement, value))
+            {
+                OnConnectionOwnershipChanged();
+            }
+        }
+    }
+
+    public bool IsOccupiedByOther => !IsConnectedByCurrentApp
+        && (IsConnected || (HasConnectableAdvertisement && !IsConnectableAdvertisement));
 
     public bool IsConnecting
     {
@@ -124,6 +172,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
             Rssi = Rssi,
             IsPaired = IsPaired,
             IsConnected = IsConnected,
+            IsConnectedByCurrentApp = IsConnectedByCurrentApp,
+            HasConnectableAdvertisement = HasConnectableAdvertisement,
+            IsConnectableAdvertisement = IsConnectableAdvertisement,
             IsConnecting = IsConnecting,
             AdvertisementType = AdvertisementType,
             AdvertisementSections = AdvertisementSections
@@ -145,6 +196,9 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         Rssi = other.Rssi;
         IsPaired = other.IsPaired;
         IsConnected = other.IsConnected;
+        IsConnectedByCurrentApp = other.IsConnectedByCurrentApp;
+        HasConnectableAdvertisement = other.HasConnectableAdvertisement;
+        IsConnectableAdvertisement = other.IsConnectableAdvertisement;
         IsConnecting = other.IsConnecting;
         AdvertisementType = other.AdvertisementType;
         AdvertisementSections = other.AdvertisementSections
@@ -157,11 +211,11 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
             .ToArray();
     }
 
-    private void SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
         {
-            return;
+            return false;
         }
 
         field = value;
@@ -172,6 +226,13 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SignalText)));
         }
+
+        return true;
+    }
+
+    private void OnConnectionOwnershipChanged()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsOccupiedByOther)));
     }
 }
 
@@ -221,6 +282,8 @@ public sealed class BleManager : IDisposable
         public string LocalName { get; init; } = string.Empty;
         public short Rssi { get; init; }
         public string AdvertisementType { get; init; } = "N/A";
+        public bool HasConnectability { get; init; }
+        public bool IsConnectable { get; init; }
         public IReadOnlyList<BleAdvertisementSection> Sections { get; init; } =
             Array.Empty<BleAdvertisementSection>();
     }
@@ -235,6 +298,7 @@ public sealed class BleManager : IDisposable
     private readonly ConcurrentDictionary<string, GattCharacteristic> _subscribedCharacteristics = new();
 
     private string? _connectedDeviceId;
+    private bool _ownsConnection;
     private bool _isReconnecting;
     private bool _disposed;
     private bool _autoReconnect = true;
@@ -259,6 +323,7 @@ public sealed class BleManager : IDisposable
         {
             "System.Devices.Aep.DeviceAddress",
             "System.Devices.Aep.IsConnected",
+            "System.Devices.Aep.Bluetooth.Le.IsConnectable",
             "System.Devices.Aep.SignalStrength"
         };
 
@@ -321,36 +386,41 @@ public sealed class BleManager : IDisposable
                     && _advertisementsByAddress.ContainsKey(device.Address)));
         }
 
-        return devices.Select(device => device.Clone()).ToList();
+        return devices.Select(device =>
+        {
+            device.IsConnectedByCurrentApp = IsConnectionOwnedByCurrentApp(device.DeviceId);
+            return device.Clone();
+        }).ToList();
+    }
+
+    public bool IsConnectionOwnedByCurrentApp(string deviceId)
+    {
+        return _ownsConnection
+            && _device?.ConnectionStatus == BluetoothConnectionStatus.Connected
+            && string.Equals(_device.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase);
     }
 
     public BleDeviceInfo? GetCurrentConnectedDevice()
     {
-        if (!string.IsNullOrWhiteSpace(_connectedDeviceId)
-            && _devicesById.TryGetValue(_connectedDeviceId, out BleDeviceInfo? currentDevice)
-            && currentDevice.IsConnected)
+        if (!_ownsConnection || _device?.ConnectionStatus != BluetoothConnectionStatus.Connected)
         {
+            return null;
+        }
+
+        if (_devicesById.TryGetValue(_device.DeviceId, out BleDeviceInfo? currentDevice))
+        {
+            currentDevice.IsConnectedByCurrentApp = true;
             return currentDevice.Clone();
         }
 
-        var discoveredConnectedDevice = _devicesById.Values.FirstOrDefault(device => device.IsConnected);
-        if (discoveredConnectedDevice != null)
+        return new BleDeviceInfo
         {
-            return discoveredConnectedDevice.Clone();
-        }
-
-        if (_device?.ConnectionStatus == BluetoothConnectionStatus.Connected)
-        {
-            return new BleDeviceInfo
-            {
-                DeviceId = _device.DeviceId,
-                Name = _device.Name ?? string.Empty,
-                Address = FormatBluetoothAddress(_device.BluetoothAddress),
-                IsConnected = true
-            };
-        }
-
-        return null;
+            DeviceId = _device.DeviceId,
+            Name = _device.Name ?? string.Empty,
+            Address = FormatBluetoothAddress(_device.BluetoothAddress),
+            IsConnected = true,
+            IsConnectedByCurrentApp = true
+        };
     }
 
     public async Task<bool> PairAsync(string deviceId)
@@ -404,20 +474,39 @@ public sealed class BleManager : IDisposable
     {
         ThrowIfDisposed();
 
+        if (_devicesById.TryGetValue(deviceId, out BleDeviceInfo? discoveredDevice)
+            && discoveredDevice.IsOccupiedByOther)
+        {
+            throw new BleException("设备已被其他软件或终端连接，当前不可连接");
+        }
+
         if (_device != null)
         {
             await DisconnectAsync();
         }
 
         _autoReconnect = true;
-        _device = await BluetoothLEDevice.FromIdAsync(deviceId)
-            ?? throw new BleException($"无法找到设备: {deviceId}");
+        _ownsConnection = false;
 
-        _connectedDeviceId = deviceId;
-        _device.ConnectionStatusChanged += OnConnectionStatusChanged;
+        try
+        {
+            _device = await BluetoothLEDevice.FromIdAsync(deviceId)
+                ?? throw new BleException($"无法找到设备: {deviceId}");
 
-        await WaitForGattAsync(cancellationToken);
-        UpdateDeviceConnectionState(deviceId, true);
+            _connectedDeviceId = deviceId;
+            _device.ConnectionStatusChanged += OnConnectionStatusChanged;
+
+            await WaitForGattAsync(cancellationToken);
+            _ownsConnection = true;
+            UpdateDeviceConnectionState(deviceId, true);
+        }
+        catch
+        {
+            _ownsConnection = false;
+            DisposeDevice();
+            _connectedDeviceId = null;
+            throw;
+        }
 
         ConnectionChanged?.Invoke(this, new BleConnectionChangedEventArgs
         {
@@ -427,13 +516,13 @@ public sealed class BleManager : IDisposable
         });
     }
 
-    public bool IsConnected => _device?.ConnectionStatus == BluetoothConnectionStatus.Connected;
+    public bool IsConnected => _ownsConnection && _device?.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
     public async Task EnsureConnectedAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
-        if (_device?.ConnectionStatus == BluetoothConnectionStatus.Connected)
+        if (IsConnected)
         {
             return;
         }
@@ -687,6 +776,15 @@ public sealed class BleManager : IDisposable
             device.IsConnected = (bool)connectedValue;
         }
 
+        if (update.Properties.TryGetValue("System.Devices.Aep.Bluetooth.Le.IsConnectable", out object? connectableValue)
+            && connectableValue is bool isConnectable)
+        {
+            device.HasConnectableAdvertisement = true;
+            device.IsConnectableAdvertisement = isConnectable;
+        }
+
+        device.IsConnectedByCurrentApp = IsConnectionOwnedByCurrentApp(device.DeviceId);
+
         MergeAdvertisement(device);
         DeviceUpdated?.Invoke(this, device.Clone());
     }
@@ -699,12 +797,21 @@ public sealed class BleManager : IDisposable
             return;
         }
 
+        bool isScanResponse = args.AdvertisementType == BluetoothLEAdvertisementType.ScanResponse;
+        _advertisementsByAddress.TryGetValue(address, out AdvertisementSnapshot? previousSnapshot);
+
         var snapshot = new AdvertisementSnapshot
         {
             Address = address,
             LocalName = args.Advertisement.LocalName ?? string.Empty,
             Rssi = (short)args.RawSignalStrengthInDBm,
-            AdvertisementType = args.IsScanResponse ? "ScanResponse" : "Advertisement",
+            AdvertisementType = isScanResponse && previousSnapshot != null
+                ? previousSnapshot.AdvertisementType
+                : args.AdvertisementType.ToString(),
+            HasConnectability = !isScanResponse || previousSnapshot?.HasConnectability == true,
+            IsConnectable = isScanResponse && previousSnapshot != null
+                ? previousSnapshot.IsConnectable
+                : IsConnectableAdvertisementType(args.AdvertisementType),
             Sections = BuildAdvertisementSections(args.Advertisement)
         };
 
@@ -767,6 +874,7 @@ public sealed class BleManager : IDisposable
 
     private void DisposeDevice()
     {
+        _ownsConnection = false;
         if (_device == null)
         {
             return;
@@ -780,6 +888,10 @@ public sealed class BleManager : IDisposable
     private void OnConnectionStatusChanged(BluetoothLEDevice sender, object args)
     {
         bool isConnected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
+        if (!isConnected)
+        {
+            _ownsConnection = false;
+        }
         UpdateDeviceConnectionState(sender.DeviceId, isConnected);
 
         ConnectionChanged?.Invoke(this, new BleConnectionChangedEventArgs
@@ -919,7 +1031,7 @@ public sealed class BleManager : IDisposable
         }
     }
 
-    private static BleDeviceInfo BuildDeviceInfo(DeviceInformation info)
+    private BleDeviceInfo BuildDeviceInfo(DeviceInformation info)
     {
         short rssi = 0;
         if (info.Properties.TryGetValue("System.Devices.Aep.SignalStrength", out object? rssiValue) && rssiValue != null)
@@ -931,6 +1043,15 @@ public sealed class BleManager : IDisposable
         if (info.Properties.TryGetValue("System.Devices.Aep.IsConnected", out object? connectedValue) && connectedValue != null)
         {
             isConnected = (bool)connectedValue;
+        }
+
+        bool hasConnectableState = false;
+        bool isConnectable = false;
+        if (info.Properties.TryGetValue("System.Devices.Aep.Bluetooth.Le.IsConnectable", out object? connectableValue)
+            && connectableValue is bool connectable)
+        {
+            hasConnectableState = true;
+            isConnectable = connectable;
         }
 
         string address = string.Empty;
@@ -947,6 +1068,9 @@ public sealed class BleManager : IDisposable
             Rssi = rssi,
             IsPaired = info.Pairing.IsPaired,
             IsConnected = isConnected,
+            IsConnectedByCurrentApp = IsConnectionOwnedByCurrentApp(info.Id),
+            HasConnectableAdvertisement = hasConnectableState,
+            IsConnectableAdvertisement = isConnectable,
             AdvertisementType = "N/A",
             AdvertisementSections = Array.Empty<BleAdvertisementSection>()
         };
@@ -974,6 +1098,11 @@ public sealed class BleManager : IDisposable
 
         device.Rssi = snapshot.Rssi;
         device.AdvertisementType = snapshot.AdvertisementType;
+        if (snapshot.HasConnectability)
+        {
+            device.HasConnectableAdvertisement = true;
+            device.IsConnectableAdvertisement = snapshot.IsConnectable;
+        }
         device.AdvertisementSections = snapshot.Sections
             .Select(section => new BleAdvertisementSection
             {
@@ -998,6 +1127,7 @@ public sealed class BleManager : IDisposable
         if (_devicesById.TryGetValue(deviceId, out BleDeviceInfo? device))
         {
             device.IsConnected = isConnected;
+            device.IsConnectedByCurrentApp = isConnected && IsConnectionOwnedByCurrentApp(deviceId);
             DeviceUpdated?.Invoke(this, device.Clone());
         }
     }
@@ -1014,6 +1144,12 @@ public sealed class BleManager : IDisposable
                 Data = bytes.Length == 0 ? "(empty)" : Convert.ToHexString(bytes)
             };
         }).ToArray();
+    }
+
+    private static bool IsConnectableAdvertisementType(BluetoothLEAdvertisementType advertisementType)
+    {
+        return advertisementType is BluetoothLEAdvertisementType.ConnectableUndirected
+            or BluetoothLEAdvertisementType.ConnectableDirected;
     }
 
     private static string FormatBluetoothAddress(ulong address)

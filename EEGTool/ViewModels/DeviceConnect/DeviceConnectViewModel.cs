@@ -165,6 +165,9 @@ namespace EEGTool.ViewModels.DeviceConnect
                 device.AdvertisementType = deviceInfo.AdvertisementType;
                 device.Rssi = deviceInfo.Rssi;
                 device.IsConnected = deviceInfo.IsConnected;
+                device.IsConnectedByCurrentApp = deviceInfo.IsConnectedByCurrentApp;
+                device.HasConnectableAdvertisement = deviceInfo.HasConnectableAdvertisement;
+                device.IsConnectableAdvertisement = deviceInfo.IsConnectableAdvertisement;
                 SyncCurrentConnectedDeviceInfo();
             });
         }
@@ -177,6 +180,7 @@ namespace EEGTool.ViewModels.DeviceConnect
                 if (device != null)
                 {
                     device.IsConnected = e.IsConnected;
+                    device.IsConnectedByCurrentApp = e.IsConnected && _ble.IsConnectionOwnedByCurrentApp(e.DeviceId);
                 }
 
                 SyncCurrentConnectedDeviceInfo();
@@ -200,6 +204,11 @@ namespace EEGTool.ViewModels.DeviceConnect
                 return;
             }
 
+            if (device.IsOccupiedByOther)
+            {
+                return;
+            }
+
             if (!await _connectGate.WaitAsync(0))
             {
                 RunOnUI(() =>
@@ -209,15 +218,16 @@ namespace EEGTool.ViewModels.DeviceConnect
                 return;
             }
 
-            bool isConnectAction = !device.IsConnected;
+            bool isConnectAction = !device.IsConnectedByCurrentApp;
             try
             {
-                if (device.IsConnected)
+                if (device.IsConnectedByCurrentApp)
                 {
                     await _ble.DisconnectAsync();
                     RunOnUI(() =>
                     {
                         device.IsConnected = false;
+                        device.IsConnectedByCurrentApp = false;
                         SyncCurrentConnectedDeviceInfo();
                         if (!_isViewUnloading)
                         {
@@ -245,6 +255,7 @@ namespace EEGTool.ViewModels.DeviceConnect
                         foreach (var dv in BtDevices)
                         {
                             dv.IsConnected = dv.DeviceId == device.DeviceId;
+                            dv.IsConnectedByCurrentApp = dv.DeviceId == device.DeviceId;
                         }
                         SyncCurrentConnectedDeviceInfo();
 
@@ -332,7 +343,9 @@ namespace EEGTool.ViewModels.DeviceConnect
 
 
             //获取扫描结果
-            var devices = _ble.GetDiscoveredDevices(onlyAdvertising: true);
+            // DeviceWatcher 已限定为本轮扫描结果。不要再按广播地址过滤：
+            // 使用随机 BLE 地址的设备，其枚举地址可能与广播地址不一致。
+            var devices = _ble.GetDiscoveredDevices();
 
             //按照蓝牙名称过滤设备
             devices = devices.Where(d => d.Name.StartsWith("16CH_", StringComparison.OrdinalIgnoreCase))
@@ -389,7 +402,7 @@ namespace EEGTool.ViewModels.DeviceConnect
 
         private void SyncCurrentConnectedDeviceInfo()
         {
-            var connectedDevice = BtDevices.FirstOrDefault(d => d.IsConnected);
+            var connectedDevice = BtDevices.FirstOrDefault(d => d.IsConnectedByCurrentApp);
             if (connectedDevice == null)
             {
                 SetDisconnectedInfo();
