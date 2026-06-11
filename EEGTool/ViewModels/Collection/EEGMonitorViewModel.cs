@@ -33,6 +33,7 @@ namespace EEGTool.ViewModels.Collection
         private const double MinVisibleChannelCount = 1;
         private const double MaxVisibleChannelPadding = 0.5;
         private const double WipeBlankFraction = 0.000001;
+        private const int MaxPlotQueueLatencyMilliseconds = 100;
         private readonly object _onDataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
         private readonly Dictionary<int, int> _autoValues = new();
@@ -289,6 +290,18 @@ namespace EEGTool.ViewModels.Collection
                 return;
             }
 
+            int maxQueuedSamples = Math.Max(1,
+                _sampleRate * MaxPlotQueueLatencyMilliseconds / 1000);
+            int samplesToDiscard = Math.Max(0,
+                _pendingPlotSamples.Count + newSampleCount - maxQueuedSamples);
+            while (samplesToDiscard > 0 && _pendingPlotSamples.Count > 0)
+            {
+                _pendingPlotSamples.Dequeue();
+                samplesToDiscard--;
+            }
+
+            newSampleCount = Math.Min(newSampleCount, maxQueuedSamples);
+
             for (int i = availableSamples - newSampleCount; i < availableSamples; i++)
             {
                 var sample = new double[channelCount];
@@ -315,13 +328,19 @@ namespace EEGTool.ViewModels.Collection
             if (_lastPlotDataTime == DateTime.MinValue)
             {
                 _lastPlotDataTime = now;
-                return Math.Min(availableSamples, Math.Max(1, WindowSec * _sampleRate));
+                return Math.Min(availableSamples, GetSamplesPerPlotUpdate());
             }
 
             double elapsedSeconds = Math.Max(0.001, (now - _lastPlotDataTime).TotalSeconds);
             _lastPlotDataTime = now;
             int expectedSamples = Math.Max(1, (int)Math.Round(elapsedSeconds * Math.Max(1, _sampleRate)));
             return Math.Min(availableSamples, expectedSamples);
+        }
+
+        private int GetSamplesPerPlotUpdate()
+        {
+            return Math.Max(1, (int)Math.Ceiling(
+                Math.Max(1, _sampleRate) * _updatePlotTimer.Interval.TotalSeconds));
         }
 
         private void EnsureStreamers(int channelCount)
