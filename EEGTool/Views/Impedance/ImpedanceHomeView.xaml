@@ -3,10 +3,61 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:local="clr-namespace:EEGTool.Views.Impedance"
+             xmlns:vm="clr-namespace:EEGTool.ViewModels.Impedance"
              mc:Ignorable="d" 
-             d:DesignHeight="1080" d:DesignWidth="1920">
-    <Grid Background="Green">
-            
-    </Grid>
+             d:DesignHeight="1080" d:DesignWidth="1920" Cursor="">
+
+    <UserControl.DataContext>
+        <vm:ImpedanceHomeViewModel/>
+    </UserControl.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="39"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+
+        <Grid Background="White">
+            <Border>
+
+                <Border.Background>
+                    <LinearGradientBrush
+                        StartPoint="1,0"
+                        EndPoint="0,1">
+                        <GradientStop
+                            Color="#FFFFFF"
+                            Offset="0" />
+                        <GradientStop
+                            Color="#D4EAFF"
+                            Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom">
+
+                    <Button Style="{StaticResource HomeIconButtonStyle}"
+                            Margin="8,0,0,3"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding BackCommand, RelativeSource={RelativeSource AncestorType={x:Type local:ImpedanceHomeView}}}"
+                            ToolTip="返回">
+                        <iconPacks:PackIconForkAwesome Kind="ArrowCircleOutlineLeft" 
+                                                     Width="20"
+                                                     Height="20"
+                                                     Foreground="#4D4D4D" />
+                    </Button>
+
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Width="1" Background="LightGray"
+                          Margin="15,5"></Grid>
+                    </StackPanel>
+            </Border>
+            </Grid>
+        </Grid>
 </UserControl>

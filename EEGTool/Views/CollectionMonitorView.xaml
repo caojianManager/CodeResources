@@ -13,7 +13,9 @@
              VerticalAlignment="Stretch">
             <Image Source="{x:Static rs:ResourcesImagePath.SYSTEM_BG}"  Stretch="UniformToFill"/>
 
-            <Grid>
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToVisibleConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="39"/>
                     <RowDefinition Height="*"/>
@@ -82,15 +84,17 @@
                 <Grid Grid.Row="1" x:Name="Monitor"
                       Background="White">
                     <mn:MonitorContainerView HorizontalAlignment="Stretch"
-                                             VerticalAlignment="Stretch"
-                                             Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <imp:ImpedanceHomeView HorizontalAlignment="Stretch"
-                                           VerticalAlignment="Stretch"
-                                           Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToCollapsedConverter}}"/>
+                                             VerticalAlignment="Stretch"/>
+                   
                 </Grid>
             </Grid>
 
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToCollapsedConverter}}">
+                <imp:ImpedanceHomeView HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"/>
             </Grid>
-       
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

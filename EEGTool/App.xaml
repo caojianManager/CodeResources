@@ -6,7 +6,7 @@
              >
     <Application.Resources>
         <ResourceDictionary>
-            <coverts:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <coverts:BoolToVisibleConverter x:Key="BoolToVisibleConverter"/>
             <coverts:BoolToCollapsedConverter x:Key="BoolToCollapsedConverter"/>
 
             <ResourceDictionary.MergedDictionaries>

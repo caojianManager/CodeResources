@@ -20,6 +20,18 @@ namespace EEGTool.Views.Impedance
     /// </summary>
     public partial class ImpedanceHomeView : UserControl
     {
+        public static readonly DependencyProperty BackCommandProperty = DependencyProperty.Register(
+            nameof(BackCommand),
+            typeof(ICommand),
+            typeof(ImpedanceHomeView),
+            new PropertyMetadata(null));
+
+        public ICommand? BackCommand
+        {
+            get => (ICommand?)GetValue(BackCommandProperty);
+            set => SetValue(BackCommandProperty, value);
+        }
+
         public ImpedanceHomeView()
         {
             InitializeComponent();
