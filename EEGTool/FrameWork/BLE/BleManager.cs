@@ -51,6 +51,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
     private bool _isPaired;
     private bool _isConnected;
     private bool _isConnectedByCurrentApp;
+    private bool _isPresent;
     private bool _hasConnectableAdvertisement;
     private bool _isConnectableAdvertisement;
     private bool _isConnecting;
@@ -111,6 +112,18 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         }
     }
 
+    public bool IsPresent
+    {
+        get => _isPresent;
+        set
+        {
+            if (SetField(ref _isPresent, value))
+            {
+                OnConnectionOwnershipChanged();
+            }
+        }
+    }
+
     public bool HasConnectableAdvertisement
     {
         get => _hasConnectableAdvertisement;
@@ -135,7 +148,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         }
     }
 
-    public bool IsOccupiedByOther => IsConnected && !IsConnectedByCurrentApp;
+    public bool IsOccupiedByOther => IsConnected && IsPresent && !IsConnectedByCurrentApp;
 
     public bool IsConnecting
     {
@@ -172,6 +185,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
             IsPaired = IsPaired,
             IsConnected = IsConnected,
             IsConnectedByCurrentApp = IsConnectedByCurrentApp,
+            IsPresent = IsPresent,
             HasConnectableAdvertisement = HasConnectableAdvertisement,
             IsConnectableAdvertisement = IsConnectableAdvertisement,
             IsConnecting = IsConnecting,
@@ -196,6 +210,7 @@ public sealed class BleDeviceInfo : INotifyPropertyChanged
         IsPaired = other.IsPaired;
         IsConnected = other.IsConnected;
         IsConnectedByCurrentApp = other.IsConnectedByCurrentApp;
+        IsPresent = other.IsPresent;
         HasConnectableAdvertisement = other.HasConnectableAdvertisement;
         IsConnectableAdvertisement = other.IsConnectableAdvertisement;
         IsConnecting = other.IsConnecting;
@@ -321,6 +336,8 @@ public sealed class BleManager : IDisposable
         string[] requestedProperties =
         {
             "System.Devices.Aep.DeviceAddress",
+            "System.Devices.Aep.IsConnected",
+            "System.Devices.Aep.IsPresent",
             "System.Devices.Aep.Bluetooth.Le.IsConnectable",
             "System.Devices.Aep.SignalStrength"
         };
@@ -379,7 +396,8 @@ public sealed class BleManager : IDisposable
         if (onlyAdvertising)
         {
             devices = devices.Where(device =>
-                device.IsConnected
+                device.IsConnectedByCurrentApp
+                || (device.IsConnected && device.IsPresent)
                 || (!string.IsNullOrWhiteSpace(device.Address)
                     && _advertisementsByAddress.TryGetValue(device.Address, out AdvertisementSnapshot? snapshot)
                     && snapshot.HasConnectability
@@ -771,6 +789,18 @@ public sealed class BleManager : IDisposable
             device.Rssi = Convert.ToInt16(rssiValue);
         }
 
+        if (update.Properties.TryGetValue("System.Devices.Aep.IsConnected", out object? connectedValue)
+            && connectedValue is bool isConnected)
+        {
+            device.IsConnected = isConnected || IsConnectionOwnedByCurrentApp(device.DeviceId);
+        }
+
+        if (update.Properties.TryGetValue("System.Devices.Aep.IsPresent", out object? presentValue)
+            && presentValue is bool isPresent)
+        {
+            device.IsPresent = isPresent;
+        }
+
         if (update.Properties.TryGetValue("System.Devices.Aep.Bluetooth.Le.IsConnectable", out object? connectableValue)
             && connectableValue is bool isConnectable)
         {
@@ -1035,6 +1065,19 @@ public sealed class BleManager : IDisposable
         }
 
         bool isConnectedByCurrentApp = IsConnectionOwnedByCurrentApp(info.Id);
+        bool isConnected = isConnectedByCurrentApp;
+        if (info.Properties.TryGetValue("System.Devices.Aep.IsConnected", out object? connectedValue)
+            && connectedValue is bool systemConnected)
+        {
+            isConnected = systemConnected || isConnectedByCurrentApp;
+        }
+
+        bool isPresent = false;
+        if (info.Properties.TryGetValue("System.Devices.Aep.IsPresent", out object? presentValue)
+            && presentValue is bool systemPresent)
+        {
+            isPresent = systemPresent;
+        }
 
         bool hasConnectableState = false;
         bool isConnectable = false;
@@ -1058,10 +1101,9 @@ public sealed class BleManager : IDisposable
             Address = address,
             Rssi = rssi,
             IsPaired = info.Pairing.IsPaired,
-            // Windows may retain AEP connection state after a device is powered off.
-            // Only a connection established and owned by this manager is authoritative.
-            IsConnected = isConnectedByCurrentApp,
+            IsConnected = isConnected,
             IsConnectedByCurrentApp = isConnectedByCurrentApp,
+            IsPresent = isPresent,
             HasConnectableAdvertisement = hasConnectableState,
             IsConnectableAdvertisement = isConnectable,
             AdvertisementType = "N/A",
