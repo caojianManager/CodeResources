@@ -63,7 +63,15 @@ namespace EEGTool.ViewModels
         private const int MaxPendingLatencyMilliseconds = 500;
 
         public ICommand? BackHomeCommand { get; set; }
+        public ICommand? ImpedanceCommand { get; set; }
         public ICommand? StartRecordCommand { get; set; }
+
+        private bool _isShowMonitor = true;
+        public bool IsShowMonitor
+        {
+            get => _isShowMonitor;
+            set => SetProperty(ref _isShowMonitor, value);
+        }
 
         private bool _isDeviceConnectTabSelected = true;
         public bool IsDeviceConnectTabSelected
@@ -106,6 +114,11 @@ namespace EEGTool.ViewModels
                 }
 
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
+            });
+
+            ImpedanceCommand = new RelayCommand(_ =>
+            {
+                IsShowMonitor = !IsShowMonitor;
             });
 
             
@@ -172,6 +185,7 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
+            IsShowMonitor = true;
             _ = OnShowAsync();
         }
 

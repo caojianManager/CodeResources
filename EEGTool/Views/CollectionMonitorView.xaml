@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:vm="clr-namespace:EEGTool.ViewModels"
                     xmlns:mn="clr-namespace:EEGTool.Views.Collection"
+                    xmlns:imp="clr-namespace:EEGTool.Views.Impedance"
                     xmlns:rs="clr-namespace:Resources"
                     xmlns:hp="clr-namespace:FrameWork.Helper"
                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
@@ -60,6 +61,15 @@
                                 Margin="0,0,0,3"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Bottom"
+                                Command="{Binding ImpedanceCommand}"
+                                ToolTip="阻抗监测">
+                            <iconPacks:PackIconForkAwesome Kind="Rebel"   Width="20" Height="20"
+                                                        Foreground="#4D4D4D"/>
+                        </Button>
+                        <Button Style="{StaticResource ToolBarIconButtonStyle}"
+                                Margin="0,0,0,3"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Bottom"
                                 Command="{Binding StartRecordCommand}"
                                 ToolTip="记录数据">
                             <iconPacks:PackIconIonicons Kind="PlayCircleMD" Width="20" Height="20"
@@ -72,7 +82,11 @@
                 <Grid Grid.Row="1" x:Name="Monitor"
                       Background="White">
                     <mn:MonitorContainerView HorizontalAlignment="Stretch"
-                                             VerticalAlignment="Stretch"/>
+                                             VerticalAlignment="Stretch"
+                                             Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <imp:ImpedanceHomeView HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch"
+                                           Visibility="{Binding IsShowMonitor,Converter={StaticResource BoolToCollapsedConverter}}"/>
                 </Grid>
             </Grid>
 
