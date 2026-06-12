@@ -342,10 +342,8 @@ namespace EEGTool.ViewModels.DeviceConnect
             }
 
 
-            //获取扫描结果
-            // DeviceWatcher 已限定为本轮扫描结果。不要再按广播地址过滤：
-            // 使用随机 BLE 地址的设备，其枚举地址可能与广播地址不一致。
-            var devices = _ble.GetDiscoveredDevices();
+            // 只显示本轮实际收到可连接广播的设备，排除 Windows 的历史枚举缓存。
+            var devices = _ble.GetDiscoveredDevices(onlyAdvertising: true);
 
             //按照蓝牙名称过滤设备
             devices = devices.Where(d => d.Name.StartsWith("16CH_", StringComparison.OrdinalIgnoreCase))
