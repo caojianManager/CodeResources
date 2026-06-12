@@ -46,7 +46,7 @@
                             HorizontalAlignment="Left"
                             VerticalAlignment="Bottom"
                             Command="{Binding BackCommand, RelativeSource={RelativeSource AncestorType={x:Type local:ImpedanceHomeView}}}"
-                            ToolTip="返回">
+                            ToolTip="返回" Cursor="Hand">
                         <iconPacks:PackIconForkAwesome Kind="ArrowCircleOutlineLeft" 
                                                      Width="20"
                                                      Height="20"
