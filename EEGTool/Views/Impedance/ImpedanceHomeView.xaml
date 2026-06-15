@@ -67,7 +67,7 @@
             </Grid.ColumnDefinitions>
 
             <Grid Background="Red">
-
+                <local:ImpedanceEEGView/>
             </Grid>
 
             <Grid Grid.Column="1">
