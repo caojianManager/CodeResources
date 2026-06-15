@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FrameWork.MVVM;
 
 namespace EEGTool.ViewModels.Impedance
 {
-    internal class ImpedanceFFTViewModel
+    public class ImpedanceFFTViewModel : BindableBase
     {
+
+        public ImpedanceFFTViewModel()
+        {
+
+        }
     }
 }
