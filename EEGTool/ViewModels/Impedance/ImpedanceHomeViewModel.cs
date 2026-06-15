@@ -2,10 +2,12 @@ using BLETool;
 using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Impedance;
+using EEGTool.Models;
 using Framework.Event;
 using FrameWork.Event;
 using FrameWork.Log;
 using FrameWork.MVVM;
+using FrameWork.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +30,21 @@ namespace EEGTool.ViewModels.Impedance
         private bool _isMonitorRunning;
         private bool _isVisible;
         private TaskCompletionSource<bool>? _configureImpedanceCompletion;
+        private MultiChannelRingBuffer? _dataBuffer;
+        private DataProcessor? _dataProcessor;
+        private readonly object _dataProcessingLock = new();
+        private readonly Queue<float[]> _pendingSamples = new();
+        private HighPrecisionTimer? _monitorTimer;
+        private CancellationTokenSource? _samplePumpCts;
+        private Task? _samplePumpTask;
+        private double _samplePumpRemainder;
+        private long _samplesWrittenVersion;
+        private long _lastProcessedSamplesVersion;
         private const int ConfigureImpedanceTimeoutMilliseconds = 3000;
+        private const int MonitorTimerIntervalMilliseconds = 40;
+        private const int SamplePumpIntervalMilliseconds = 10;
+        private const int TargetPendingLatencyMilliseconds = 100;
+        private const int MaxPendingLatencyMilliseconds = 500;
 
         public bool IsMonitorRunning
         {
@@ -98,6 +114,7 @@ namespace EEGTool.ViewModels.Impedance
                 Logger.Info($"[ImpedanceHomeViewModel][StartMonitorAsync]:开始阻抗监测指令 {CommandManager.ToHexString(startCommand)}");
                 await WriteDataToBleAsync(startCommand);
                 IsMonitorRunning = true;
+                StartMonitorTimer();
             }
             catch (Exception ex)
             {
@@ -130,6 +147,7 @@ namespace EEGTool.ViewModels.Impedance
             finally
             {
                 IsMonitorRunning = false;
+                StopMonitorTimer();
                 _commandStreamParser.Clear();
                 UnsubscribeDataReceived();
                 _monitorLock.Release();
@@ -205,7 +223,7 @@ namespace EEGTool.ViewModels.Impedance
             }
 
             Logger.Debug($"[ImpedanceHomeViewModel][DataReceived]:收到阻抗数据 {dataFrame.CommandType}, Channels={dataFrame.ChannelCount}, Samples={dataFrame.SampleCount}, Battery={dataFrame.ElectricityQuantity}");
-            EventUtilManager.EventUitl.OnEvent<DataFrame>(EventName.RECEVIED_IMPEDANCE_DATA, dataFrame);
+            _ = ReceivedImpedanceData(dataFrame);
         }
 
         private async Task<bool> GetGattProfileAsync()
@@ -227,6 +245,243 @@ namespace EEGTool.ViewModels.Impedance
             _isNotifySubscribed = dataChannel.IsNotifySubscribed;
             Logger.Info($"[ImpedanceHomeViewModel][GetGattProfileAsync]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
             return true;
+        }
+
+        private async Task ReceivedImpedanceData(DataFrame dataFrame)
+        {
+            EnsureDataProcessor(dataFrame);
+            if (_dataBuffer == null || _dataProcessor == null)
+            {
+                Logger.Debug("[ImpedanceHomeViewModel][ReceivedImpedanceData]:数据处理器初始化失败");
+                return;
+            }
+
+            float[][] samples = ConvertDataFrameSamples(dataFrame);
+            int droppedSamples = 0;
+            int pendingCount;
+            int bufferCount;
+            lock (_dataProcessingLock)
+            {
+                foreach (float[] sample in samples)
+                {
+                    _pendingSamples.Enqueue(sample);
+                }
+
+                int maxPendingSamples = Math.Max(
+                    1,
+                    _dataBuffer.SampleRate * MaxPendingLatencyMilliseconds / 1000);
+                while (_pendingSamples.Count > maxPendingSamples)
+                {
+                    _pendingSamples.Dequeue();
+                    droppedSamples++;
+                }
+
+                pendingCount = _pendingSamples.Count;
+                bufferCount = _dataBuffer.Count;
+                EnsureSamplePumpRunning();
+            }
+
+            if (droppedSamples > 0)
+            {
+                Logger.Info($"[ImpedanceHomeViewModel][ReceivedImpedanceData]:平滑队列超出实时延迟上限，丢弃旧样本 Count={droppedSamples}");
+            }
+
+            Logger.Debug($"[ImpedanceHomeViewModel][ReceivedImpedanceData]:阻抗数据已进入平滑队列 Pending={pendingCount}, BufferCount={bufferCount}");
+            await Task.CompletedTask;
+        }
+
+        private void EnsureDataProcessor(DataFrame dataFrame)
+        {
+            int channelCount = dataFrame.ChannelCount > 0 ? dataFrame.ChannelCount : 16;
+            int sampleRate = CollectionInfoManager.GetInstance().Info.SampleRate > 0
+                ? CollectionInfoManager.GetInstance().Info.SampleRate
+                : 250;
+
+            if (_dataBuffer != null &&
+                _dataProcessor != null &&
+                _dataBuffer.ChannelCount == channelCount &&
+                _dataBuffer.SampleRate == sampleRate)
+            {
+                return;
+            }
+
+            _dataBuffer = new MultiChannelRingBuffer(channelCount, sampleRate);
+            _dataProcessor = new DataProcessor(
+                _dataBuffer,
+                new PassthroughSignalFilter(),
+                new ZeroFftProcessor(),
+                new DataProcessorSettings(channelCount, sampleRate));
+            _pendingSamples.Clear();
+            _samplePumpRemainder = 0;
+            _samplesWrittenVersion = 0;
+            _lastProcessedSamplesVersion = 0;
+
+            Logger.Info($"[ImpedanceHomeViewModel][EnsureDataProcessor]:初始化数据处理器 Channels={channelCount}, SampleRate={sampleRate}");
+        }
+
+        private void StartMonitorTimer()
+        {
+            if (_monitorTimer?.IsRunning == true)
+            {
+                return;
+            }
+
+            _monitorTimer ??= new HighPrecisionTimer(
+                TimeSpan.FromMilliseconds(MonitorTimerIntervalMilliseconds),
+                OnMonitorTimerTick,
+                ex => Logger.Debug($"[ImpedanceHomeViewModel][StartMonitorTimer]:监测定时器异常 {ex}"));
+            _monitorTimer.Start();
+        }
+
+        private void StopMonitorTimer()
+        {
+            _monitorTimer?.Stop();
+            StopSamplePump();
+        }
+
+        private void EnsureSamplePumpRunning()
+        {
+            if (_samplePumpTask?.IsCompleted == false)
+            {
+                return;
+            }
+
+            _samplePumpCts?.Dispose();
+            _samplePumpCts = new CancellationTokenSource();
+            _samplePumpTask = Task.Run(() => PumpSamplesAsync(_samplePumpCts.Token));
+        }
+
+        private void StopSamplePump()
+        {
+            _samplePumpCts?.Cancel();
+            _samplePumpCts?.Dispose();
+            _samplePumpCts = null;
+            _samplePumpTask = null;
+            _samplePumpRemainder = 0;
+
+            lock (_dataProcessingLock)
+            {
+                _pendingSamples.Clear();
+            }
+        }
+
+        private async Task PumpSamplesAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(SamplePumpIntervalMilliseconds));
+                while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    lock (_dataProcessingLock)
+                    {
+                        if (_dataBuffer == null || _pendingSamples.Count == 0)
+                        {
+                            return;
+                        }
+
+                        double samplesPerTick = _dataBuffer.SampleRate * SamplePumpIntervalMilliseconds / 1000.0;
+                        _samplePumpRemainder += samplesPerTick;
+                        int targetPendingSamples = Math.Max(
+                            1,
+                            _dataBuffer.SampleRate * TargetPendingLatencyMilliseconds / 1000);
+                        int catchUpSamples = Math.Max(0, _pendingSamples.Count - targetPendingSamples);
+                        int samplesToWrite = Math.Min(
+                            _pendingSamples.Count,
+                            (int)_samplePumpRemainder + catchUpSamples);
+                        if (samplesToWrite <= 0)
+                        {
+                            continue;
+                        }
+
+                        int scheduledSamples = Math.Min(samplesToWrite, (int)_samplePumpRemainder);
+                        _samplePumpRemainder -= scheduledSamples;
+                        for (int i = 0; i < samplesToWrite; i++)
+                        {
+                            _dataBuffer.AddSample(_pendingSamples.Dequeue());
+                            _samplesWrittenVersion++;
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        private void OnMonitorTimerTick(HighPrecisionTimerTick tick)
+        {
+            DataProcessingResult result;
+            int bufferCount;
+            lock (_dataProcessingLock)
+            {
+                if (_dataBuffer == null ||
+                    _dataProcessor == null ||
+                    _dataBuffer.Count == 0 ||
+                    _samplesWrittenVersion == _lastProcessedSamplesVersion)
+                {
+                    return;
+                }
+
+                result = _dataProcessor.Process();
+                bufferCount = _dataBuffer.Count;
+                _lastProcessedSamplesVersion = _samplesWrittenVersion;
+            }
+
+            EventUtilManager.EventUitl.OnEvent<DataProcessingResult>(
+                EventName.RECEVIED_IMPEDANCE_DATA,
+                result);
+            Logger.Debug($"[ImpedanceHomeViewModel][OnMonitorTimerTick]:阻抗数据处理完成 Tick={tick.TickIndex}, BufferCount={bufferCount}, ReferenceChannel={result.ReferenceChannel}");
+        }
+
+        private static float[][] ConvertDataFrameSamples(DataFrame dataFrame)
+        {
+            int channelCount = dataFrame.Samples.Count;
+            int sampleCount = dataFrame.SampleCount;
+            var samples = new float[sampleCount][];
+
+            for (int sample = 0; sample < sampleCount; sample++)
+            {
+                samples[sample] = new float[channelCount];
+                for (int channel = 0; channel < channelCount; channel++)
+                {
+                    uint adcValue = (uint)dataFrame.Samples[channel][sample] & 0x00FFFFFF;
+                    samples[sample][channel] = CalculateAdcMicrovolts(adcValue);
+                }
+            }
+
+            return samples;
+        }
+
+        private static float CalculateAdcMicrovolts(uint value)
+        {
+            double referenceVoltage = FrameWork.Common.Config.Instance.ReferenceVoltage;
+            double gain = FrameWork.Common.Config.Instance.GainNum;
+            if (gain <= 0)
+            {
+                gain = 1;
+            }
+
+            double microvolts = (value & 0x00800000) != 0
+                ? -1 * ((16777216 - (double)value) * referenceVoltage / 0x7FFFFF * 1000 / gain * 1000)
+                : (double)value * referenceVoltage / 0x7FFFFF * 1000 / gain * 1000;
+            return (float)Math.Round(microvolts, 6);
+        }
+
+        private sealed class PassthroughSignalFilter : ISignalFilter
+        {
+            public void BandPass(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type) { }
+            public void BandStop(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type) { }
+            public void RemoveEnvironmentalNoise(double[] data, int sampleRate, int noiseHz) { }
+        }
+
+        private sealed class ZeroFftProcessor : IFftProcessor
+        {
+            public float[] ComputeAmplitudeSpectrum(float[] timeData, int sampleRate)
+            {
+                return timeData == null || timeData.Length == 0
+                    ? Array.Empty<float>()
+                    : new float[(timeData.Length / 2) + 1];
+            }
         }
 
         private async Task WriteDataToBleAsync(byte[] data)
