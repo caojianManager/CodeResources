@@ -5,8 +5,190 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EEGTool.Views.Impedance"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="1080" d:DesignWidth="1920">
     <Grid>
-            
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions> 
+
+        <Grid Background="Red"></Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition
+                      Width="150" />
+                <ColumnDefinition
+                      Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ContentControl
+                  Margin="108,0,20,20"
+                  Content="{Binding ScottPlotEEG, Mode=OneTime}"
+                  Grid.ColumnSpan="2" />
+            <Grid Grid.Column="0"
+                  Width="126"
+                  HorizontalAlignment="Left"
+                  Panel.ZIndex="100">
+                <ListBox
+                      ItemsSource="{Binding ChannelHeaders}"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      Margin="0,0,0,67"
+                      BorderThickness="0"
+                      VerticalAlignment="Stretch"
+                      Focusable="False"
+                      HorizontalAlignment="Stretch"
+                      Background="Transparent">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->
+                            <UniformGrid
+                                  Columns="1" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+
+                    <ListBox.ItemContainerStyle>
+                        <Style
+                              TargetType="ListBoxItem">
+                            <Setter
+                                  Property="Background"
+                                  Value="Transparent" />
+                            <Setter
+                                  Property="BorderThickness"
+                                  Value="0" />
+                            <Setter
+                                  Property="Focusable"
+                                  Value="False" />
+                            <Setter
+                                  Property="HorizontalContentAlignment"
+                                  Value="Stretch" />
+                            <Setter
+                                  Property="VerticalContentAlignment"
+                                  Value="Stretch" />
+                            <Setter
+                                  Property="Padding"
+                                  Value="0" />
+                            <Setter
+                                  Property="Margin"
+                                  Value="0" />
+                            <Setter
+                                  Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate
+                                          TargetType="ListBoxItem">
+                                        <Border
+                                              Background="Transparent"
+                                              BorderThickness="0">
+                                            <ContentPresenter
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid
+                                  Opacity="{Binding OpacityValue}">
+                                <Rectangle
+                                      Height="1"
+                                      Stroke="#858585"
+                                      StrokeThickness="1"
+                                      StrokeDashArray="5,6"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Top"
+                                      Margin="0,-1.2,0,0"
+                                      SnapsToDevicePixels="True" />
+                                <Button
+                                      Width="116"
+                                      Height="25"
+                                      Padding="0"
+                                      BorderThickness="0"
+                                      Background="Transparent"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Center"
+                                      Focusable="False"
+                                      CommandParameter="{Binding}"
+                                      Command="{Binding DataContext.ClickChannelHeaderCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                    <Button.Template>
+                                        <ControlTemplate
+                                              TargetType="Button">
+                                            <Border
+                                                  Background="{TemplateBinding Background}">
+                                                <ContentPresenter
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+
+                                    <StackPanel
+                                          Orientation="Horizontal"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center">
+                                        <Grid
+                                              Width="42"
+                                              Height="23">
+                                            <Border
+                                                  CornerRadius="3"
+                                                  Background="{Binding ImpedanceColor}" />
+                                            <TextBlock
+                                                  Text="{Binding ImpedanceValue}"
+                                                  Foreground="White"
+                                                  FontSize="11"
+                                                  FontWeight="SemiBold"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <Grid
+                                              Width="72"
+                                              Height="23"
+                                              Margin="1,0,0,0">
+                                            <Border
+                                                  BorderThickness="1"
+                                                  BorderBrush="#8DBEFF"
+                                                  CornerRadius="3"
+                                                  Background="#F9FCFF" />
+                                            <TextBlock
+                                                  Text="{Binding ChannelId}"
+                                                  Margin="3,0,0,0"
+                                                  Foreground="#3A4B63"
+                                                  FontSize="11"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center" />
+                                            <TextBlock
+                                                  Text="{Binding EleTag}"
+                                                  Margin="0,0,3,0"
+                                                  Foreground="#5E6A7A"
+                                                  FontSize="11"
+                                                  TextTrimming="CharacterEllipsis"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Button>
+
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Rectangle
+                      Height="1"
+                      Width="126"
+                      Margin="0,0,0,66.5"
+                      Stroke="#858585"
+                      StrokeThickness="1"
+                      StrokeDashArray="5,6"
+                      SnapsToDevicePixels="True"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Bottom" />
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>
