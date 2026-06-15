@@ -22,7 +22,7 @@ namespace EEGTool.Models.BLE
         StopCollectionResponse = 0x83,
         ConfigureStimulusResponse = 0x84,
         StopStimulusResponse = 0x86,
-        ImpedanceData = 0x87,
+        ConfigureImpedanceResponse = 0x87,
         BatteryResponse = 0x88,
         StopImpedanceResponse = 0x89,
         ImpedanceMonitorData = 0x90
@@ -515,7 +515,6 @@ namespace EEGTool.Models.BLE
         private static bool UsesTwoByteLength(BleCommandType commandType)
         {
             return commandType == BleCommandType.CollectionData ||
-                   commandType == BleCommandType.ImpedanceData ||
                    commandType == BleCommandType.ImpedanceMonitorData;
         }
 
@@ -525,6 +524,7 @@ namespace EEGTool.Models.BLE
                    commandType == BleCommandType.StopCollectionResponse ||
                    commandType == BleCommandType.ConfigureStimulusResponse ||
                    commandType == BleCommandType.StopStimulusResponse ||
+                   commandType == BleCommandType.ConfigureImpedanceResponse ||
                    commandType == BleCommandType.StopImpedanceResponse;
         }
 

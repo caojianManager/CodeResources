@@ -106,6 +106,7 @@ namespace EEGTool.Models.BLE
                 BleCommandType.StopCollectionResponse => 7,
                 BleCommandType.ConfigureStimulusResponse => 7,
                 BleCommandType.StopStimulusResponse => 6,
+                BleCommandType.ConfigureImpedanceResponse => 7,
                 BleCommandType.BatteryResponse => 6,
                 BleCommandType.StopImpedanceResponse => 6,
                 _ => 5
@@ -115,7 +116,6 @@ namespace EEGTool.Models.BLE
         private static bool UsesTwoByteLength(BleCommandType commandType)
         {
             return commandType == BleCommandType.CollectionData ||
-                   commandType == BleCommandType.ImpedanceData ||
                    commandType == BleCommandType.ImpedanceMonitorData;
         }
 

@@ -27,6 +27,8 @@ namespace EEGTool.ViewModels.Impedance
         private bool _isDataReceivedSubscribed;
         private bool _isMonitorRunning;
         private bool _isVisible;
+        private TaskCompletionSource<bool>? _configureImpedanceCompletion;
+        private const int ConfigureImpedanceTimeoutMilliseconds = 3000;
 
         public bool IsMonitorRunning
         {
@@ -63,9 +65,29 @@ namespace EEGTool.ViewModels.Impedance
                 }
 
                 var collectionInfo = CollectionInfoManager.GetInstance().Info;
+                _configureImpedanceCompletion = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+
                 byte[] configureCommand = ImpedanceCommandBuilder.BuildConfigureCommand(collectionInfo);
                 Logger.Info($"[ImpedanceHomeViewModel][StartMonitorAsync]:阻抗配置指令 {CommandManager.ToHexString(configureCommand)}");
                 await WriteDataToBleAsync(configureCommand);
+
+                Task completedTask = await Task.WhenAny(
+                    _configureImpedanceCompletion.Task,
+                    Task.Delay(ConfigureImpedanceTimeoutMilliseconds));
+                if (completedTask != _configureImpedanceCompletion.Task)
+                {
+                    Logger.Debug("[ImpedanceHomeViewModel][StartMonitorAsync]:等待阻抗配置响应超时");
+                    ShowMessage("阻抗配置指令已发送，但设备未在3秒内响应。", "阻抗配置超时");
+                    return;
+                }
+
+                if (!await _configureImpedanceCompletion.Task)
+                {
+                    Logger.Debug("[ImpedanceHomeViewModel][StartMonitorAsync]:设备返回阻抗配置失败");
+                    ShowMessage("设备返回阻抗配置失败，未发送开始阻抗监测指令。", "阻抗配置失败");
+                    return;
+                }
 
                 if (!_isVisible)
                 {
@@ -84,6 +106,7 @@ namespace EEGTool.ViewModels.Impedance
             }
             finally
             {
+                _configureImpedanceCompletion = null;
                 _monitorLock.Release();
             }
         }
@@ -163,15 +186,20 @@ namespace EEGTool.ViewModels.Impedance
                 }
             }
 
+            if (result.Response?.CommandType == BleCommandType.ConfigureImpedanceResponse)
+            {
+                Logger.Info($"[ImpedanceHomeViewModel][DataReceived]:阻抗配置响应 Status={result.Response.StatusCode}, Detail={result.Response.ErrorDetail}");
+                _configureImpedanceCompletion?.TrySetResult(result.Response.IsSuccess);
+                return;
+            }
+
             if (result.Battery != null)
             {
                 Logger.Info($"[ImpedanceHomeViewModel][DataReceived]:收到电量 {result.Battery.ElectricityQuantity}");
             }
 
             DataFrame? dataFrame = result.DataFrame;
-            if (dataFrame == null ||
-                (dataFrame.CommandType != BleCommandType.ImpedanceData &&
-                 dataFrame.CommandType != BleCommandType.ImpedanceMonitorData))
+            if (dataFrame == null || dataFrame.CommandType != BleCommandType.ImpedanceMonitorData)
             {
                 return;
             }
@@ -222,6 +250,12 @@ namespace EEGTool.ViewModels.Impedance
                 ? "当前蓝牙设备已连接，但本软件没有读取或写入权限。请关闭其他蓝牙工具，断开设备后在本软件中重新连接。"
                 : ex.Message;
 
+            Application.Current?.Dispatcher.Invoke(() =>
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning));
+        }
+
+        private static void ShowMessage(string message, string title)
+        {
             Application.Current?.Dispatcher.Invoke(() =>
                 MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning));
         }
