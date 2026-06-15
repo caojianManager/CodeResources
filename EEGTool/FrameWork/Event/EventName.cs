@@ -8,5 +8,7 @@ namespace Framework.Event
 
         RECEVIED_COLLECTION_DATA = 2,
 
+        RECEVIED_IMPEDANCE_DATA = 3,
+
     }
 }

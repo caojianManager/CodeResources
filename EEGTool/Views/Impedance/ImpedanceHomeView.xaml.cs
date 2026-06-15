@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using EEGTool.ViewModels.Impedance;
 
 namespace EEGTool.Views.Impedance
 {
@@ -35,6 +36,33 @@ namespace EEGTool.Views.Impedance
         public ImpedanceHomeView()
         {
             InitializeComponent();
+            IsVisibleChanged += OnIsVisibleChanged;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (DataContext is not ImpedanceHomeViewModel viewModel)
+            {
+                return;
+            }
+
+            if (IsVisible)
+            {
+                viewModel.OnShow();
+            }
+            else
+            {
+                viewModel.OnHide();
+            }
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ImpedanceHomeViewModel viewModel)
+            {
+                viewModel.OnHide();
+            }
         }
     }
 }

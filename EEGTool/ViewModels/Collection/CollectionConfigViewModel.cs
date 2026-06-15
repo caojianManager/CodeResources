@@ -18,7 +18,6 @@ namespace EEGTool.ViewModels.Collection
     public class CollectionConfigViewModel : BindableBase
     {
         private readonly BleManager _ble;
-        private readonly Guid TargetServiceUuid = Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
         private bool _isLoadingPreferences = true;
         private bool _isSubscribedToBleEvents;
         private bool _isStartingCollection;
@@ -262,9 +261,7 @@ namespace EEGTool.ViewModels.Collection
                 return false;
             }
 
-            var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
-            var writeCharacteristic = targetService?.Characteristics.FirstOrDefault(c => c.SupportsWrite)
-                ?? gatt.SelectMany(s => s.Characteristics).FirstOrDefault(c => c.SupportsWrite);
+            var writeCharacteristic = BleGattProfileHelper.FindWriteCharacteristic(gatt);
 
             if (writeCharacteristic == null)
             {

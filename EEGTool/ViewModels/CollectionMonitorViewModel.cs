@@ -42,7 +42,6 @@ namespace EEGTool.ViewModels
         }
 
         private BleManager _ble;
-        private readonly Guid TargetServiceUuid = Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
         private BleGattCharacteristicInfo _writeCharacteristic, _notifyCharacteristic;
         private readonly BleCommandStreamParser _commandStreamParser = new();
         private bool _isNotifySubscribed;
@@ -226,68 +225,20 @@ namespace EEGTool.ViewModels
                 return true;
             }
 
-            var gatt = await _ble.GetGattProfileAsync();
-            LogGattProfile(gatt);
-
-            var targetService = gatt.FirstOrDefault(s => s.Uuid == TargetServiceUuid);
-            if (targetService == null)
+            var dataChannel = await BleGattProfileHelper.GetDataChannelAsync(
+                _ble,
+                continueWhenNotifyAccessDenied: true);
+            if (dataChannel == null)
             {
-                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:没有找到目标服务 {TargetServiceUuid}");
-                return false;
-            }
-            
-            var characteristics = targetService.Characteristics;
-            var allCharacteristics = gatt.SelectMany(s => s.Characteristics).ToList();
-
-            _writeCharacteristic = characteristics.FirstOrDefault(c => c.SupportsWrite)
-                ?? allCharacteristics.FirstOrDefault(c => c.SupportsWrite);
-            _notifyCharacteristic = characteristics.FirstOrDefault(c => c.SupportsNotify)
-                ?? allCharacteristics.FirstOrDefault(c => c.SupportsNotify);
-
-            if (_writeCharacteristic == null)
-            {
-                Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到写入数据特征~");
                 return false;
             }
 
-            if (_notifyCharacteristic == null)
-            {
-                Logger.Debug("[CollectionMonitorViewModel][GetGattProfile]:没有找到通知特征~");
-                return false;
-            }
-
-            try
-            {
-                await _ble.SubscribeAsync(_notifyCharacteristic.ServiceUuid, _notifyCharacteristic.Uuid);
-                _isNotifySubscribed = true;
-                Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅成功 Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}");
-            }
-            catch (BleAccessDeniedException ex)
-            {
-                _isNotifySubscribed = false;
-                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅访问被拒绝，继续尝试写入采集配置。Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}, Properties={_notifyCharacteristic.Properties}, Error={ex}");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _isNotifySubscribed = false;
-                Logger.Debug($"[CollectionMonitorViewModel][GetGattProfile]:Notify订阅无权限，继续尝试写入采集配置。Service={_notifyCharacteristic.ServiceUuid}, Characteristic={_notifyCharacteristic.Uuid}, Properties={_notifyCharacteristic.Properties}, Error={ex}");
-            }
+            _writeCharacteristic = dataChannel.WriteCharacteristic;
+            _notifyCharacteristic = dataChannel.NotifyCharacteristic;
+            _isNotifySubscribed = dataChannel.IsNotifySubscribed;
 
             Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Write特征 Service={_writeCharacteristic.ServiceUuid}, Characteristic={_writeCharacteristic.Uuid}, Properties={_writeCharacteristic.Properties}");
             return true;
-        }
-
-        private static void LogGattProfile(IReadOnlyList<BleGattServiceInfo> gatt)
-        {
-            Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:GATT服务数量 {gatt.Count}");
-            foreach (var service in gatt)
-            {
-                Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:Service={service.Uuid}, Characteristics={service.Characteristics.Count}");
-                foreach (var characteristic in service.Characteristics)
-                {
-                    Logger.Info($"[CollectionMonitorViewModel][GetGattProfile]:  Characteristic={characteristic.Uuid}, Properties={characteristic.Properties}, SupportsWrite={characteristic.SupportsWrite}, SupportsNotify={characteristic.SupportsNotify}");
-                }
-            }
         }
 
         private async Task WriteDataToBLE(byte[] data)
@@ -345,7 +296,10 @@ namespace EEGTool.ViewModels
             if (result.DataFrame != null)
             {
                 Logger.Debug($"[CollectionMonitorViewModel][DataReceived]:收到数据帧 {result.DataFrame.CommandType}, Channels={result.DataFrame.ChannelCount}, Samples={result.DataFrame.SampleCount}");
-                _ = ReceivedCollectionData(result.DataFrame);
+                if (result.DataFrame.CommandType == BleCommandType.CollectionData)
+                {
+                    _ = ReceivedCollectionData(result.DataFrame);
+                }
             }
 
         }
