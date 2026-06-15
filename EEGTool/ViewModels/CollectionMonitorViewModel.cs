@@ -56,10 +56,13 @@ namespace EEGTool.ViewModels
         private double _samplePumpRemainder;
         private long _samplesWrittenVersion;
         private long _lastProcessedSamplesVersion;
+        private TaskCompletionSource<bool>? _stopCollectionCompletion;
+        private bool _isSwitchingToImpedance;
         private const int MonitorTimerIntervalMilliseconds = 40;
         private const int SamplePumpIntervalMilliseconds = 10;
         private const int TargetPendingLatencyMilliseconds = 100;
         private const int MaxPendingLatencyMilliseconds = 500;
+        private const int StopCollectionTimeoutMilliseconds = 3000;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? ShowImpedanceCommand { get; set; }
@@ -116,7 +119,7 @@ namespace EEGTool.ViewModels
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
 
-            ShowImpedanceCommand = new RelayCommand(_ => IsShowMonitor = false);
+            ShowImpedanceCommand = new RelayCommand(_ => _ = SwitchToImpedanceAsync());
             ShowMonitorCommand = new RelayCommand(_ => IsShowMonitor = true);
 
             
@@ -164,6 +167,79 @@ namespace EEGTool.ViewModels
         private void StopMonitor()
         {
             StopMonitorTimer();
+        }
+
+        private async Task SwitchToImpedanceAsync()
+        {
+            if (_isSwitchingToImpedance || !IsShowMonitor)
+            {
+                return;
+            }
+
+            _isSwitchingToImpedance = true;
+            try
+            {
+                if (!await GetGattProfile())
+                {
+                    MessageBox.Show(
+                        "没有找到可用的蓝牙写入通道，无法停止采集。",
+                        "切换阻抗监测失败",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                _stopCollectionCompletion = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+
+                byte[] command = CommandManager.BuildStopCollectionCommand();
+                Logger.Info($"[CollectionMonitorViewModel][SwitchToImpedanceAsync]:停止采集指令 {CommandManager.ToHexString(command)}");
+                await WriteDataToBLE(command);
+
+                Task completedTask = await Task.WhenAny(
+                    _stopCollectionCompletion.Task,
+                    Task.Delay(StopCollectionTimeoutMilliseconds));
+
+                if (completedTask != _stopCollectionCompletion.Task)
+                {
+                    Logger.Debug("[CollectionMonitorViewModel][SwitchToImpedanceAsync]:等待停止采集响应超时");
+                    MessageBox.Show(
+                        "停止采集指令已发送，但设备未在3秒内响应，暂不启动阻抗监测。",
+                        "停止采集超时",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!await _stopCollectionCompletion.Task)
+                {
+                    MessageBox.Show(
+                        "设备返回停止采集失败，暂不启动阻抗监测。",
+                        "停止采集失败",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                StopMonitor();
+                IsShowMonitor = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"[CollectionMonitorViewModel][SwitchToImpedanceAsync]:切换阻抗监测失败 {ex}");
+                MessageBox.Show(
+                    IsBleAccessDenied(ex)
+                        ? "当前蓝牙设备没有写入权限，请重新连接设备后再试。"
+                        : ex.Message,
+                    "切换阻抗监测失败",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            finally
+            {
+                _stopCollectionCompletion = null;
+                _isSwitchingToImpedance = false;
+            }
         }
 
         private void ClickPlaybackBtn()
@@ -306,6 +382,13 @@ namespace EEGTool.ViewModels
 
         private async Task HandleResponse(CommandResponse response)
         {
+            if (response.CommandType == BleCommandType.StopCollectionResponse)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][DataReceived]:停止采集响应 Status={response.StatusCode}, Detail={response.ErrorDetail}");
+                _stopCollectionCompletion?.TrySetResult(response.IsSuccess);
+                return;
+            }
+
             if (response.CommandType == BleCommandType.ConfigureCollectionResponse)
             {
                 if (!response.IsSuccess)
