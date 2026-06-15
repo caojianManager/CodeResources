@@ -76,7 +76,9 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Grid Background="Green"></Grid>
+                <Grid Background="#111820">
+                    <local:ImpedanceFFTView/>
+                </Grid>
 
                 <Grid Grid.Row="1" Background="Yellow"></Grid>
             </Grid>

@@ -106,12 +106,12 @@
 
     <Grid>
         <Border BorderThickness="0.5" BorderBrush="LightGray"/>
-        <Grid Background="White" Margin="1">
+        <Grid Background="#111820" Margin="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="80"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid>
+            <Grid Background="#18232D">
 
                 <StackPanel Orientation="Horizontal" 
                      HorizontalAlignment="Right"
@@ -181,7 +181,7 @@
             </Grid>
             <Grid Grid.Row="1">
                 <ContentControl  
-             Margin="20,0,20,20"
+             Margin="12,0,12,12"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
              Content="{Binding FftPlot, Mode=OneTime}" />

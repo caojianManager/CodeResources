@@ -14,6 +14,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Numerics;
+using MathNet.Numerics.IntegralTransforms;
 using CommandManager = EEGTool.Models.BLE.CommandManager;
 
 namespace EEGTool.ViewModels.Impedance
@@ -309,7 +311,7 @@ namespace EEGTool.ViewModels.Impedance
             _dataProcessor = new DataProcessor(
                 _dataBuffer,
                 new PassthroughSignalFilter(),
-                new ZeroFftProcessor(),
+                new MathNetFftProcessor(),
                 new DataProcessorSettings(channelCount, sampleRate));
             _pendingSamples.Clear();
             _samplePumpRemainder = 0;
@@ -474,13 +476,30 @@ namespace EEGTool.ViewModels.Impedance
             public void RemoveEnvironmentalNoise(double[] data, int sampleRate, int noiseHz) { }
         }
 
-        private sealed class ZeroFftProcessor : IFftProcessor
+        private sealed class MathNetFftProcessor : IFftProcessor
         {
             public float[] ComputeAmplitudeSpectrum(float[] timeData, int sampleRate)
             {
-                return timeData == null || timeData.Length == 0
-                    ? Array.Empty<float>()
-                    : new float[(timeData.Length / 2) + 1];
+                if (timeData == null || timeData.Length == 0)
+                {
+                    return Array.Empty<float>();
+                }
+
+                var spectrum = timeData.Select(value => new Complex(value, 0)).ToArray();
+                Fourier.Forward(spectrum, FourierOptions.Matlab);
+
+                int resultLength = spectrum.Length / 2 + 1;
+                var amplitude = new float[resultLength];
+                for (int index = 0; index < resultLength; index++)
+                {
+                    double scale = index == 0 ||
+                        (spectrum.Length % 2 == 0 && index == spectrum.Length / 2)
+                        ? 1.0 / spectrum.Length
+                        : 2.0 / spectrum.Length;
+                    amplitude[index] = (float)(spectrum[index].Magnitude * scale);
+                }
+
+                return amplitude;
             }
         }
 
