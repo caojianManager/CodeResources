@@ -16,7 +16,20 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions> 
 
-        <Grid Background="Red"></Grid>
+        <Grid Background="#18232D">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="14,0">
+                <TextBlock Text="EEG CHANNELS"
+                           Foreground="#CFD8DC"
+                           FontSize="14"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="  5 sec window / 200 µV scale"
+                           Foreground="#78909C"
+                           FontSize="12"
+                           Margin="10,1,0,0" />
+            </StackPanel>
+        </Grid>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -27,7 +40,7 @@
             </Grid.ColumnDefinitions>
 
             <ContentControl
-                  Margin="108,0,20,20"
+                  Margin="126,0,12,12"
                   Content="{Binding ScottPlotEEG, Mode=OneTime}"
                   Grid.ColumnSpan="2" />
             <Grid Grid.Column="0"
@@ -42,7 +55,7 @@
                       VerticalAlignment="Stretch"
                       Focusable="False"
                       HorizontalAlignment="Stretch"
-                      Background="Transparent">
+                      Background="#18232D">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->
