@@ -144,7 +144,7 @@ namespace EEGTool.ViewModels.Impedance
 
                 double[] smoothed = Smooth(channel, current);
                 double[] display = SelectedYAxesType == "Log"
-                    ? smoothed.Select(value => 20 * Math.Log10(Math.Max(value, 1e-4))).ToArray()
+                    ? smoothed.Select(value => Math.Max(0, 20 * Math.Log10(Math.Max(value, 1)))).ToArray()
                     : smoothed;
                 series.Add(new FftSeries(channel, frequencies, display));
             }
@@ -193,7 +193,7 @@ namespace EEGTool.ViewModels.Impedance
             FftPlot.Plot.Axes.SetLimitsX(0, Math.Max(1, Math.Min(SelectedMaxWindowHz, sampleRate / 2.0)));
             if (SelectedYAxesType == "Log")
             {
-                FftPlot.Plot.Axes.SetLimitsY(-40, Math.Max(0, 20 * Math.Log10(Math.Max(1, SelectedMaxWindowUv))));
+                FftPlot.Plot.Axes.SetLimitsY(0, Math.Max(1, 20 * Math.Log10(Math.Max(1, SelectedMaxWindowUv))));
             }
             else
             {
