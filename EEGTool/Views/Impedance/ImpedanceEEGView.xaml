@@ -32,25 +32,19 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition
-                      Width="150" />
-                <ColumnDefinition
-                      Width="*" />
-            </Grid.ColumnDefinitions>
-
             <ContentControl
-                  Margin="126,0,12,12"
-                  Content="{Binding ScottPlotEEG, Mode=OneTime}"
-                  Grid.ColumnSpan="2" />
-            <Grid Grid.Column="0"
-                  Width="126"
-                  HorizontalAlignment="Left"
-                  Panel.ZIndex="100">
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                  Margin="80,0,12,12"
+                  Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
+            <Grid Width="115"
+                  Background="Transparent"
+                  VerticalAlignment="Stretch"
+                  HorizontalAlignment="Left">
                 <ListBox
                       ItemsSource="{Binding ChannelHeaders}"
                       ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                      Margin="0,0,0,67"
+                      Margin="0,10,0,12"
                       BorderThickness="0"
                       VerticalAlignment="Stretch"
                       Focusable="False"
@@ -120,76 +114,42 @@
                                       VerticalAlignment="Top"
                                       Margin="0,-1.2,0,0"
                                       SnapsToDevicePixels="True" />
-                                <Button
-                                      Width="116"
-                                      Height="25"
-                                      Padding="0"
-                                      BorderThickness="0"
-                                      Background="Transparent"
-                                      HorizontalAlignment="Left"
-                                      VerticalAlignment="Center"
-                                      Focusable="False"
-                                      CommandParameter="{Binding}"
-                                      Command="{Binding DataContext.ClickChannelHeaderCommand,RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Button.Template>
-                                        <ControlTemplate
-                                              TargetType="Button">
-                                            <Border
-                                                  Background="{TemplateBinding Background}">
-                                                <ContentPresenter
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center" />
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Button.Template>
 
-                                    <StackPanel
-                                          Orientation="Horizontal"
-                                          HorizontalAlignment="Left"
-                                          VerticalAlignment="Center">
-                                        <Grid
-                                              Width="42"
-                                              Height="23">
-                                            <Border
-                                                  CornerRadius="3"
-                                                  Background="{Binding ImpedanceColor}" />
-                                            <TextBlock
-                                                  Text="{Binding ImpedanceValue}"
-                                                  Foreground="White"
-                                                  FontSize="11"
-                                                  FontWeight="SemiBold"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center" />
-                                        </Grid>
 
-                                        <Grid
-                                              Width="72"
-                                              Height="23"
-                                              Margin="1,0,0,0">
-                                            <Border
-                                                  BorderThickness="1"
-                                                  BorderBrush="#8DBEFF"
-                                                  CornerRadius="3"
-                                                  Background="#F9FCFF" />
-                                            <TextBlock
-                                                  Text="{Binding ChannelId}"
-                                                  Margin="3,0,0,0"
-                                                  Foreground="#3A4B63"
-                                                  FontSize="11"
-                                                  HorizontalAlignment="Left"
-                                                  VerticalAlignment="Center" />
-                                            <TextBlock
-                                                  Text="{Binding EleTag}"
-                                                  Margin="0,0,3,0"
-                                                  Foreground="#5E6A7A"
-                                                  FontSize="11"
-                                                  TextTrimming="CharacterEllipsis"
-                                                  HorizontalAlignment="Right"
-                                                  VerticalAlignment="Center" />
-                                        </Grid>
+                                <Border
+                                    BorderThickness="1"
+                                    BorderBrush="LightGray"
+                                    CornerRadius="25"
+                                    Width="50"
+                                    Height="50"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="{Binding ImpedanceColor}" >
+                                    <StackPanel Orientation="Vertical"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                        <TextBlock
+                                            Text="{Binding EleTag}"
+                                            Margin="0,0,0,0"
+                                            Foreground="White"
+                                            FontSize="11"
+                                            TextTrimming="CharacterEllipsis"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                                        <Grid Height="1" Background="White"></Grid>
+                                        <TextBlock
+                                            Text="{Binding ChannelId}"
+                                            Margin="0,0,0,0"
+                                            Foreground="White"
+                                            FontSize="11"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
                                     </StackPanel>
-                                </Button>
+                               
+                                </Border>
+                        
 
+            
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
