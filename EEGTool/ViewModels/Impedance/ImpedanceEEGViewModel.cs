@@ -24,7 +24,6 @@ namespace EEGTool.ViewModels.Impedance
         private const double ChannelHeight = 1.0;
         private const double WaveAmplitude = 0.38;
         private const float ChannelDividerLineWidth = 0.5f;
-        private const int WindowSeconds = 5;
         private const int MaxQueueLatencyMilliseconds = 150;
 
         private readonly object _dataLock = new();
@@ -45,18 +44,62 @@ namespace EEGTool.ViewModels.Impedance
         private int _channelCount;
         private int _lastWindowSampleCount;
         private int _streamerSampleRate;
+        private float[][] _latestSource = Array.Empty<float[]>();
+        private int _latestSourceSampleRate = 250;
         private long _receivedVersion;
 
         public WpfPlot ScottPlotEEG { get; } = new();
         public ObservableCollection<ImpedanceChannelHeader> ChannelHeaders { get; } = new();
         public ObservableCollection<ImpedanceChannelDivider> ChannelDividerItems { get; } = new();
         public ICommand ClickChannelHeaderCommand { get; }
+        public ICommand EegAutoClickCommand { get; }
 
-        private double _verticalScaleMicrovolts = 200;
+        private bool _isAuto;
+        public bool IsAuto
+        {
+            get => _isAuto;
+            set
+            {
+                if (SetProperty(ref _isAuto, value))
+                {
+                    ResetPlotData();
+                }
+            }
+        }
+
+        private int _windowSec = 5;
+        public int WindowSec
+        {
+            get => _windowSec;
+            set
+            {
+                int nextValue = Math.Clamp(value, 1, 15);
+                if (SetProperty(ref _windowSec, nextValue))
+                {
+                    ResetPlotData();
+                }
+            }
+        }
+
+        private int _vertScale = 200;
+        public int VertScale
+        {
+            get => _vertScale;
+            set
+            {
+                int nextValue = Math.Clamp(value, 1, 10000);
+                if (SetProperty(ref _vertScale, nextValue))
+                {
+                    OnPropertyChanged(nameof(VerticalScaleMicrovolts));
+                    ResetPlotData();
+                }
+            }
+        }
+
         public double VerticalScaleMicrovolts
         {
-            get => _verticalScaleMicrovolts;
-            set => SetProperty(ref _verticalScaleMicrovolts, Math.Max(1, value));
+            get => VertScale;
+            set => VertScale = (int)Math.Round(Math.Max(1, value));
         }
 
         public ImpedanceEEGViewModel()
@@ -76,6 +119,10 @@ namespace EEGTool.ViewModels.Impedance
                     streamer.IsVisible = header.IsSelected;
                     ScottPlotEEG.Refresh();
                 }
+            });
+            EegAutoClickCommand = new RelayCommand(_ =>
+            {
+                IsAuto = !IsAuto;
             });
 
             _sampleTimer.Tick += (_, _) => AddPendingSamples();
@@ -118,18 +165,22 @@ namespace EEGTool.ViewModels.Impedance
                 previousWindowCount = _lastWindowSampleCount;
                 _lastWindowSampleCount = windowSampleCount;
                 _sampleRate = sampleRate;
+                _latestSource = CopySource(source);
+                _latestSourceSampleRate = sampleRate;
                 version = ++_receivedVersion;
             }
 
             int newSampleCount = previousWindowCount <= 0
                 ? Math.Min(windowSampleCount, Math.Max(1, sampleRate / 25))
                 : Math.Clamp(windowSampleCount - previousWindowCount, 0, windowSampleCount);
-            if (newSampleCount == 0 && windowSampleCount >= WindowSeconds * sampleRate)
+            int visibleSampleCount = Math.Min(windowSampleCount, Math.Max(1, WindowSec * sampleRate));
+            newSampleCount = Math.Min(newSampleCount, visibleSampleCount);
+            if (newSampleCount == 0 && visibleSampleCount >= WindowSec * sampleRate)
             {
                 newSampleCount = Math.Min(windowSampleCount, Math.Max(1, sampleRate / 25));
             }
 
-            double[][] scaledChannels = BuildScaledChannels(source, windowSampleCount);
+            double[][] scaledChannels = BuildScaledChannels(source, visibleSampleCount);
             Application.Current?.Dispatcher.BeginInvoke(() =>
             {
                 if (version < _receivedVersion)
@@ -137,9 +188,70 @@ namespace EEGTool.ViewModels.Impedance
                     return;
                 }
 
-                EnsurePlotChannels(scaledChannels.Length, sampleRate);
+                bool channelsRebuilt = EnsurePlotChannels(scaledChannels.Length, sampleRate);
+                if (channelsRebuilt)
+                {
+                    FillStreamersFromCurrentWindow(scaledChannels);
+                    RefreshPlot();
+                    return;
+                }
+
                 QueueNewestSamples(scaledChannels, newSampleCount);
             });
+        }
+
+        private void ResetPlotData()
+        {
+            float[][] source;
+            int sampleRate;
+            int windowSampleCount;
+
+            lock (_dataLock)
+            {
+                source = CopySource(_latestSource);
+                sampleRate = Math.Max(1, _latestSourceSampleRate);
+                windowSampleCount = source.Where(channel => channel != null)
+                    .Select(channel => channel.Length)
+                    .DefaultIfEmpty(0)
+                    .Min();
+                _lastWindowSampleCount = windowSampleCount;
+                _receivedVersion++;
+            }
+
+            if (windowSampleCount <= 0)
+            {
+                return;
+            }
+
+            void RefreshFromLatestData()
+            {
+                int visibleSampleCount = Math.Min(windowSampleCount, Math.Max(1, WindowSec * sampleRate));
+                double[][] scaledChannels = BuildScaledChannels(source, visibleSampleCount);
+                EnsurePlotChannels(scaledChannels.Length, sampleRate, forceRebuild: true);
+                FillStreamersFromCurrentWindow(scaledChannels);
+                RefreshPlot();
+            }
+
+            if (Application.Current?.Dispatcher.CheckAccess() == true)
+            {
+                RefreshFromLatestData();
+                return;
+            }
+
+            Application.Current?.Dispatcher.BeginInvoke(RefreshFromLatestData);
+        }
+
+        private static float[][] CopySource(float[][] source)
+        {
+            if (source == null || source.Length == 0)
+            {
+                return Array.Empty<float[]>();
+            }
+
+            return source
+                .Where(channel => channel != null && channel.Length > 0)
+                .Select(channel => channel.ToArray())
+                .ToArray();
         }
 
         private static float[][] SelectSource(DataProcessingResult result)
@@ -165,7 +277,7 @@ namespace EEGTool.ViewModels.Impedance
                     ? 0
                     : channelData.Skip(start).Take(count).Average(value => (double)value);
                 double center = GetChannelCenter(channel, source.Length);
-                double scale = WaveAmplitude / Math.Max(1, VerticalScaleMicrovolts);
+                double scale = GetChannelScale(channelData, start, count);
 
                 result[channel] = new double[count];
                 for (int sample = 0; sample < count; sample++)
@@ -181,13 +293,31 @@ namespace EEGTool.ViewModels.Impedance
             return result;
         }
 
-        private void EnsurePlotChannels(int channelCount, int sampleRate)
+        private double GetChannelScale(float[] channelData, int start, int count)
         {
-            if (_channelCount == channelCount &&
+            if (!IsAuto || count <= 0)
+            {
+                return WaveAmplitude / Math.Max(1, VerticalScaleMicrovolts);
+            }
+
+            double mean = channelData.Skip(start).Take(count).Average(value => (double)value);
+            double maxAbs = channelData
+                .Skip(start)
+                .Take(count)
+                .Select(value => Math.Abs(value - mean))
+                .DefaultIfEmpty(1)
+                .Max();
+            return WaveAmplitude / Math.Max(1, maxAbs);
+        }
+
+        private bool EnsurePlotChannels(int channelCount, int sampleRate, bool forceRebuild = false)
+        {
+            if (!forceRebuild &&
+                _channelCount == channelCount &&
                 _streamerSampleRate == sampleRate &&
                 _streamers.Count == channelCount)
             {
-                return;
+                return false;
             }
 
             ScottPlotEEG.Plot.Remove<DataStreamer>();
@@ -197,7 +327,7 @@ namespace EEGTool.ViewModels.Impedance
             _channelCount = channelCount;
             _streamerSampleRate = sampleRate;
 
-            int capacity = Math.Max(1, WindowSeconds * sampleRate);
+            int capacity = Math.Max(1, WindowSec * sampleRate);
             for (int channel = 0; channel < channelCount; channel++)
             {
                 DataStreamer streamer = ScottPlotEEG.Plot.Add.DataStreamer(capacity);
@@ -213,8 +343,7 @@ namespace EEGTool.ViewModels.Impedance
             BuildChannelDividerLines(channelCount);
             ScottPlotEEG.Plot.Axes.SetLimitsX(0, capacity);
             ScottPlotEEG.Plot.Axes.SetLimitsY(0, Math.Max(1, channelCount));
-            ScottPlotEEG.Refresh();
-            UpdateChannelHeaderPositions();
+            return true;
         }
 
         private void ClearChannelDividerLines()
@@ -267,6 +396,22 @@ namespace EEGTool.ViewModels.Impedance
             }
         }
 
+        private void FillStreamersFromCurrentWindow(double[][] channels)
+        {
+            if (channels.Length == 0)
+            {
+                return;
+            }
+
+            for (int channel = 0; channel < channels.Length; channel++)
+            {
+                if (_streamers.TryGetValue(channel, out DataStreamer? streamer))
+                {
+                    streamer.AddRange(channels[channel]);
+                }
+            }
+        }
+
         private void AddPendingSamples()
         {
             if (_pendingSamples.Count == 0 || _streamers.Count == 0)
@@ -309,6 +454,11 @@ namespace EEGTool.ViewModels.Impedance
                 return;
             }
 
+            RefreshPlot();
+        }
+
+        private void RefreshPlot()
+        {
             ScottPlotEEG.Refresh();
             UpdateChannelHeaderPositions();
         }
