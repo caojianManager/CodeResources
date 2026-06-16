@@ -15,6 +15,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Color = System.Drawing.Color;
 
 namespace EEGTool.ViewModels.Impedance
 {
@@ -22,12 +23,14 @@ namespace EEGTool.ViewModels.Impedance
     {
         private const double ChannelHeight = 1.0;
         private const double WaveAmplitude = 0.38;
+        private const float ChannelDividerLineWidth = 0.5f;
         private const double WipeBlankFraction = 0.000001;
         private const int WindowSeconds = 5;
         private const int MaxQueueLatencyMilliseconds = 150;
 
         private readonly object _dataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
+        private readonly List<HorizontalLine> _channelDividerLines = new();
         private readonly Queue<double[]> _pendingSamples = new();
         private readonly DispatcherTimer _sampleTimer = new()
         {
@@ -47,6 +50,7 @@ namespace EEGTool.ViewModels.Impedance
 
         public WpfPlot ScottPlotEEG { get; } = new();
         public ObservableCollection<ImpedanceChannelHeader> ChannelHeaders { get; } = new();
+        public ObservableCollection<ImpedanceChannelDivider> ChannelDividerItems { get; } = new();
         public ICommand ClickChannelHeaderCommand { get; }
 
         private double _verticalScaleMicrovolts = 200;
@@ -188,6 +192,7 @@ namespace EEGTool.ViewModels.Impedance
             }
 
             ScottPlotEEG.Plot.Remove<DataStreamer>();
+            ClearChannelDividerLines();
             _streamers.Clear();
             _pendingSamples.Clear();
             _channelCount = channelCount;
@@ -205,10 +210,34 @@ namespace EEGTool.ViewModels.Impedance
             }
 
             BuildChannelHeaders(channelCount);
+            BuildChannelDividerItems(channelCount);
+            BuildChannelDividerLines(channelCount);
             ScottPlotEEG.Plot.Axes.SetLimitsX(0, capacity);
             ScottPlotEEG.Plot.Axes.SetLimitsY(0, Math.Max(1, channelCount));
             ScottPlotEEG.Refresh();
             UpdateChannelHeaderPositions();
+        }
+
+        private void ClearChannelDividerLines()
+        {
+            foreach (HorizontalLine line in _channelDividerLines)
+            {
+                ScottPlotEEG.Plot.Remove(line);
+            }
+
+            _channelDividerLines.Clear();
+        }
+
+        private void BuildChannelDividerLines(int channelCount)
+        {
+            for (int channelBoundary = 1; channelBoundary < channelCount; channelBoundary++)
+            {
+                HorizontalLine dividerLine = ScottPlotEEG.Plot.Add.HorizontalLine(
+                    channelBoundary,
+                    ChannelDividerLineWidth,
+                    ScottPlot.Color.FromColor(System.Drawing.Color.Gray));
+                _channelDividerLines.Add(dividerLine);
+            }
         }
 
         private void QueueNewestSamples(double[][] channels, int newSampleCount)
@@ -321,6 +350,18 @@ namespace EEGTool.ViewModels.Impedance
             }
         }
 
+        private void BuildChannelDividerItems(int channelCount)
+        {
+            ChannelDividerItems.Clear();
+            for (int channelBoundary = 1; channelBoundary < channelCount; channelBoundary++)
+            {
+                ChannelDividerItems.Add(new ImpedanceChannelDivider
+                {
+                    BoundaryY = channelBoundary
+                });
+            }
+        }
+
         public void UpdateChannelHeaderPositions()
         {
             if (ChannelHeaders.Count == 0)
@@ -344,6 +385,11 @@ namespace EEGTool.ViewModels.Impedance
                 ChannelHeaders[i].ItemOffsetY = topPixelY;
                 ChannelHeaders[i].ItemHeight = Math.Max(1, bottomPixelY - topPixelY);
             }
+
+            foreach (ImpedanceChannelDivider divider in ChannelDividerItems)
+            {
+                divider.ItemOffsetY = ScottPlotEEG.Plot.Axes.Left.GetPixel(divider.BoundaryY, dataRect);
+            }
         }
 
         private void ConfigurePlot()
@@ -351,13 +397,32 @@ namespace EEGTool.ViewModels.Impedance
             Plot plot = ScottPlotEEG.Plot;
             plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#263441");
             plot.Grid.MinorLineColor = ScottPlot.Color.FromHex("#1B2730");
+     
+
+            plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromColor(System.Drawing.Color.Gray);
+            plot.Axes.Right.FrameLineStyle.Width = 1;
+            plot.Axes.Right.FrameLineStyle.Pattern = LinePattern.Solid;
+
+            plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromColor(System.Drawing.Color.Gray);
+            plot.Axes.Bottom.FrameLineStyle.Width = 1;
+            plot.Axes.Bottom.FrameLineStyle.Pattern = LinePattern.Solid;
+
+            plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromColor(System.Drawing.Color.Gray);
+            plot.Axes.Left.FrameLineStyle.Width = 1;
+            plot.Axes.Left.FrameLineStyle.Pattern = LinePattern.Solid;
+
+            plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromColor(System.Drawing.Color.Gray);
+            plot.Axes.Top.FrameLineStyle.Width = 1;
+            plot.Axes.Top.FrameLineStyle.Pattern = LinePattern.Solid;
+
             plot.Axes.Left.TickLabelStyle.IsVisible = false;
-            plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
+            plot.Axes.Left.TickLabelStyle.FontSize = 0;
             plot.Axes.Left.MajorTickStyle.Length = 0;
+            plot.Axes.Left.MinorTickStyle.Length = 0;
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
-            plot.Axes.Right.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
-            plot.Axes.Left.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
-            plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
+            plot.Axes.Bottom.MinorTickStyle.Length = 0;
+            plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
+
             plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
             plot.Benchmark.IsVisible = false;
             plot.Grid.MajorLineWidth = 0;
@@ -406,6 +471,18 @@ namespace EEGTool.ViewModels.Impedance
                     OnPropertyChanged(nameof(OpacityValue));
                 }
             }
+        }
+    }
+
+    public class ImpedanceChannelDivider : BindableBase
+    {
+        private double _itemOffsetY;
+
+        public double BoundaryY { get; set; }
+        public double ItemOffsetY
+        {
+            get => _itemOffsetY;
+            set => SetProperty(ref _itemOffsetY, value);
         }
     }
 }

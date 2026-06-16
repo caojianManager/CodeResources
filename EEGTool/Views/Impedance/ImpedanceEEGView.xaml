@@ -109,7 +109,7 @@
                     Grid.ColumnSpan="2"
                     IsHitTestVisible="False"
                     ClipToBounds="True">
-                <ItemsControl ItemsSource="{Binding ChannelHeaders}">
+                <ItemsControl ItemsSource="{Binding ChannelDividerItems}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas />
@@ -122,30 +122,38 @@
                     </ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Rectangle Height="1"
-                                       Width="120"
-                                       Stroke="#858585"
-                                       StrokeThickness="1"
-                                       StrokeDashArray="5,6"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Top"
-                                       SnapsToDevicePixels="True" />
+                            <Line X1="0"
+                                  X2="100"
+                                  Y1="0"
+                                  Y2="0"
+                                  Stroke="Gray"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Canvas>
 
-            <Rectangle Grid.Column="0"
-                       Grid.ColumnSpan="2"
-                       Height="1"
-                       Width="120"
-                       Stroke="#858585"
-                       StrokeThickness="1"
-                       StrokeDashArray="5,6"
-                       HorizontalAlignment="Left"
-                       VerticalAlignment="Bottom"
-                       Margin="0,0,0,36"
-                       SnapsToDevicePixels="True" />
+            <Line Grid.Column="0"
+                  Grid.ColumnSpan="2"
+                  HorizontalAlignment="Left"
+                  StrokeThickness="1" 
+                  VerticalAlignment="Top"
+                  Margin="0,16,0,0"
+                  X1="0"
+                  X2="100"
+                  Y1="0"
+                  Y2="0"
+                  Stroke="Gray"/>
+
+            <Line Grid.Column="0"
+                  Grid.ColumnSpan="2"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,0,36"
+                  X1="0"
+                  X2="100"
+                  Y1="0"
+                  Y2="0"
+                  Stroke="Gray" />
         </Grid>
     </Grid>
 </UserControl>
