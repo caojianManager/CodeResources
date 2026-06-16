@@ -360,6 +360,7 @@ namespace EEGTool.ViewModels.Impedance
             plot.Axes.Top.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
             plot.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Color.FromHex("#455A64");
             plot.Benchmark.IsVisible = false;
+            plot.Grid.MajorLineWidth = 0;
 
             _wipeLine = plot.Add.VerticalLine(0, 1, ScottPlot.Color.FromHex("#90A4AE"));
             _wipeLine.LinePattern = LinePattern.Dotted;
