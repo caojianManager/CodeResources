@@ -80,7 +80,9 @@
                     <local:ImpedanceFFTView/>
                 </Grid>
 
-                <Grid Grid.Row="1" Background="Yellow"></Grid>
+                <Grid Grid.Row="1" Background="WhiteSmoke">
+                    <local:ImpedanceListView/>
+                </Grid>
             </Grid>
         </Grid>
 

@@ -31,6 +31,10 @@ namespace FrameWork.Common
         public bool CollectionIsVideoRecordYes = false;
         public double ReferenceVoltage = 4.5;
         public int GainNum = 24;
+        public int Impedance_SampleRate = 250;
+        public double Impedance_TargetFreq = 31.25;
+        public double AA = 6.0e-9;
+        public double series_resistor_kohm = 0;
 
         public void Init()
         {
