@@ -32,24 +32,38 @@
         </Grid>
 
         <Grid Grid.Row="1">
+
             <ContentControl
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                  Margin="80,0,12,12"
-                  Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
+                Margin="80,0,12,12"
+                Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
             <Grid Width="115"
                   Background="Transparent"
                   VerticalAlignment="Stretch"
+                  Margin="0,15,0,36"
                   HorizontalAlignment="Left">
+
+                <Rectangle
+                    Height="1"
+                    Width="126"
+                    Margin="0,0,0,0"
+                    Stroke="#858585"
+                    StrokeThickness="1"
+                    StrokeDashArray="5,6"
+                    SnapsToDevicePixels="True"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top" />
+
                 <ListBox
-                      ItemsSource="{Binding ChannelHeaders}"
-                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                      Margin="0,10,0,12"
-                      BorderThickness="0"
-                      VerticalAlignment="Stretch"
-                      Focusable="False"
-                      HorizontalAlignment="Stretch"
-                      Background="Transparent">
+                    ItemsSource="{Binding ChannelHeaders}"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                    Margin="0,10,0,0"
+                    BorderThickness="0"
+                    VerticalAlignment="Stretch"
+                    Focusable="False"
+                    HorizontalAlignment="Stretch"
+                    Background="Transparent">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->
@@ -158,7 +172,7 @@
                 <Rectangle
                       Height="1"
                       Width="126"
-                      Margin="0,0,0,66.5"
+                      Margin="0,0,0,0"
                       Stroke="#858585"
                       StrokeThickness="1"
                       StrokeDashArray="5,6"
