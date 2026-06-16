@@ -105,17 +105,35 @@
                 SizeChanged="ScottPlotEEG_SizeChanged"
                 Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
 
-            <Rectangle Grid.Column="0"
-                       Grid.ColumnSpan="2"
-                Height="1"
-                Width="120"
-                Stroke="#858585"
-                StrokeThickness="1"
-                StrokeDashArray="5,6"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="0,15,0,0"
-                SnapsToDevicePixels="True" />
+            <Canvas Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    IsHitTestVisible="False"
+                    ClipToBounds="True">
+                <ItemsControl ItemsSource="{Binding ChannelHeaders}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style>
+                            <Setter Property="Canvas.Top" Value="{Binding ItemOffsetY}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Rectangle Height="1"
+                                       Width="120"
+                                       Stroke="#858585"
+                                       StrokeThickness="1"
+                                       StrokeDashArray="5,6"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       SnapsToDevicePixels="True" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Canvas>
 
             <Rectangle Grid.Column="0"
                        Grid.ColumnSpan="2"
