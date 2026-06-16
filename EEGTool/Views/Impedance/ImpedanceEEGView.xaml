@@ -32,104 +32,33 @@
         </Grid>
 
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <ContentControl
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Margin="80,0,12,12"
-                Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
-            <Grid Width="115"
-                  Background="Transparent"
-                  VerticalAlignment="Stretch"
-                  Margin="0,15,0,36"
-                  HorizontalAlignment="Left">
-
-                <Rectangle
-                    Height="1"
-                    Width="126"
-                    Margin="0,0,0,0"
-                    Stroke="#858585"
-                    StrokeThickness="1"
-                    StrokeDashArray="5,6"
-                    SnapsToDevicePixels="True"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top" />
-
-                <ListBox
-                    ItemsSource="{Binding ChannelHeaders}"
-                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                    Margin="0,10,0,0"
-                    BorderThickness="0"
-                    VerticalAlignment="Stretch"
-                    Focusable="False"
-                    HorizontalAlignment="Stretch"
-                    Background="Transparent">
-                    <ListBox.ItemsPanel>
+            <Canvas
+                Width="80"
+                ClipToBounds="True"
+                Background="Transparent"
+                Margin="0,0,0,12">
+                <ItemsControl ItemsSource="{Binding ChannelHeaders}">
+                    <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->
-                            <UniformGrid
-                                  Columns="1" />
+                            <Canvas />
                         </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-
-                    <ListBox.ItemContainerStyle>
-                        <Style
-                              TargetType="ListBoxItem">
-                            <Setter
-                                  Property="Background"
-                                  Value="Transparent" />
-                            <Setter
-                                  Property="BorderThickness"
-                                  Value="0" />
-                            <Setter
-                                  Property="Focusable"
-                                  Value="False" />
-                            <Setter
-                                  Property="HorizontalContentAlignment"
-                                  Value="Stretch" />
-                            <Setter
-                                  Property="VerticalContentAlignment"
-                                  Value="Stretch" />
-                            <Setter
-                                  Property="Padding"
-                                  Value="0" />
-                            <Setter
-                                  Property="Margin"
-                                  Value="0" />
-                            <Setter
-                                  Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate
-                                          TargetType="ListBoxItem">
-                                        <Border
-                                              Background="Transparent"
-                                              BorderThickness="0">
-                                            <ContentPresenter
-                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style>
+                            <Setter Property="Canvas.Top" Value="{Binding ItemOffsetY}" />
                         </Style>
-                    </ListBox.ItemContainerStyle>
-
-                    <ListBox.ItemTemplate>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid
+                                  Width="80"
+                                  Height="{Binding ItemHeight}"
                                   Opacity="{Binding OpacityValue}">
-                                <Rectangle
-                                      Height="1"
-                                      Stroke="#858585"
-                                      StrokeThickness="1"
-                                      StrokeDashArray="5,6"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Top"
-                                      Margin="0,-1.2,0,0"
-                                      SnapsToDevicePixels="True" />
-
-
                                 <Border
                                     BorderThickness="1"
                                     BorderBrush="LightGray"
@@ -161,25 +90,19 @@
                                     </StackPanel>
                                
                                 </Border>
-                        
-
-            
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Canvas>
 
-                <Rectangle
-                      Height="1"
-                      Width="126"
-                      Margin="0,0,0,0"
-                      Stroke="#858585"
-                      StrokeThickness="1"
-                      StrokeDashArray="5,6"
-                      SnapsToDevicePixels="True"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Bottom" />
-            </Grid>
+            <ContentControl
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Margin="0,0,12,12"
+                SizeChanged="ScottPlotEEG_SizeChanged"
+                Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
         </Grid>
     </Grid>
 </UserControl>

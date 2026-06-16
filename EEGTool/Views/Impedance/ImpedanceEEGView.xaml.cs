@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using EEGTool.ViewModels.Impedance;
 
 namespace EEGTool.Views.Impedance
 {
@@ -23,6 +24,15 @@ namespace EEGTool.Views.Impedance
         public ImpedanceEEGView()
         {
             InitializeComponent();
+        }
+
+        private void ScottPlotEEG_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (DataContext is ImpedanceEEGViewModel viewModel)
+            {
+                viewModel.ScottPlotEEG.Refresh();
+                viewModel.UpdateChannelHeaderPositions();
+            }
         }
     }
 }

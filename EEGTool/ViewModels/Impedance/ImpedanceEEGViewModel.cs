@@ -208,6 +208,7 @@ namespace EEGTool.ViewModels.Impedance
             ScottPlotEEG.Plot.Axes.SetLimitsX(0, capacity);
             ScottPlotEEG.Plot.Axes.SetLimitsY(0, Math.Max(1, channelCount));
             ScottPlotEEG.Refresh();
+            UpdateChannelHeaderPositions();
         }
 
         private void QueueNewestSamples(double[][] channels, int newSampleCount)
@@ -287,6 +288,7 @@ namespace EEGTool.ViewModels.Impedance
             }
 
             ScottPlotEEG.Refresh();
+            UpdateChannelHeaderPositions();
         }
 
         private void BuildChannelHeaders(int channelCount)
@@ -319,6 +321,31 @@ namespace EEGTool.ViewModels.Impedance
             }
         }
 
+        public void UpdateChannelHeaderPositions()
+        {
+            if (ChannelHeaders.Count == 0)
+            {
+                return;
+            }
+
+            PixelRect dataRect = ScottPlotEEG.Plot.RenderManager.LastRender.DataRect;
+            if (dataRect.Height <= 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < ChannelHeaders.Count; i++)
+            {
+                double topY = ChannelHeaders.Count - i;
+                double bottomY = ChannelHeaders.Count - i - 1;
+                float topPixelY = ScottPlotEEG.Plot.Axes.Left.GetPixel(topY, dataRect);
+                float bottomPixelY = ScottPlotEEG.Plot.Axes.Left.GetPixel(bottomY, dataRect);
+
+                ChannelHeaders[i].ItemOffsetY = topPixelY;
+                ChannelHeaders[i].ItemHeight = Math.Max(1, bottomPixelY - topPixelY);
+            }
+        }
+
         private void ConfigurePlot()
         {
             Plot plot = ScottPlotEEG.Plot;
@@ -348,12 +375,24 @@ namespace EEGTool.ViewModels.Impedance
     public class ImpedanceChannelHeader : BindableBase
     {
         private bool _isSelected = true;
+        private double _itemOffsetY;
+        private double _itemHeight = 50.0;
 
         public int ChannelIndex { get; set; }
         public string ChannelId { get; set; } = string.Empty;
         public string EleTag { get; set; } = string.Empty;
         public string ImpedanceValue { get; set; } = "--";
         public string ImpedanceColor { get; set; } = "#56A4F4";
+        public double ItemOffsetY
+        {
+            get => _itemOffsetY;
+            set => SetProperty(ref _itemOffsetY, value);
+        }
+        public double ItemHeight
+        {
+            get => _itemHeight;
+            set => SetProperty(ref _itemHeight, value);
+        }
         public double OpacityValue => IsSelected ? 1 : 0.35;
 
         public bool IsSelected
