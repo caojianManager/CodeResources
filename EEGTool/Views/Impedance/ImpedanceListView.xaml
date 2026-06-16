@@ -71,33 +71,39 @@
                            Foreground="Gray"
                            VerticalAlignment="Center"/>
             </StackPanel>
-
-            <Grid Height="1"
-                  HorizontalAlignment="Stretch"
+            <Grid Height="1" HorizontalAlignment="Stretch"
                   VerticalAlignment="Bottom"
                   Background="LightGray"></Grid>
         </Grid>
 
-        <Grid Grid.Row="1" Grid.ColumnSpan="2" Background="White">
+        <Grid Grid.Row="1" Background="WhiteSmoke" Grid.ColumnSpan="2">
             <Grid HorizontalAlignment="Center"
-                  VerticalAlignment="Center"
-                   Width="500"> 
-                    <Border BorderThickness="0.5" BorderBrush="LightGray" Margin="-50" CornerRadius="5">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="18"
-                                              ShadowDepth="2"
-                                              Direction="270"
-                                              Opacity="0.25"
-                                              Color="#000000"/>
-                        </Border.Effect>
+                  VerticalAlignment="Stretch"
+                  Margin="0,25"
+                   Width="550">
+                <Border BorderBrush="LightGray" CornerRadius="0"
+                        BorderThickness="1,0,1,1" Margin="0">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="18"
+                                          ShadowDepth="2"
+                                          Direction="270"
+                                          Opacity="0.25"
+                                          Color="#000000"/>
+                    </Border.Effect>
                 </Border>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                             VerticalAlignment="Top"
-                             Margin="0,10,0,0">
-                    <TextBlock Text="电极/通道" FontSize="16" Foreground="Gray"/>
-                    <TextBlock Text="阻抗值" Margin="260,0,0,0" FontSize="16" Foreground="Gray"/>
-                </StackPanel>
+                <Grid  HorizontalAlignment="Stretch"
+                       VerticalAlignment="Top"
+                       Height="35"
+                            Background="LightGray">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="电极/通道" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="Gray"/>
+                    <TextBlock Grid.Column="2" Text="阻抗值" HorizontalAlignment="Center" VerticalAlignment="Center"  FontSize="16" Foreground="Gray"/>
+                </Grid>
                 <Grid Height="1" HorizontalAlignment="Stretch"
                        Background="LightGray"
                        VerticalAlignment="Top"
@@ -163,8 +169,7 @@
                                         <TextBlock Text="{Binding NameAndChannel}" 
                                                     FontSize="14" Foreground="Gray"
                                                     HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Margin="25,0,0,0"/>
+                                                    VerticalAlignment="Center"/>
 
                                         <iconPacks:PackIconUnicons Grid.Column="1" Kind="ArrowCircleRight" 
                                                                     HorizontalAlignment="Center"

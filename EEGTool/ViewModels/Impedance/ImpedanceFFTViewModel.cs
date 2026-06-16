@@ -144,7 +144,7 @@ namespace EEGTool.ViewModels.Impedance
 
                 double[] smoothed = Smooth(channel, current);
                 double[] display = SelectedYAxesType == "Log"
-                    ? smoothed.Select(value => Math.Max(0, 20 * Math.Log10(Math.Max(value, 1)))).ToArray()
+                    ? smoothed.Select(ToLogAxisValue).ToArray()
                     : smoothed;
                 series.Add(new FftSeries(channel, frequencies, display));
             }
@@ -193,15 +193,57 @@ namespace EEGTool.ViewModels.Impedance
             FftPlot.Plot.Axes.SetLimitsX(0, Math.Max(1, Math.Min(SelectedMaxWindowHz, sampleRate / 2.0)));
             if (SelectedYAxesType == "Log")
             {
-                FftPlot.Plot.Axes.SetLimitsY(0, Math.Max(1, 20 * Math.Log10(Math.Max(1, SelectedMaxWindowUv))));
+                FftPlot.Plot.Axes.SetLimitsY(0, ToLogAxisValue(SelectedMaxWindowUv));
+                SetLogYAxisTicks(SelectedMaxWindowUv);
             }
             else
             {
                 FftPlot.Plot.Axes.SetLimitsY(0, SelectedMaxWindowUv);
+                SetLinearYAxisTicks(SelectedMaxWindowUv);
             }
 
             FftPlot.Plot.ShowLegend(Alignment.UpperRight);
             FftPlot.Refresh();
+        }
+
+        private void SetLogYAxisTicks(int maxUv)
+        {
+            double[] candidates = { 0, 1, 2, 5, 10, 20, 50, 100, 200, 500 };
+            double[] ticks = candidates
+                .Where(value => value <= maxUv)
+                .Select(ToLogAxisValue)
+                .ToArray();
+            string[] labels = candidates
+                .Where(value => value <= maxUv)
+                .Select(value => value.ToString("0"))
+                .ToArray();
+
+            FftPlot.Plot.Axes.Left.SetTicks(ticks, labels);
+        }
+
+        private void SetLinearYAxisTicks(int maxUv)
+        {
+            int step = maxUv switch
+            {
+                <= 10 => 2,
+                <= 25 => 5,
+                <= 50 => 10,
+                <= 100 => 20,
+                <= 200 => 50,
+                _ => 100
+            };
+
+            double[] ticks = Enumerable.Range(0, maxUv / step + 1)
+                .Select(index => (double)(index * step))
+                .Where(value => value <= maxUv)
+                .ToArray();
+            string[] labels = ticks.Select(value => value.ToString("0")).ToArray();
+            FftPlot.Plot.Axes.Left.SetTicks(ticks, labels);
+        }
+
+        private static double ToLogAxisValue(double value)
+        {
+            return Math.Log10(Math.Max(0, value) + 1);
         }
 
         private static List<string> GetChannelNames(int channelCount)
