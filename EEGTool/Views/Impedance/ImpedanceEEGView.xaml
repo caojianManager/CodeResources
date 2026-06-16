@@ -16,7 +16,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions> 
 
-        <Grid Background="#18232D">
+        <Grid Background="White">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         Margin="14,0">
@@ -55,7 +55,7 @@
                       VerticalAlignment="Stretch"
                       Focusable="False"
                       HorizontalAlignment="Stretch"
-                      Background="#18232D">
+                      Background="Transparent">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <!-- ⚠️ 不要绑 Rows，自动计算行数即可 -->

@@ -322,8 +322,6 @@ namespace EEGTool.ViewModels.Impedance
         private void ConfigurePlot()
         {
             Plot plot = ScottPlotEEG.Plot;
-            plot.FigureBackground.Color = ScottPlot.Color.FromHex("#111820");
-            plot.DataBackground.Color = ScottPlot.Color.FromHex("#111820");
             plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#263441");
             plot.Grid.MinorLineColor = ScottPlot.Color.FromHex("#1B2730");
             plot.Axes.Left.TickLabelStyle.IsVisible = false;
