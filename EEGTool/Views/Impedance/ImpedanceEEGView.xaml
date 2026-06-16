@@ -12,11 +12,11 @@
     </UserControl.DataContext>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="51"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions> 
 
-        <Grid Background="White">
+        <Grid Background="LightGray">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         Margin="14,0">
@@ -29,16 +29,28 @@
                            FontSize="12"
                            Margin="10,1,0,0" />
             </StackPanel>
+
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Bottom"
+                  Background="Gray"
+                  Height="1"></Grid>
         </Grid>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20"/>
                 <ColumnDefinition Width="80" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
+            <Grid>
+                <Grid Width="1" Background="Gray"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Right"
+                      Margin="0,15,0,36"></Grid>
+            </Grid>
       
-            <Canvas
+            <Canvas Grid.Column="1"
                 Width="100"
                 ClipToBounds="True"
                 Background="White"
@@ -98,14 +110,14 @@
             </Canvas>
 
             <ContentControl
-                Grid.Column="1"
+                Grid.Column="2"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Margin="0,0,12,12"
                 SizeChanged="ScottPlotEEG_SizeChanged"
                 Content="{Binding ScottPlotEEG, Mode=OneTime}"/>
 
-            <Canvas Grid.Column="0"
+            <Canvas Grid.Column="1"
                     Grid.ColumnSpan="2"
                     IsHitTestVisible="False"
                     ClipToBounds="True">
@@ -132,7 +144,7 @@
                 </ItemsControl>
             </Canvas>
 
-            <Line Grid.Column="0"
+            <Line Grid.Column="1"
                   Grid.ColumnSpan="2"
                   HorizontalAlignment="Left"
                   StrokeThickness="1" 
@@ -144,7 +156,7 @@
                   Y2="0"
                   Stroke="Gray"/>
 
-            <Line Grid.Column="0"
+            <Line Grid.Column="1"
                   Grid.ColumnSpan="2"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Bottom"
@@ -155,5 +167,7 @@
                   Y2="0"
                   Stroke="Gray" />
         </Grid>
+
+        <Border Grid.Row="0" Grid.RowSpan="2" BorderThickness="1" BorderBrush="Gray"/>
     </Grid>
 </UserControl>
