@@ -24,7 +24,6 @@ namespace EEGTool.ViewModels.Impedance
         private const double ChannelHeight = 1.0;
         private const double WaveAmplitude = 0.38;
         private const float ChannelDividerLineWidth = 0.5f;
-        private const double WipeBlankFraction = 0.000001;
         private const int WindowSeconds = 5;
         private const int MaxQueueLatencyMilliseconds = 150;
 
@@ -205,7 +204,7 @@ namespace EEGTool.ViewModels.Impedance
                 streamer.LineWidth = 1.3f;
                 streamer.LineColor = Constants.ChannelColors[channel % Constants.ChannelColors.Length];
                 streamer.ManageAxisLimits = false;
-                streamer.ViewWipeRight(WipeBlankFraction);
+                streamer.ViewScrollLeft();
                 _streamers[channel] = streamer;
             }
 
@@ -308,12 +307,6 @@ namespace EEGTool.ViewModels.Impedance
             if (!_streamers.Values.Any(streamer => streamer.HasNewData))
             {
                 return;
-            }
-
-            DataStreamer? firstStreamer = _streamers.Values.FirstOrDefault();
-            if (_wipeLine != null && firstStreamer != null)
-            {
-                _wipeLine.Position = firstStreamer.Data.NextIndex;
             }
 
             ScottPlotEEG.Refresh();
@@ -429,6 +422,7 @@ namespace EEGTool.ViewModels.Impedance
 
             _wipeLine = plot.Add.VerticalLine(0, 1, ScottPlot.Color.FromHex("#90A4AE"));
             _wipeLine.LinePattern = LinePattern.Dotted;
+            _wipeLine.IsVisible = false;
             ScottPlotEEG.UserInputProcessor.Disable();
         }
 
