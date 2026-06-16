@@ -29,6 +29,7 @@ namespace EEGTool.ViewModels.Impedance
         private readonly object _dataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
         private readonly List<HorizontalLine> _channelDividerLines = new();
+        private readonly List<VerticalLine> _secondDividerLines = new();
         private readonly Queue<double[]> _pendingSamples = new();
         private readonly DispatcherTimer _sampleTimer = new()
         {
@@ -322,12 +323,14 @@ namespace EEGTool.ViewModels.Impedance
 
             ScottPlotEEG.Plot.Remove<DataStreamer>();
             ClearChannelDividerLines();
+            ClearSecondDividerLines();
             _streamers.Clear();
             _pendingSamples.Clear();
             _channelCount = channelCount;
             _streamerSampleRate = sampleRate;
 
             int capacity = Math.Max(1, WindowSec * sampleRate);
+            BuildSecondDividerLines(WindowSec, sampleRate);
             for (int channel = 0; channel < channelCount; channel++)
             {
                 DataStreamer streamer = ScottPlotEEG.Plot.Add.DataStreamer(capacity);
@@ -356,6 +359,16 @@ namespace EEGTool.ViewModels.Impedance
             _channelDividerLines.Clear();
         }
 
+        private void ClearSecondDividerLines()
+        {
+            foreach (VerticalLine line in _secondDividerLines)
+            {
+                ScottPlotEEG.Plot.Remove(line);
+            }
+
+            _secondDividerLines.Clear();
+        }
+
         private void BuildChannelDividerLines(int channelCount)
         {
             for (int channelBoundary = 1; channelBoundary < channelCount; channelBoundary++)
@@ -365,6 +378,20 @@ namespace EEGTool.ViewModels.Impedance
                     ChannelDividerLineWidth,
                     ScottPlot.Color.FromColor(System.Drawing.Color.Gray));
                 _channelDividerLines.Add(dividerLine);
+            }
+        }
+
+        private void BuildSecondDividerLines(int windowSeconds, int sampleRate)
+        {
+            for (int second = 1; second < windowSeconds; second++)
+            {
+                VerticalLine dividerLine = ScottPlotEEG.Plot.Add.VerticalLine(
+                    second * sampleRate,
+                    0.8f,
+                    ScottPlot.Color.FromHex("#90A4AE"));
+                dividerLine.LinePattern = LinePattern.DenselyDashed;
+                dividerLine.IsVisible = true;
+                _secondDividerLines.Add(dividerLine);
             }
         }
 
