@@ -80,7 +80,7 @@
                        VerticalAlignment="Top"
                        Margin="0,35,0,0"/>
 
-                <ListBox ItemsSource="{Binding Template.EleDirectory}" Margin="0,35,0,150"
+                <ListBox ItemsSource="{Binding Template.EleDirectory}" Margin="0,35,0,10"
                           BorderThickness="0"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -137,7 +137,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="{Binding Name}" 
+                                        <TextBlock Text="{Binding NameAndChannel}" 
                                                     FontSize="14" Foreground="Gray"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"/>
@@ -147,7 +147,7 @@
                                                                     VerticalAlignment="Center"
                                                                     Foreground="Gray"
                                                                     Width="20" Height="20"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding Channel}"
+                                        <TextBlock Grid.Column="2" Text="{Binding ImpedanceValue}"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
                                                 FontSize="14" Foreground="Gray"/>
