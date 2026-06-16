@@ -14,6 +14,7 @@
         <vm:EEGMonitorViewModel/>
     </UserControl.DataContext>
 
+
     <UserControl.Resources>
         <cv:BoolToBrushConverter
             x:Key="IsEnableBrush"

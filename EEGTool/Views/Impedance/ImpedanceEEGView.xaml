@@ -3,6 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+             xmlns:cv="clr-namespace:FrameWork.Converts"
+             xmlns:nu="clr-namespace:FrameWork.UserControls.NumericUpDown"
              xmlns:local="clr-namespace:EEGTool.Views.Impedance"
              xmlns:vm="clr-namespace:EEGTool.ViewModels.Impedance"
              mc:Ignorable="d" 
@@ -10,6 +13,16 @@
     <UserControl.DataContext>
         <vm:ImpedanceEEGViewModel/>
     </UserControl.DataContext>
+
+    <UserControl.Resources>
+        <cv:BoolToBrushConverter
+            x:Key="IsEnableBrush"
+            TrueBrush="LightGray"
+            FalseBrush="#0D0D0D"></cv:BoolToBrushConverter>
+        <cv:InverseBoolConverter
+            x:Key="InverseBool" />
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="51"/>
@@ -19,15 +32,145 @@
         <Grid Background="LightGray">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
-                        Margin="14,0">
-                <TextBlock Text="EEG CHANNELS"
-                           Foreground="#CFD8DC"
-                           FontSize="14"
-                           FontWeight="SemiBold" />
-                <TextBlock Text="  5 sec window / 200 µV scale"
-                           Foreground="#78909C"
-                           FontSize="12"
-                           Margin="10,1,0,0" />
+                        HorizontalAlignment="Right"
+                        Margin="0,0,15,0">
+                <StackPanel
+                    Orientation="Horizontal"
+                    Margin="0,0,15,0"
+                    Width="200"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        FontSize="14"
+                        Margin="0,0,15,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Text="窗口时间(秒)" />
+                    <nu:BZNumericUpDown
+                        Width="100"
+                        Height="30"
+                        MaxValue="15"
+                        MinValue="1"
+                        IsDecimal="False"
+                        Value="{Binding WindowSec}"
+                        Step="1" />
+                </StackPanel>
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    Margin="0,0,0,0"
+                    Width="235"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        FontSize="14"
+                        Margin="0,5,15,0"
+                        HorizontalAlignment="Center"
+                        Text="垂直刻度uV/div"
+                        Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}" />
+                    <nu:BZNumericUpDown
+                        MaxValue="10000"
+                        Width="100"
+                        Height="30"
+                        MinValue="1"
+                        IsEnabled="{Binding IsAuto,Converter={StaticResource InverseBool}}"
+                        IsDecimal="False"
+                        Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}"
+                        Value="{Binding VertScale}"
+                        Step="10" />
+
+                </StackPanel>
+
+
+
+                <StackPanel
+                    Background="Transparent"
+                    Orientation="Horizontal"
+                    Margin="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        Text="波形自适应"
+                        Foreground="Black"
+                        VerticalAlignment="Center"
+                        Margin="0,0,10,0"
+                        FontSize="14" />
+                    <Button
+                        Width="50"
+                        Height="25"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Command="{Binding EegAutoClickCommand}">
+                        <Button.Template>
+                            <ControlTemplate
+                                TargetType="Button">
+                                <Grid
+                                    Width="50"
+                                    Height="25">
+                                    <Border
+                                        x:Name="SwitchTrack"
+                                        Background="#D6DCE5"
+                                        CornerRadius="12.5" />
+                                    <Border
+                                        x:Name="SwitchThumb"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="3"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="White"
+                                        CornerRadius="20">
+                                        <TextBlock
+                                            x:Name="SwitchCheck"
+                                            Text="✓"
+                                            Foreground="#56A4F4"
+                                            FontSize="20"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Border>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding IsAuto}"
+                                        Value="True">
+                                        <Setter
+                                            TargetName="SwitchTrack"
+                                            Property="Background"
+                                            Value="#56A4F4" />
+                                        <Setter
+                                            TargetName="SwitchThumb"
+                                            Property="HorizontalAlignment"
+                                            Value="Right" />
+                                        <Setter
+                                            TargetName="SwitchCheck"
+                                            Property="Visibility"
+                                            Value="Visible" />
+                                    </DataTrigger>
+                                    <Trigger
+                                        Property="IsMouseOver"
+                                        Value="True">
+                                        <Setter
+                                            TargetName="SwitchTrack"
+                                            Property="Opacity"
+                                            Value="0.9" />
+                                    </Trigger>
+                                    <Trigger
+                                        Property="IsPressed"
+                                        Value="True">
+                                        <Setter
+                                            TargetName="SwitchThumb"
+                                            Property="Opacity"
+                                            Value="0.85" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+
             </StackPanel>
 
             <Grid HorizontalAlignment="Stretch"
