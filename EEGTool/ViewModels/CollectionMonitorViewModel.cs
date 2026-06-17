@@ -16,6 +16,7 @@ using BLETool;
 using EEGTool.Models;
 using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
+using EEGTool.Models.Impedance;
 using EEGTool.Models.Template;
 using CommandManager = EEGTool.Models.BLE.CommandManager;
 using Logger = FrameWork.Log.Logger;
@@ -57,12 +58,14 @@ namespace EEGTool.ViewModels
         private long _samplesWrittenVersion;
         private long _lastProcessedSamplesVersion;
         private TaskCompletionSource<bool>? _stopCollectionCompletion;
+        private TaskCompletionSource<bool>? _configureImpedanceCompletion;
         private bool _isSwitchingToImpedance;
         private const int MonitorTimerIntervalMilliseconds = 40;
         private const int SamplePumpIntervalMilliseconds = 10;
         private const int TargetPendingLatencyMilliseconds = 100;
         private const int MaxPendingLatencyMilliseconds = 500;
         private const int StopCollectionTimeoutMilliseconds = 3000;
+        private const int ConfigureImpedanceTimeoutMilliseconds = 3000;
 
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? ShowImpedanceCommand { get; set; }
@@ -221,6 +224,41 @@ namespace EEGTool.ViewModels
                     return;
                 }
 
+                CollectionInfo collectionInfo = CollectionInfoManager.GetInstance().Info;
+                collectionInfo.ImpedanceConfigureCommandConfirmed = false;
+                _configureImpedanceCompletion = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+
+                byte[] configureImpedanceCommand = ImpedanceCommandBuilder.BuildConfigureCommand(collectionInfo);
+                Logger.Info($"[CollectionMonitorViewModel][SwitchToImpedanceAsync]:阻抗配置指令 {CommandManager.ToHexString(configureImpedanceCommand)}");
+                await WriteDataToBLE(configureImpedanceCommand);
+
+                completedTask = await Task.WhenAny(
+                    _configureImpedanceCompletion.Task,
+                    Task.Delay(ConfigureImpedanceTimeoutMilliseconds));
+                if (completedTask != _configureImpedanceCompletion.Task)
+                {
+                    Logger.Debug("[CollectionMonitorViewModel][SwitchToImpedanceAsync]:等待阻抗配置响应超时");
+                    MessageBox.Show(
+                        "设备异常，请检查。",
+                        "阻抗监测异常",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!await _configureImpedanceCompletion.Task)
+                {
+                    Logger.Debug("[CollectionMonitorViewModel][SwitchToImpedanceAsync]:设备返回阻抗配置失败");
+                    MessageBox.Show(
+                        "设备异常，请检查。",
+                        "阻抗监测异常",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                collectionInfo.ImpedanceConfigureCommandConfirmed = true;
                 StopMonitor();
                 IsShowMonitor = false;
             }
@@ -238,6 +276,7 @@ namespace EEGTool.ViewModels
             finally
             {
                 _stopCollectionCompletion = null;
+                _configureImpedanceCompletion = null;
                 _isSwitchingToImpedance = false;
             }
         }
@@ -386,6 +425,13 @@ namespace EEGTool.ViewModels
             {
                 Logger.Info($"[CollectionMonitorViewModel][DataReceived]:停止采集响应 Status={response.StatusCode}, Detail={response.ErrorDetail}");
                 _stopCollectionCompletion?.TrySetResult(response.IsSuccess);
+                return;
+            }
+
+            if (response.CommandType == BleCommandType.ConfigureImpedanceResponse)
+            {
+                Logger.Info($"[CollectionMonitorViewModel][DataReceived]:阻抗配置响应 Status={response.StatusCode}, Detail={response.ErrorDetail}");
+                _configureImpedanceCompletion?.TrySetResult(response.IsSuccess);
                 return;
             }
 

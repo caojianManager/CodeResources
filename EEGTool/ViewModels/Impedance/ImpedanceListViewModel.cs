@@ -225,7 +225,7 @@ namespace EEGTool.ViewModels.Impedance
         private void UpdateItemValues()
         {
             foreach (ImpedanceListItem item in Items)
-            {
+            {                
                 string key = item.ChannelNumber.ToString();
                 if (!_impedanceValues.TryGetValue(key, out double value))
                 {

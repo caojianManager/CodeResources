@@ -83,8 +83,10 @@ namespace EEGTool.ViewModels.Impedance
                 }
 
                 var collectionInfo = CollectionInfoManager.GetInstance().Info;
-                _configureImpedanceCompletion = new TaskCompletionSource<bool>(
-                    TaskCreationOptions.RunContinuationsAsynchronously);
+                if (!collectionInfo.ImpedanceConfigureCommandConfirmed)
+                {
+                    _configureImpedanceCompletion = new TaskCompletionSource<bool>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
 
                 byte[] configureCommand = ImpedanceCommandBuilder.BuildConfigureCommand(collectionInfo);
                 Logger.Info($"[ImpedanceHomeViewModel][StartMonitorAsync]:阻抗配置指令 {CommandManager.ToHexString(configureCommand)}");
@@ -105,6 +107,13 @@ namespace EEGTool.ViewModels.Impedance
                     Logger.Debug("[ImpedanceHomeViewModel][StartMonitorAsync]:设备返回阻抗配置失败");
                     ShowMessage("设备返回阻抗配置失败，未发送开始阻抗监测指令。", "阻抗配置失败");
                     return;
+                }
+
+                    collectionInfo.ImpedanceConfigureCommandConfirmed = true;
+                }
+                else
+                {
+                    Logger.Info("[ImpedanceHomeViewModel][StartMonitorAsync]:阻抗配置已在切换前确认，跳过重复配置");
                 }
 
                 if (!_isVisible)
@@ -148,6 +157,7 @@ namespace EEGTool.ViewModels.Impedance
             }
             finally
             {
+                CollectionInfoManager.GetInstance().Info.ImpedanceConfigureCommandConfirmed = false;
                 IsMonitorRunning = false;
                 StopMonitorTimer();
                 _commandStreamParser.Clear();
