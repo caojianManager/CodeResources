@@ -13,7 +13,7 @@
         <vm:ImpedanceListViewModel/>
     </UserControl.DataContext>
 
-    <Grid>
+    <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
             <RowDefinition Height="*"/>
@@ -65,18 +65,13 @@
                     Value="{Binding ThresholdWarnKohm}"
                     Step="1" />
                 </StackPanel>
-                <TextBlock Text="{Binding SampleInfo}"
-                           FontSize="13"
-                           Margin="0,0,15,0"
-                           Foreground="Gray"
-                           VerticalAlignment="Center"/>
             </StackPanel>
             <Grid Height="1" HorizontalAlignment="Stretch"
                   VerticalAlignment="Bottom"
                   Background="#72767A"></Grid>
         </Grid>
 
-        <Grid Grid.Row="1" Background="WhiteSmoke" Grid.ColumnSpan="2">
+        <Grid Grid.Row="1" Background="White" Grid.ColumnSpan="2">
             <Grid HorizontalAlignment="Center"
                   VerticalAlignment="Stretch"
                   Margin="0,25"

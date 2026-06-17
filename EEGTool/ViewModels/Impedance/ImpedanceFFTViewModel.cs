@@ -72,6 +72,7 @@ namespace EEGTool.ViewModels.Impedance
         }
 
         private void ReceivedData(DataProcessingResult result)
+
         {
             if (result == null ||
                 !result.FftAmplitudeByChannel.Any(channel => channel != null && channel.Length > 0))
@@ -266,9 +267,10 @@ namespace EEGTool.ViewModels.Impedance
         private void ConfigurePlot()
         {
             Plot plot = FftPlot.Plot;
-            plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#33424F");
-            plot.Grid.MinorLineColor = ScottPlot.Color.FromHex("#22303B");
-            plot.Axes.Color(ScottPlot.Color.FromHex("#B0BEC5"));
+            plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#B0BEC5");
+            plot.Grid.MinorLineColor = ScottPlot.Color.FromHex("#B0BEC5");
+            plot.Grid.LinePattern = LinePattern.DenselyDashed;
+
             plot.Axes.Bottom.Label.Text = "Frequency (Hz)";
             plot.Axes.Left.Label.Text = "Amplitude (µV)";
             plot.Benchmark.IsVisible = false;

@@ -61,13 +61,6 @@ namespace EEGTool.ViewModels.Impedance
             }
         }
 
-        private string _sampleInfo = "--";
-        public string SampleInfo
-        {
-            get => _sampleInfo;
-            set => SetProperty(ref _sampleInfo, value);
-        }
-
         private void ReceivedData(DataProcessingResult result)
         {
             if (result == null)
@@ -247,7 +240,6 @@ namespace EEGTool.ViewModels.Impedance
                 ApplyThreshold(item);
             }
 
-            SampleInfo = $"{DateTime.Now:HH:mm:ss}  {Items.Count}通道";
         }
 
         private void ApplyThresholds()
