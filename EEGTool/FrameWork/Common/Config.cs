@@ -8,6 +8,7 @@ namespace FrameWork.Common
 {
     public class Config
     {
+        public const double DefaultLeadOffCurrentAmperes = 10.5e-9;
         private static string _configFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
         private static Config _instance;
         public static Config Instance
@@ -33,7 +34,7 @@ namespace FrameWork.Common
         public int GainNum = 24;
         public int Impedance_SampleRate = 250;
         public double Impedance_TargetFreq = 31.25;
-        public double Lead_Of = 1.0e-8;
+        public double Lead_Of = DefaultLeadOffCurrentAmperes;
         public double series_resistor_kohm = 10;
 
         public void Init()
@@ -56,7 +57,13 @@ namespace FrameWork.Common
             if (File.Exists(_configFilePath))
             {
                 var json = File.ReadAllText(_configFilePath);
-                return JsonConvert.DeserializeObject<Config>(json) ?? new Config();
+                var config = JsonConvert.DeserializeObject<Config>(json) ?? new Config();
+                if (Math.Abs(config.Lead_Of - 1.0e-8) < 1.0e-15)
+                {
+                    config.Lead_Of = DefaultLeadOffCurrentAmperes;
+                }
+
+                return config;
             }
             return new Config();
         }

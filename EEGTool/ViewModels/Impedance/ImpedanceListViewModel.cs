@@ -6,12 +6,10 @@ using FrameWork.Common;
 using FrameWork.Event;
 using FrameWork.Log;
 using FrameWork.MVVM;
-using MathNet.Numerics.IntegralTransforms;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Numerics;
 using System.Windows;
 
 namespace EEGTool.ViewModels.Impedance
@@ -98,14 +96,14 @@ namespace EEGTool.ViewModels.Impedance
             List<int> channelList = GetEnabledChannels(source.Length);
             int fs = GetSampleRate();
             double targetFreq = Config.Instance.Impedance_TargetFreq;
-            double leadoffCurrent = Config.Instance.AA;
-            double iFundPeak = leadoffCurrent * (4.0 / Math.PI);
-            if (iFundPeak == 0)
+            double leadoffCurrent = Config.Instance.Lead_Of;
+            double iFundPeak = leadoffCurrent;
+            if (iFundPeak <= 0)
             {
                 return;
             }
 
-            Logger.Info($"[ImpedancePro] Start fs={fs}, targetFreq={targetFreq:F4}Hz, AA={leadoffCurrent:E6}A, IFundPeak={iFundPeak:E6}A, seriesR={Config.Instance.series_resistor_kohm}kOhm, channels={source.Length}");
+            Logger.Info($"[ImpedancePro] Start fs={fs}, targetFreq={targetFreq:F4}Hz, LeadOffPeak={leadoffCurrent:E6}A, IFundPeak={iFundPeak:E6}A, seriesR={Config.Instance.series_resistor_kohm}kOhm, channels={source.Length}");
 
             for (int channelIndex = 0; channelIndex < source.Length; channelIndex++)
             {
@@ -128,69 +126,53 @@ namespace EEGTool.ViewModels.Impedance
                     continue;
                 }
 
-                double mean = data.Average();
-                double[] centered = new double[n];
-                for (int i = 0; i < n; i++)
-                {
-                    centered[i] = data[i] - mean;
-                }
-
-                double[] window = MathNet.Numerics.Window.Hann(n);
-                Complex[] fftData = new Complex[n];
-                for (int i = 0; i < n; i++)
-                {
-                    fftData[i] = new Complex(centered[i] * window[i], 0);
-                }
-
-                Fourier.Forward(fftData, FourierOptions.Matlab);
-                int rfftLen = (n / 2) + 1;
-                Complex[] rfftData = new Complex[rfftLen];
-                Array.Copy(fftData, 0, rfftData, 0, rfftLen);
-
-                double[] freqs = new double[rfftLen];
-                for (int i = 0; i < rfftLen; i++)
-                {
-                    freqs[i] = i * (fs / (double)n);
-                }
-
-                double[] magSpectrum = new double[rfftLen];
-                for (int i = 0; i < rfftLen; i++)
-                {
-                    magSpectrum[i] = rfftData[i].Magnitude / (n / 2.0) * 2.0;
-                }
-
-                int freqIdx = 0;
-                double minDiff = double.MaxValue;
-                for (int i = 0; i < rfftLen; i++)
-                {
-                    double diff = Math.Abs(freqs[i] - targetFreq);
-                    if (diff < minDiff)
-                    {
-                        minDiff = diff;
-                        freqIdx = i;
-                    }
-                }
-
-                int startIdx = Math.Max(0, freqIdx - 1);
-                int endIdx = Math.Min(rfftLen, freqIdx + 2);
-                double freqAtIdx = freqs[freqIdx];
-
-                double sumSquares = 0.0;
-                for (int i = startIdx; i < endIdx; i++)
-                {
-                    double mag = magSpectrum[i];
-                    sumSquares += mag * mag;
-                }
-
-                double vPeakUv = Math.Sqrt(sumSquares);
-                double impedanceKohm = ((vPeakUv * 1.0e-6) / iFundPeak) / 1000.0 - Config.Instance.series_resistor_kohm;
+                double vPeakUv = EstimatePeakAmplitudeAtFrequency(data, fs, targetFreq);
+                double iFundPeakNa = iFundPeak * 1.0e9;
+                double impedanceKohm =
+                    vPeakUv / iFundPeakNa - Config.Instance.series_resistor_kohm;
                 impedanceKohm = Math.Max(0, impedanceKohm);
 
                 _impedanceValues[channelId] = impedanceKohm;
 
                 Logger.Info(
-                    $"[ImpedancePro] ch={channelId}, N={n}, rfftLen={rfftLen}, freqIdx={freqIdx}, freqAtIdx={freqAtIdx:F4}Hz, binRange=[{startIdx},{endIdx}), minDiff={minDiff:F6}, Vpeak={vPeakUv:F6}uV, Z={impedanceKohm:F6}kOhm");
+                    $"[ImpedancePro] ch={channelId}, N={n}, targetFreq={targetFreq:F4}Hz, Vpeak={vPeakUv:F6}uV, IFundPeak={iFundPeakNa:F6}nA, Z={impedanceKohm:F6}kOhm");
             }
+        }
+
+        private static double EstimatePeakAmplitudeAtFrequency(
+            double[] data,
+            int sampleRate,
+            double targetFrequency)
+        {
+            if (data == null ||
+                data.Length < 3 ||
+                sampleRate <= 0 ||
+                targetFrequency <= 0 ||
+                targetFrequency >= sampleRate / 2.0)
+            {
+                return 0;
+            }
+
+            double mean = data.Average();
+            double real = 0;
+            double imaginary = 0;
+            double windowSum = 0;
+            double angularStep = 2.0 * Math.PI * targetFrequency / sampleRate;
+            int lastIndex = data.Length - 1;
+
+            for (int index = 0; index < data.Length; index++)
+            {
+                double window = 0.5 - 0.5 * Math.Cos(2.0 * Math.PI * index / lastIndex);
+                double value = (data[index] - mean) * window;
+                double angle = angularStep * index;
+                real += value * Math.Cos(angle);
+                imaginary -= value * Math.Sin(angle);
+                windowSum += window;
+            }
+
+            return windowSum > 0
+                ? 2.0 * Math.Sqrt(real * real + imaginary * imaginary) / windowSum
+                : 0;
         }
 
         private void RefreshItems(int channelCount)
