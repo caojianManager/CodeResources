@@ -33,8 +33,8 @@ namespace FrameWork.Common
         public int GainNum = 24;
         public int Impedance_SampleRate = 250;
         public double Impedance_TargetFreq = 31.25;
-        public double AA = 6.0e-9;
-        public double series_resistor_kohm = 0;
+        public double Lead_Of = 1.0e-8;
+        public double series_resistor_kohm = 10;
 
         public void Init()
         {
