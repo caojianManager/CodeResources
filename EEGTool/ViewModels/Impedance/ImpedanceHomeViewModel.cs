@@ -452,7 +452,7 @@ namespace EEGTool.ViewModels.Impedance
         private static float CalculateAdcMicrovolts(uint value)
         {
             double referenceVoltage = FrameWork.Common.Config.Instance.ReferenceVoltage;
-            double gain = FrameWork.Common.Config.Instance.GainNum;
+            double gain = FrameWork.Common.Config.Instance.ImpedanceGain;
             if (gain <= 0)
             {
                 gain = 1;

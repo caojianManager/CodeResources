@@ -6,10 +6,12 @@ using FrameWork.Common;
 using FrameWork.Event;
 using FrameWork.Log;
 using FrameWork.MVVM;
+using MathNet.Numerics.IntegralTransforms;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Numerics;
 using System.Windows;
 
 namespace EEGTool.ViewModels.Impedance
@@ -97,7 +99,7 @@ namespace EEGTool.ViewModels.Impedance
             int fs = GetSampleRate();
             double targetFreq = Config.Instance.Impedance_TargetFreq;
             double leadoffCurrent = Config.Instance.Lead_Of;
-            double iFundPeak = leadoffCurrent;
+            double iFundPeak = leadoffCurrent * (4.0 / Math.PI);
             if (iFundPeak <= 0)
             {
                 return;
@@ -118,15 +120,39 @@ namespace EEGTool.ViewModels.Impedance
                 {
                     continue;
                 }
-                //  2026_05_27增加逻辑，如果是同一值，则属于未佩戴，给个默认极大值。【AI不可以修改这一行】
-                bool allSame = data.All(x => x == data[0]);
-                if (allSame)
+
+                double mean = data.Average();
+                double[] window = MathNet.Numerics.Window.Hann(n);
+                var fftData = new Complex[n];
+                for (int sample = 0; sample < n; sample++)
                 {
-                    _impedanceValues[channelId] = 600;
-                    continue;
+                    fftData[sample] = new Complex(
+                        (data[sample] - mean) * window[sample],
+                        0);
                 }
 
-                double vPeakUv = EstimatePeakAmplitudeAtFrequency(data, fs, targetFreq);
+                Fourier.Forward(fftData, FourierOptions.Matlab);
+
+                int rfftLength = n / 2 + 1;
+                double frequencyResolution = fs / (double)n;
+                int frequencyIndex = (int)Math.Round(
+                    targetFreq / frequencyResolution,
+                    MidpointRounding.AwayFromZero);
+                frequencyIndex = Math.Clamp(frequencyIndex, 0, rfftLength - 1);
+
+                int startIndex = Math.Max(0, frequencyIndex - 1);
+                int endIndex = Math.Min(rfftLength, frequencyIndex + 2);
+                double sumSquares = 0;
+                for (int index = startIndex; index < endIndex; index++)
+                {
+                    // 与 Python 保持一致:
+                    // np.abs(fft_data) / (N / 2) * 2.0
+                    double magnitudeUv =
+                        fftData[index].Magnitude / (n / 2.0) * 2.0;
+                    sumSquares += magnitudeUv * magnitudeUv;
+                }
+
+                double vPeakUv = Math.Sqrt(sumSquares);
                 double iFundPeakNa = iFundPeak * 1.0e9;
                 double impedanceKohm =
                     vPeakUv / iFundPeakNa - Config.Instance.series_resistor_kohm;
@@ -135,44 +161,8 @@ namespace EEGTool.ViewModels.Impedance
                 _impedanceValues[channelId] = impedanceKohm;
 
                 Logger.Info(
-                    $"[ImpedancePro] ch={channelId}, N={n}, targetFreq={targetFreq:F4}Hz, Vpeak={vPeakUv:F6}uV, IFundPeak={iFundPeakNa:F6}nA, Z={impedanceKohm:F6}kOhm");
+                    $"[ImpedancePro] ch={channelId}, N={n}, targetFreq={targetFreq:F4}Hz, freqResolution={frequencyResolution:F6}Hz, freqIdx={frequencyIndex}, binRange=[{startIndex},{endIndex}), Vpeak={vPeakUv:F6}uV, IFundPeak={iFundPeakNa:F6}nA, seriesR={Config.Instance.series_resistor_kohm:F6}kOhm, Z={impedanceKohm:F6}kOhm");
             }
-        }
-
-        private static double EstimatePeakAmplitudeAtFrequency(
-            double[] data,
-            int sampleRate,
-            double targetFrequency)
-        {
-            if (data == null ||
-                data.Length < 3 ||
-                sampleRate <= 0 ||
-                targetFrequency <= 0 ||
-                targetFrequency >= sampleRate / 2.0)
-            {
-                return 0;
-            }
-
-            double mean = data.Average();
-            double real = 0;
-            double imaginary = 0;
-            double windowSum = 0;
-            double angularStep = 2.0 * Math.PI * targetFrequency / sampleRate;
-            int lastIndex = data.Length - 1;
-
-            for (int index = 0; index < data.Length; index++)
-            {
-                double window = 0.5 - 0.5 * Math.Cos(2.0 * Math.PI * index / lastIndex);
-                double value = (data[index] - mean) * window;
-                double angle = angularStep * index;
-                real += value * Math.Cos(angle);
-                imaginary -= value * Math.Sin(angle);
-                windowSum += window;
-            }
-
-            return windowSum > 0
-                ? 2.0 * Math.Sqrt(real * real + imaginary * imaginary) / windowSum
-                : 0;
         }
 
         private void RefreshItems(int channelCount)

@@ -32,9 +32,11 @@ namespace FrameWork.Common
         public bool CollectionIsVideoRecordYes = false;
         public double ReferenceVoltage = 4.5;
         public int GainNum = 24;
+        public double ImpedanceGain = 8;
         public int Impedance_SampleRate = 250;
         public double Impedance_TargetFreq = 31.25;
         public double Lead_Of = DefaultLeadOffCurrentAmperes;
+        // P 端与 SRB1 端串联电阻之和，单位 kΩ。
         public double series_resistor_kohm = 10;
 
         public void Init()
@@ -61,6 +63,11 @@ namespace FrameWork.Common
                 if (Math.Abs(config.Lead_Of - 1.0e-8) < 1.0e-15)
                 {
                     config.Lead_Of = DefaultLeadOffCurrentAmperes;
+                }
+
+                if (config.ImpedanceGain <= 0)
+                {
+                    config.ImpedanceGain = 8;
                 }
 
                 return config;
