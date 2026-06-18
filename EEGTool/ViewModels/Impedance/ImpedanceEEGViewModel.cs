@@ -24,7 +24,6 @@ namespace EEGTool.ViewModels.Impedance
         private const double ChannelHeight = 1.0;
         private const double WaveAmplitude = 0.38;
         private const float ChannelDividerLineWidth = 0.5f;
-        private const int MaxQueueLatencyMilliseconds = 150;
 
         private readonly object _dataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
@@ -43,11 +42,14 @@ namespace EEGTool.ViewModels.Impedance
         private VerticalLine? _wipeLine;
         private int _sampleRate = 250;
         private int _channelCount;
-        private int _lastWindowSampleCount;
         private int _streamerSampleRate;
         private float[][] _latestSource = Array.Empty<float[]>();
         private int _latestSourceSampleRate = 250;
+        private long _latestTotalSamplesWritten;
         private long _receivedVersion;
+        private long _lastQueuedSampleVersion;
+        private DateTime _lastSamplePumpTime = DateTime.UtcNow;
+        private double _samplePumpRemainder;
 
         public WpfPlot ScottPlotEEG { get; } = new();
         public ObservableCollection<ImpedanceChannelHeader> ChannelHeaders { get; } = new();
@@ -159,28 +161,17 @@ namespace EEGTool.ViewModels.Impedance
                 return;
             }
 
-            int previousWindowCount;
             long version;
             lock (_dataLock)
             {
-                previousWindowCount = _lastWindowSampleCount;
-                _lastWindowSampleCount = windowSampleCount;
                 _sampleRate = sampleRate;
                 _latestSource = CopySource(source);
                 _latestSourceSampleRate = sampleRate;
+                _latestTotalSamplesWritten = result.TotalSamplesWritten;
                 version = ++_receivedVersion;
             }
 
-            int newSampleCount = previousWindowCount <= 0
-                ? Math.Min(windowSampleCount, Math.Max(1, sampleRate / 25))
-                : Math.Clamp(windowSampleCount - previousWindowCount, 0, windowSampleCount);
             int visibleSampleCount = Math.Min(windowSampleCount, Math.Max(1, WindowSec * sampleRate));
-            newSampleCount = Math.Min(newSampleCount, visibleSampleCount);
-            if (newSampleCount == 0 && visibleSampleCount >= WindowSec * sampleRate)
-            {
-                newSampleCount = Math.Min(windowSampleCount, Math.Max(1, sampleRate / 25));
-            }
-
             double[][] scaledChannels = BuildScaledChannels(source, visibleSampleCount);
             Application.Current?.Dispatcher.BeginInvoke(() =>
             {
@@ -193,11 +184,20 @@ namespace EEGTool.ViewModels.Impedance
                 if (channelsRebuilt)
                 {
                     FillStreamersFromCurrentWindow(scaledChannels);
+                    _lastQueuedSampleVersion = result.TotalSamplesWritten;
                     RefreshPlot();
                     return;
                 }
 
+                long sampleDelta = result.TotalSamplesWritten - _lastQueuedSampleVersion;
+                if (sampleDelta <= 0)
+                {
+                    return;
+                }
+
+                int newSampleCount = (int)Math.Min(visibleSampleCount, sampleDelta);
                 QueueNewestSamples(scaledChannels, newSampleCount);
+                _lastQueuedSampleVersion = result.TotalSamplesWritten;
             });
         }
 
@@ -206,16 +206,17 @@ namespace EEGTool.ViewModels.Impedance
             float[][] source;
             int sampleRate;
             int windowSampleCount;
+            long totalSamplesWritten;
 
             lock (_dataLock)
             {
                 source = CopySource(_latestSource);
                 sampleRate = Math.Max(1, _latestSourceSampleRate);
+                totalSamplesWritten = _latestTotalSamplesWritten;
                 windowSampleCount = source.Where(channel => channel != null)
                     .Select(channel => channel.Length)
                     .DefaultIfEmpty(0)
                     .Min();
-                _lastWindowSampleCount = windowSampleCount;
                 _receivedVersion++;
             }
 
@@ -230,6 +231,7 @@ namespace EEGTool.ViewModels.Impedance
                 double[][] scaledChannels = BuildScaledChannels(source, visibleSampleCount);
                 EnsurePlotChannels(scaledChannels.Length, sampleRate, forceRebuild: true);
                 FillStreamersFromCurrentWindow(scaledChannels);
+                _lastQueuedSampleVersion = totalSamplesWritten;
                 RefreshPlot();
             }
 
@@ -326,6 +328,9 @@ namespace EEGTool.ViewModels.Impedance
             ClearSecondDividerLines();
             _streamers.Clear();
             _pendingSamples.Clear();
+            _lastQueuedSampleVersion = 0;
+            _samplePumpRemainder = 0;
+            _lastSamplePumpTime = DateTime.UtcNow;
             _channelCount = channelCount;
             _streamerSampleRate = sampleRate;
 
@@ -404,13 +409,6 @@ namespace EEGTool.ViewModels.Impedance
 
             int available = channels.Min(channel => channel.Length);
             int count = Math.Min(newSampleCount, available);
-            int maxQueued = Math.Max(1, _sampleRate * MaxQueueLatencyMilliseconds / 1000);
-            while (_pendingSamples.Count + count > maxQueued && _pendingSamples.Count > 0)
-            {
-                _pendingSamples.Dequeue();
-            }
-
-            count = Math.Min(count, maxQueued);
             for (int sample = available - count; sample < available; sample++)
             {
                 var values = new double[channels.Length];
@@ -441,14 +439,24 @@ namespace EEGTool.ViewModels.Impedance
 
         private void AddPendingSamples()
         {
+            DateTime now = DateTime.UtcNow;
+            double elapsedSeconds = Math.Max(0, (now - _lastSamplePumpTime).TotalSeconds);
+            _lastSamplePumpTime = now;
+
             if (_pendingSamples.Count == 0 || _streamers.Count == 0)
+            {
+                _samplePumpRemainder = 0;
+                return;
+            }
+
+            _samplePumpRemainder += Math.Max(1, _sampleRate) * elapsedSeconds;
+            int count = Math.Min(_pendingSamples.Count, (int)Math.Floor(_samplePumpRemainder));
+            if (count <= 0)
             {
                 return;
             }
 
-            int count = Math.Max(
-                1,
-                (int)Math.Round(_sampleRate * _sampleTimer.Interval.TotalSeconds));
+            _samplePumpRemainder -= count;
             var channelValues = _streamers.Keys.ToDictionary(
                 channel => channel,
                 _ => new List<double>(count));

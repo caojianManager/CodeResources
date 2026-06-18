@@ -46,7 +46,6 @@ namespace EEGTool.ViewModels.Impedance
         private const int MonitorTimerIntervalMilliseconds = 40;
         private const int SamplePumpIntervalMilliseconds = 10;
         private const int TargetPendingLatencyMilliseconds = 100;
-        private const int MaxPendingLatencyMilliseconds = 500;
 
         public bool IsMonitorRunning
         {
@@ -269,7 +268,6 @@ namespace EEGTool.ViewModels.Impedance
             }
 
             float[][] samples = ConvertDataFrameSamples(dataFrame);
-            int droppedSamples = 0;
             int pendingCount;
             int bufferCount;
             lock (_dataProcessingLock)
@@ -279,23 +277,9 @@ namespace EEGTool.ViewModels.Impedance
                     _pendingSamples.Enqueue(sample);
                 }
 
-                int maxPendingSamples = Math.Max(
-                    1,
-                    _dataBuffer.SampleRate * MaxPendingLatencyMilliseconds / 1000);
-                while (_pendingSamples.Count > maxPendingSamples)
-                {
-                    _pendingSamples.Dequeue();
-                    droppedSamples++;
-                }
-
                 pendingCount = _pendingSamples.Count;
                 bufferCount = _dataBuffer.Count;
                 EnsureSamplePumpRunning();
-            }
-
-            if (droppedSamples > 0)
-            {
-                Logger.Info($"[ImpedanceHomeViewModel][ReceivedImpedanceData]:平滑队列超出实时延迟上限，丢弃旧样本 Count={droppedSamples}");
             }
 
             Logger.Debug($"[ImpedanceHomeViewModel][ReceivedImpedanceData]:阻抗数据已进入平滑队列 Pending={pendingCount}, BufferCount={bufferCount}");
@@ -435,6 +419,7 @@ namespace EEGTool.ViewModels.Impedance
                 }
 
                 result = _dataProcessor.Process();
+                result.TotalSamplesWritten = _samplesWrittenVersion;
                 bufferCount = _dataBuffer.Count;
                 _lastProcessedSamplesVersion = _samplesWrittenVersion;
             }
