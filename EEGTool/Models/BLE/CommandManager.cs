@@ -546,7 +546,8 @@ namespace EEGTool.Models.BLE
                 samples[channel] = new int[sampleCount];
                 for (int sample = 0; sample < sampleCount; sample++)
                 {
-                    int index = (channel * sampleCount + sample) * 3;
+                    // 设备按采样点交织发送：Sample0-Ch0, Sample0-Ch1, Sample1-Ch0, ...
+                    int index = (sample * channelCount + channel) * 3;
                     int value = (rawData[index] << 16) | (rawData[index + 1] << 8) | rawData[index + 2];
                     if ((value & 0x800000) != 0)
                     {
