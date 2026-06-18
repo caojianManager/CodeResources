@@ -268,6 +268,7 @@ public sealed class DataProcessingResult
     public float[,] BandPowerByChannel { get; }
     public float[] HeadWideBandPower { get; }
     public int ReferenceChannel { get; set; } = -1;
+    public long TotalSamplesWritten { get; set; }
 
     public DataProcessingResult(int channels, int bands)
     {

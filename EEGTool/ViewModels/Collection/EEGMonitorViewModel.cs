@@ -33,7 +33,6 @@ namespace EEGTool.ViewModels.Collection
         private const double MinVisibleChannelCount = 1;
         private const double MaxVisibleChannelPadding = 0.5;
         private const double WipeBlankFraction = 0.000001;
-        private const int MaxPlotQueueLatencyMilliseconds = 100;
         private readonly object _onDataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
         private readonly Dictionary<int, int> _autoValues = new();
@@ -42,7 +41,9 @@ namespace EEGTool.ViewModels.Collection
         private readonly DispatcherTimer _updatePlotTimer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(50) };
         private float[][] _currentFrameData = Array.Empty<float[]>();
         private long _latestWindowUpdateVersion;
-        private DateTime _lastPlotDataTime = DateTime.MinValue;
+        private long _lastQueuedSampleVersion;
+        private DateTime _lastPlotPumpTime = DateTime.UtcNow;
+        private double _plotPumpRemainder;
         private int _sampleRate = 250;
         private int _lastAxisSampleRate;
         private int _lastAxisWindowSec;
@@ -192,7 +193,7 @@ namespace EEGTool.ViewModels.Collection
                     return;
                 }
 
-                QueuePlotData(renderData);
+                QueuePlotData(renderData, result.TotalSamplesWritten);
             });
         }
 
@@ -271,7 +272,9 @@ namespace EEGTool.ViewModels.Collection
             return result;
         }
 
-        private void QueuePlotData(List<(double[] xs, double[] ys, int ch)> renderData)
+        private void QueuePlotData(
+            List<(double[] xs, double[] ys, int ch)> renderData,
+            long totalSamplesWritten)
         {
             if (renderData.Count == 0)
             {
@@ -287,27 +290,21 @@ namespace EEGTool.ViewModels.Collection
             if (streamersRebuilt)
             {
                 FillStreamersFromCurrentWindow(renderData, availableSamples);
-                _lastPlotDataTime = DateTime.UtcNow;
+                _lastQueuedSampleVersion = totalSamplesWritten;
                 return;
             }
 
-            int newSampleCount = GetNewPlotSampleCount(availableSamples);
+            long sampleDelta = totalSamplesWritten - _lastQueuedSampleVersion;
+            if (sampleDelta <= 0)
+            {
+                return;
+            }
+
+            int newSampleCount = (int)Math.Min(availableSamples, sampleDelta);
             if (newSampleCount <= 0)
             {
                 return;
             }
-
-            int maxQueuedSamples = Math.Max(1,
-                _sampleRate * MaxPlotQueueLatencyMilliseconds / 1000);
-            int samplesToDiscard = Math.Max(0,
-                _pendingPlotSamples.Count + newSampleCount - maxQueuedSamples);
-            while (samplesToDiscard > 0 && _pendingPlotSamples.Count > 0)
-            {
-                _pendingPlotSamples.Dequeue();
-                samplesToDiscard--;
-            }
-
-            newSampleCount = Math.Min(newSampleCount, maxQueuedSamples);
 
             for (int i = availableSamples - newSampleCount; i < availableSamples; i++)
             {
@@ -322,32 +319,8 @@ namespace EEGTool.ViewModels.Collection
 
                 _pendingPlotSamples.Enqueue(sample);
             }
-        }
 
-        private int GetNewPlotSampleCount(int availableSamples)
-        {
-            if (availableSamples <= 0)
-            {
-                return 0;
-            }
-
-            DateTime now = DateTime.UtcNow;
-            if (_lastPlotDataTime == DateTime.MinValue)
-            {
-                _lastPlotDataTime = now;
-                return Math.Min(availableSamples, GetSamplesPerPlotUpdate());
-            }
-
-            double elapsedSeconds = Math.Max(0.001, (now - _lastPlotDataTime).TotalSeconds);
-            _lastPlotDataTime = now;
-            int expectedSamples = Math.Max(1, (int)Math.Round(elapsedSeconds * Math.Max(1, _sampleRate)));
-            return Math.Min(availableSamples, expectedSamples);
-        }
-
-        private int GetSamplesPerPlotUpdate()
-        {
-            return Math.Max(1, (int)Math.Ceiling(
-                Math.Max(1, _sampleRate) * _updatePlotTimer.Interval.TotalSeconds));
+            _lastQueuedSampleVersion = totalSamplesWritten;
         }
 
         private bool EnsureStreamers(int channelCount)
@@ -364,7 +337,9 @@ namespace EEGTool.ViewModels.Collection
             EegPlot.Plot.Remove<DataStreamer>();
             _streamers.Clear();
             _pendingPlotSamples.Clear();
-            _lastPlotDataTime = DateTime.MinValue;
+            _lastQueuedSampleVersion = 0;
+            _plotPumpRemainder = 0;
+            _lastPlotPumpTime = DateTime.UtcNow;
 
             for (int ch = 0; ch < channelCount; ch++)
             {
@@ -444,12 +419,24 @@ namespace EEGTool.ViewModels.Collection
 
         private void AddPendingPlotSamples()
         {
+            DateTime now = DateTime.UtcNow;
+            double elapsedSeconds = Math.Max(0, (now - _lastPlotPumpTime).TotalSeconds);
+            _lastPlotPumpTime = now;
+
             if (_pendingPlotSamples.Count == 0 || _streamers.Count == 0)
+            {
+                _plotPumpRemainder = 0;
+                return;
+            }
+
+            _plotPumpRemainder += Math.Max(1, _sampleRate) * elapsedSeconds;
+            int count = Math.Min(_pendingPlotSamples.Count, (int)Math.Floor(_plotPumpRemainder));
+            if (count <= 0)
             {
                 return;
             }
 
-            int count = Math.Max(1, (int)Math.Round(Math.Max(1, _sampleRate) * _addNewDataTimer.Interval.TotalSeconds));
+            _plotPumpRemainder -= count;
             var samplesByChannel = _streamers.Keys.ToDictionary(ch => ch, _ => new List<double>(count));
 
             for (int i = 0; i < count && _pendingPlotSamples.Count > 0; i++)
