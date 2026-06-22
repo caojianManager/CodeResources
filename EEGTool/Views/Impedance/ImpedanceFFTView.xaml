@@ -108,7 +108,7 @@
         <Border BorderThickness="1" BorderBrush="#72767A"/>
         <Grid Background="White" Margin="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="39"/>
+                <RowDefinition Height="38"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Grid Background="LightGray">
