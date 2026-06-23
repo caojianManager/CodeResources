@@ -12,7 +12,16 @@
         <vm:MonitorContainerViewModel/>
     </UserControl.DataContext>
     <Grid Background="White">
-            <local:EEGMonitorView HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Stretch"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <local:EEGMonitorView HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"/>
+
+        <local:FFTMonitorView Grid.Row="1"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"/>
     </Grid>
 </UserControl>

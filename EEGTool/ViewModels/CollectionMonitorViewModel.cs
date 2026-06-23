@@ -4,9 +4,11 @@ using Framework.MVVM.Commands;
 using FrameWork.Event;
 using FrameWork.MVVM;
 using FrameWork.Tools;
+using MathNet.Numerics.IntegralTransforms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -496,7 +498,7 @@ namespace EEGTool.ViewModels
             _dataProcessor = new DataProcessor(
                 _dataBuffer,
                 new PassthroughSignalFilter(),
-                new ZeroFftProcessor(),
+                new MathNetFftProcessor(),
                 new DataProcessorSettings(channelCount, sampleRate));
             _pendingSamples.Clear();
             _samplePumpRemainder = 0;
@@ -678,7 +680,7 @@ namespace EEGTool.ViewModels
             }
         }
 
-        private sealed class ZeroFftProcessor : IFftProcessor
+        private sealed class MathNetFftProcessor : IFftProcessor
         {
             public float[] ComputeAmplitudeSpectrum(float[] timeData, int sampleRate)
             {
@@ -687,7 +689,21 @@ namespace EEGTool.ViewModels
                     return Array.Empty<float>();
                 }
 
-                return new float[(timeData.Length / 2) + 1];
+                var spectrum = timeData.Select(value => new Complex(value, 0)).ToArray();
+                Fourier.Forward(spectrum, FourierOptions.Matlab);
+
+                int resultLength = spectrum.Length / 2 + 1;
+                var amplitude = new float[resultLength];
+                for (int index = 0; index < resultLength; index++)
+                {
+                    double scale = index == 0 ||
+                        (spectrum.Length % 2 == 0 && index == spectrum.Length / 2)
+                        ? 1.0 / spectrum.Length
+                        : 2.0 / spectrum.Length;
+                    amplitude[index] = (float)(spectrum[index].Magnitude * scale);
+                }
+
+                return amplitude;
             }
         }
 
