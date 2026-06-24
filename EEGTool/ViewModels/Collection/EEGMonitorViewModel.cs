@@ -60,7 +60,22 @@ namespace EEGTool.ViewModels.Collection
         public bool IsAuto
         {
             get => _isAuto;
-            set => SetProperty(ref _isAuto, value);
+            set
+            {
+                if (SetProperty(ref _isAuto, value))
+                {
+                    OnPropertyChanged(nameof(IsManualScale));
+                    OnPropertyChanged(nameof(AutoModeSelectedIndex));
+                }
+            }
+        }
+
+        public bool IsManualScale => !IsAuto;
+
+        public int AutoModeSelectedIndex
+        {
+            get => IsAuto ? 1 : 0;
+            set => IsAuto = value == 1;
         }
 
         private int _windowSec = 5;
@@ -80,6 +95,8 @@ namespace EEGTool.ViewModels.Collection
         public ICommand? EegAutoClickCommand { get; set; }
         public ICommand? ClickWaveHeaderCommand { get; set; }
         public ICommand? ScrollModeClickCommand { get; set; }
+        public ICommand? SetAutoModeCommand { get; set; }
+        public ICommand? SetScrollModeCommand { get; set; }
 
         public bool ScrollMode
         {
@@ -89,8 +106,18 @@ namespace EEGTool.ViewModels.Collection
                 if (SetProperty(ref _scrollMode, value))
                 {
                     SetStreamerViewMode(value ? StreamerViewMode.Scroll : StreamerViewMode.Wipe);
+                    OnPropertyChanged(nameof(IsWipeMode));
+                    OnPropertyChanged(nameof(ScrollModeSelectedIndex));
                 }
             }
+        }
+
+        public bool IsWipeMode => !ScrollMode;
+
+        public int ScrollModeSelectedIndex
+        {
+            get => ScrollMode ? 1 : 0;
+            set => ScrollMode = value == 1;
         }
 
         public void ZoomYAxisByWheel(int wheelDelta)
@@ -148,6 +175,14 @@ namespace EEGTool.ViewModels.Collection
             ScrollModeClickCommand = new RelayCommand((o) =>
             {
                 ScrollMode = !ScrollMode;
+            });
+            SetAutoModeCommand = new RelayCommand(o =>
+            {
+                IsAuto = string.Equals(o?.ToString(), "Auto", StringComparison.OrdinalIgnoreCase);
+            });
+            SetScrollModeCommand = new RelayCommand(o =>
+            {
+                ScrollMode = string.Equals(o?.ToString(), "Scroll", StringComparison.OrdinalIgnoreCase);
             });
             ClickWaveHeaderCommand = new RelayCommand((o) =>
             {

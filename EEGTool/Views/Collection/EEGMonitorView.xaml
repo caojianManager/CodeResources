@@ -19,7 +19,7 @@
         <cv:BoolToBrushConverter
             x:Key="IsEnableBrush"
             TrueBrush="LightGray"
-            FalseBrush="#0D0D0D"></cv:BoolToBrushConverter>
+            FalseBrush="#334155"></cv:BoolToBrushConverter>
         <cv:InverseBoolConverter
             x:Key="InverseBool" />
         <Style
@@ -46,13 +46,13 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="5" />
+                                CornerRadius="2" />
 
                             <!-- 显示选中项 -->
                             <ContentPresenter
-                                Margin="3,0,0,0"
+                                Margin="0,0,12,0"
                                 VerticalAlignment="Center"
-                                HorizontalAlignment="Left"
+                                HorizontalAlignment="Center"
                                 Content="{TemplateBinding SelectionBoxItem}"
                                 ContentTemplate="{TemplateBinding ItemTemplate}" />
 
@@ -79,8 +79,8 @@
                                             <Path
                                                 Data="M 0 0 L 8 8 L 16 0 Z"
                                                 Fill="Black"
-                                                Width="10"
-                                                Height="6"
+                                                Width="5"
+                                                Height="2"
                                                 Margin="0,0,10,0"
                                                 Stretch="Uniform"
                                                 HorizontalAlignment="Right"
@@ -144,6 +144,46 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="MonitorOptionButtonStyle" TargetType="Button">
+            <Setter Property="MinWidth" Value="54"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#334155"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="Background" Value="#EAF4FF"/>
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#5DA9E9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Background" Value="#D7ECFF"/>
+                    <Setter Property="BorderBrush" Value="#378CF3"/>
+                    <Setter Property="Foreground" Value="#0F4C81"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Border
@@ -154,57 +194,69 @@
             Margin="1">
             <Grid.RowDefinitions>
                 <RowDefinition
-                    Height="42" />
+                    Height="60" />
                 <RowDefinition
                     Height="*" />
             </Grid.RowDefinitions>
             <Grid Background="WhiteSmoke">
-                <Border
-                    BorderThickness="0,0,0,0"
-                    BorderBrush="LightGray" />
 
-                <StackPanel Orientation="Horizontal"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border Background="#F8FAFC"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="0,0,0,1">
+                    <TextBlock Text="EEG"
+                               Margin="10,0"
+                               VerticalAlignment="Center"
+                               Foreground="#334155"
+                               FontWeight="SemiBold"/>
+                </Border>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,15,0">
+                    <TextBlock Text="窗口时间(s)"
+                               Margin="10,0"
+                               VerticalAlignment="Center"
+                               Foreground="#334155"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="垂直刻度(uV)"
+                               Margin="8,0,10,0"
+                               VerticalAlignment="Center"
+                               Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}" 
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="自动"
+                               Margin="20,0,26,0"
+                               VerticalAlignment="Center"
+                               Foreground="#334155"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="模式切换"
+                               Margin="10,0"
+                               VerticalAlignment="Center"
+                               Foreground="#334155"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right"
                             Margin="0,0,15,0">
-                    <StackPanel
-                        Orientation="Horizontal"
-                        Margin="0,0,15,0"
-                        Width="200"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center">
-                        <TextBlock
-                            FontSize="14"
-                            Margin="0,0,15,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="窗口时间(秒)" />
                         <nu:BZNumericUpDown
-                            Width="100"
-                            Height="30"
+                            Width="80"
+                            Height="25"
                             MaxValue="15"
                             MinValue="1"
                             IsDecimal="False"
                             Value="{Binding WindowSec}"
                             Step="1" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Orientation="Horizontal"
-                        Margin="0,0,0,0"
-                        Width="235"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center">
-                        <TextBlock
-                            FontSize="14"
-                            Margin="0,5,15,0"
-                            HorizontalAlignment="Center"
-                            Text="垂直刻度uV/div"
-                            Foreground="{Binding IsAuto,Converter={StaticResource IsEnableBrush}}" />
                         <nu:BZNumericUpDown
+                            Margin="5,0,0,0"
                             MaxValue="10000"
-                            Width="100"
-                            Height="30"
+                            Width="80"
+                            Height="25"
                             MinValue="1"
                             IsEnabled="{Binding IsAuto,Converter={StaticResource InverseBool}}"
                             IsDecimal="False"
@@ -212,187 +264,27 @@
                             Value="{Binding VertScale}"
                             Step="10" />
 
+                        <ComboBox Width="65"
+                                  Height="25"
+                                  FontSize="11"
+                                  Margin="5,0,0,0"
+                                  SelectedIndex="{Binding AutoModeSelectedIndex, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxStyle}">
+                            <ComboBoxItem Content="否"/>
+                            <ComboBoxItem Content="是"/>
+                        </ComboBox>
+                        <ComboBox Width="65"
+                                  Height="25"
+                                  Margin="5,0,1,0"
+                                  FontSize="11"
+                                  SelectedIndex="{Binding ScrollModeSelectedIndex, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxStyle}">
+                            <ComboBoxItem Content="Wipe"/>
+                            <ComboBoxItem Content="Scroll"/>
+                        </ComboBox>
                     </StackPanel>
 
-
-
-                    <StackPanel
-                        Background="Transparent"
-                        Orientation="Horizontal"
-                        Margin="0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center">
-                        <TextBlock
-                            Text="波形自适应"
-                            Foreground="Black"
-                            VerticalAlignment="Center"
-                            Margin="0,0,10,0"
-                            FontSize="14" />
-                        <Button
-                            Width="50"
-                            Height="25"
-                            Padding="0"
-                            BorderThickness="0"
-                            Background="Transparent"
-                            Command="{Binding EegAutoClickCommand}">
-                            <Button.Template>
-                                <ControlTemplate
-                                    TargetType="Button">
-                                    <Grid
-                                        Width="50"
-                                        Height="25">
-                                        <Border
-                                            x:Name="SwitchTrack"
-                                            Background="#D6DCE5"
-                                            CornerRadius="12.5" />
-                                        <Border
-                                            x:Name="SwitchThumb"
-                                            Width="20"
-                                            Height="20"
-                                            Margin="3"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            Background="White"
-                                            CornerRadius="20">
-                                            <TextBlock
-                                                x:Name="SwitchCheck"
-                                                Text="✓"
-                                                Foreground="#56A4F4"
-                                                FontSize="20"
-                                                FontWeight="Bold"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Visibility="Collapsed" />
-                                        </Border>
-                                    </Grid>
-                                    <ControlTemplate.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding IsAuto}"
-                                            Value="True">
-                                            <Setter
-                                                TargetName="SwitchTrack"
-                                                Property="Background"
-                                                Value="#56A4F4" />
-                                            <Setter
-                                                TargetName="SwitchThumb"
-                                                Property="HorizontalAlignment"
-                                                Value="Right" />
-                                            <Setter
-                                                TargetName="SwitchCheck"
-                                                Property="Visibility"
-                                                Value="Visible" />
-                                        </DataTrigger>
-                                        <Trigger
-                                            Property="IsMouseOver"
-                                            Value="True">
-                                            <Setter
-                                                TargetName="SwitchTrack"
-                                                Property="Opacity"
-                                                Value="0.9" />
-                                        </Trigger>
-                                        <Trigger
-                                            Property="IsPressed"
-                                            Value="True">
-                                            <Setter
-                                                TargetName="SwitchThumb"
-                                                Property="Opacity"
-                                                Value="0.85" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </StackPanel>
-
-                    <StackPanel
-                     Background="Transparent"
-                     Orientation="Horizontal"
-                     Margin="20,0,0,0"
-                     HorizontalAlignment="Right"
-                     VerticalAlignment="Center">
-                        <TextBlock
-                                 Text="模式切换(Wipe/Scroll)"
-                                 Foreground="Black"
-                                 VerticalAlignment="Center"
-                                 Margin="0,0,10,0"
-                                 FontSize="14" />
-                        <Button
-                                 Width="50"
-                                 Height="25"
-                                 Padding="0"
-                                 BorderThickness="0"
-                                 Background="Transparent"
-                                 Command="{Binding ScrollModeClickCommand}">
-                            <Button.Template>
-                                <ControlTemplate
-                     TargetType="Button">
-                                    <Grid
-                         Width="50"
-                         Height="25">
-                                        <Border
-                             x:Name="SwitchTrack"
-                             Background="#D6DCE5"
-                             CornerRadius="12.5" />
-                                        <Border
-                             x:Name="SwitchThumb"
-                             Width="20"
-                             Height="20"
-                             Margin="3"
-                             HorizontalAlignment="Left"
-                             VerticalAlignment="Center"
-                             Background="White"
-                             CornerRadius="20">
-                                            <TextBlock
-                                 x:Name="SwitchCheck"
-                                 Text="✓"
-                                 Foreground="#56A4F4"
-                                 FontSize="20"
-                                 FontWeight="Bold"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 Visibility="Collapsed" />
-                                        </Border>
-                                    </Grid>
-                                    <ControlTemplate.Triggers>
-                                        <DataTrigger
-                             Binding="{Binding ScrollMode}"
-                             Value="True">
-                                            <Setter
-                                 TargetName="SwitchTrack"
-                                 Property="Background"
-                                 Value="#56A4F4" />
-                                            <Setter
-                                 TargetName="SwitchThumb"
-                                 Property="HorizontalAlignment"
-                                 Value="Right" />
-                                            <Setter
-                                 TargetName="SwitchCheck"
-                                 Property="Visibility"
-                                 Value="Visible" />
-                                        </DataTrigger>
-                                        <Trigger
-                             Property="IsMouseOver"
-                             Value="True">
-                                            <Setter
-                                 TargetName="SwitchTrack"
-                                 Property="Opacity"
-                                 Value="0.9" />
-                                        </Trigger>
-                                        <Trigger
-                             Property="IsPressed"
-                             Value="True">
-                                            <Setter
-                                 TargetName="SwitchThumb"
-                                 Property="Opacity"
-                                 Value="0.85" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </StackPanel>
-
-                </StackPanel>
+    
 
 
             </Grid>
