@@ -11,16 +11,35 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace EEGTool.ViewModels.Collection
 {
     public class FFTMonitorViewModel : BindableBase
     {
         private readonly object _dataLock = new();
+        private readonly object _smoothLock = new();
+        private readonly object _preparedLock = new();
         private readonly Dictionary<int, double[]> _smoothedAmplitude = new();
+        private const double DisplayEasingFactor = 0.22;
+        private readonly DispatcherTimer _renderTimer = new(DispatcherPriority.Render)
+        {
+            Interval = TimeSpan.FromMilliseconds(40)
+        };
         private DataProcessingResult? _latestResult;
-        private long _renderVersion;
+        private List<FftSeries>? _preparedSeries;
+        private List<FftSeries>? _displaySeries;
+        private int _preparedSampleRate;
+        private int _cachedChannelNameCount = -1;
+        private List<string> _cachedChannelNames = new();
+        private long _latestDataVersion;
+        private long _preparedFrameVersion;
+        private long _displayTargetFrameVersion;
+        private bool _displaySettled = true;
+        private int _isPreparing;
 
         public WpfPlot FftPlot { get; } = new();
         public ObservableCollection<int> MaxWindowHz { get; } = new() { 30, 60, 100, 125 };
@@ -32,24 +51,24 @@ namespace EEGTool.ViewModels.Collection
         public int SelectedMaxWindowHz
         {
             get => _selectedMaxWindowHz;
-            set { if (SetProperty(ref _selectedMaxWindowHz, value)) RenderLatest(); }
+            set { if (SetProperty(ref _selectedMaxWindowHz, value)) QueuePrepareLatest(); }
         }
 
         private int _selectedMaxWindowUv = 100;
         public int SelectedMaxWindowUv
         {
             get => _selectedMaxWindowUv;
-            set { if (SetProperty(ref _selectedMaxWindowUv, value)) RenderLatest(); }
+            set { if (SetProperty(ref _selectedMaxWindowUv, value)) ForceRenderPrepared(); }
         }
 
         private string _selectedYAxesType = "Lin";
         public string SelectedYAxesType
         {
             get => _selectedYAxesType;
-            set { if (SetProperty(ref _selectedYAxesType, value)) RenderLatest(); }
+            set { if (SetProperty(ref _selectedYAxesType, value)) QueuePrepareLatest(); }
         }
 
-        private double _selectedSmoothingFactor = 0.5;
+        private double _selectedSmoothingFactor = 0.9;
         public double SelectedSmoothingFactor
         {
             get => _selectedSmoothingFactor;
@@ -57,8 +76,12 @@ namespace EEGTool.ViewModels.Collection
             {
                 if (SetProperty(ref _selectedSmoothingFactor, Math.Clamp(value, 0, 0.99)))
                 {
-                    _smoothedAmplitude.Clear();
-                    RenderLatest();
+                    lock (_smoothLock)
+                    {
+                        _smoothedAmplitude.Clear();
+                    }
+
+                    QueuePrepareLatest();
                 }
             }
         }
@@ -66,6 +89,8 @@ namespace EEGTool.ViewModels.Collection
         public FFTMonitorViewModel()
         {
             ConfigurePlot();
+            _renderTimer.Tick += (_, _) => RenderPrepared();
+            _renderTimer.Start();
             EventUtilManager.EventUitl.AddEvent<DataProcessingResult>(
                 EventName.RECEVIED_COLLECTION_DATA,
                 ReceivedData);
@@ -82,35 +107,179 @@ namespace EEGTool.ViewModels.Collection
             lock (_dataLock)
             {
                 _latestResult = result;
+                _latestDataVersion++;
             }
 
-            RenderLatest();
+            QueuePrepareLatest();
         }
 
-        private void RenderLatest()
+        private void QueuePrepareLatest()
         {
-            DataProcessingResult? result;
-            long version;
-            lock (_dataLock)
-            {
-                result = _latestResult;
-                version = ++_renderVersion;
-            }
-
-            if (result == null)
+            if (Interlocked.Exchange(ref _isPreparing, 1) == 1)
             {
                 return;
             }
 
-            int sampleRate = Math.Max(1, CollectionInfoManager.GetInstance().Info.SampleRate);
-            List<FftSeries> series = BuildSeries(result, sampleRate);
-            Application.Current?.Dispatcher.BeginInvoke(() =>
+            _ = Task.Run(() =>
             {
-                if (version == _renderVersion)
+                long preparedVersion = 0;
+                try
                 {
-                    DrawSeries(series, sampleRate);
+                    while (true)
+                    {
+                        DataProcessingResult? result;
+                        long version;
+                        lock (_dataLock)
+                        {
+                            result = _latestResult;
+                            version = _latestDataVersion;
+                        }
+
+                        if (result == null || version == preparedVersion)
+                        {
+                            break;
+                        }
+
+                        int sampleRate = Math.Max(1, CollectionInfoManager.GetInstance().Info.SampleRate);
+                        List<FftSeries> series;
+                        lock (_smoothLock)
+                        {
+                            series = BuildSeries(result, sampleRate);
+                        }
+
+                        lock (_preparedLock)
+                        {
+                            _preparedSeries = series;
+                            _preparedSampleRate = sampleRate;
+                            _preparedFrameVersion++;
+                        }
+
+                        preparedVersion = version;
+
+                        lock (_dataLock)
+                        {
+                            if (_latestDataVersion == version)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isPreparing, 0);
+
+                    lock (_dataLock)
+                    {
+                        if (_latestResult != null && _latestDataVersion != preparedVersion)
+                        {
+                            QueuePrepareLatest();
+                        }
+                    }
                 }
             });
+        }
+
+        private void ForceRenderPrepared()
+        {
+            lock (_preparedLock)
+            {
+                _preparedFrameVersion++;
+            }
+
+            RenderPrepared();
+        }
+
+        private void RenderPrepared()
+        {
+            List<FftSeries> targetSeries;
+            int sampleRate;
+            long frameVersion;
+            lock (_preparedLock)
+            {
+                if (_preparedSeries == null)
+                {
+                    return;
+                }
+
+                targetSeries = _preparedSeries;
+                sampleRate = _preparedSampleRate;
+                frameVersion = _preparedFrameVersion;
+            }
+
+            if (frameVersion != _displayTargetFrameVersion)
+            {
+                _displayTargetFrameVersion = frameVersion;
+                _displaySettled = false;
+            }
+
+            if (_displaySettled)
+            {
+                return;
+            }
+
+            List<FftSeries> displaySeries = BuildDisplaySeries(targetSeries);
+            DrawSeries(displaySeries, sampleRate);
+        }
+
+        private List<FftSeries> BuildDisplaySeries(List<FftSeries> targetSeries)
+        {
+            if (_displaySeries == null || !HasSameShape(_displaySeries, targetSeries))
+            {
+                _displaySeries = targetSeries
+                    .Select(item => new FftSeries(
+                        item.Channel,
+                        item.Frequencies.ToArray(),
+                        item.Amplitude.ToArray()))
+                    .ToList();
+                _displaySettled = false;
+                return _displaySeries;
+            }
+
+            double maxDelta = 0;
+            for (int seriesIndex = 0; seriesIndex < targetSeries.Count; seriesIndex++)
+            {
+                double[] display = _displaySeries[seriesIndex].Amplitude;
+                double[] target = targetSeries[seriesIndex].Amplitude;
+                for (int index = 0; index < display.Length; index++)
+                {
+                    double delta = target[index] - display[index];
+                    display[index] += delta * DisplayEasingFactor;
+                    maxDelta = Math.Max(maxDelta, Math.Abs(delta));
+                }
+            }
+
+            if (maxDelta < 0.01)
+            {
+                for (int seriesIndex = 0; seriesIndex < targetSeries.Count; seriesIndex++)
+                {
+                    Array.Copy(targetSeries[seriesIndex].Amplitude, _displaySeries[seriesIndex].Amplitude, targetSeries[seriesIndex].Amplitude.Length);
+                }
+
+                _displaySettled = true;
+            }
+
+            return _displaySeries;
+        }
+
+        private static bool HasSameShape(List<FftSeries> displaySeries, List<FftSeries> targetSeries)
+        {
+            if (displaySeries.Count != targetSeries.Count)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < targetSeries.Count; index++)
+            {
+                if (displaySeries[index].Channel != targetSeries[index].Channel ||
+                    displaySeries[index].Frequencies.Length != targetSeries[index].Frequencies.Length ||
+                    displaySeries[index].Amplitude.Length != targetSeries[index].Amplitude.Length)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private List<FftSeries> BuildSeries(DataProcessingResult result, int sampleRate)
@@ -177,13 +346,15 @@ namespace EEGTool.ViewModels.Collection
         private void DrawSeries(List<FftSeries> series, int sampleRate)
         {
             FftPlot.Plot.Remove<Scatter>();
-            List<string> channelNames = GetChannelNames(series.Count);
+            List<string> channelNames = GetCachedChannelNames(series.Count);
 
             foreach (FftSeries item in series)
             {
                 Scatter scatter = FftPlot.Plot.Add.Scatter(item.Frequencies, item.Amplitude);
                 scatter.LineWidth = 1.5f;
                 scatter.MarkerSize = 0;
+                scatter.Smooth = true;
+                scatter.SmoothTension = 0.35f;
                 scatter.Color = Constants.ChannelColors[item.Channel % Constants.ChannelColors.Length];
                 scatter.LegendText = item.Channel < channelNames.Count
                     ? channelNames[item.Channel]
@@ -202,8 +373,18 @@ namespace EEGTool.ViewModels.Collection
                 SetLinearYAxisTicks(SelectedMaxWindowUv);
             }
 
-            FftPlot.Plot.ShowLegend(Alignment.UpperRight);
             FftPlot.Refresh();
+        }
+
+        private List<string> GetCachedChannelNames(int channelCount)
+        {
+            if (_cachedChannelNameCount != channelCount)
+            {
+                _cachedChannelNames = GetChannelNames(channelCount);
+                _cachedChannelNameCount = channelCount;
+            }
+
+            return _cachedChannelNames;
         }
 
         private void SetLogYAxisTicks(int maxUv)
@@ -273,6 +454,7 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Bottom.Label.Text = "Frequency (Hz)";
             plot.Axes.Left.Label.Text = "Amplitude (μV)";
             plot.Benchmark.IsVisible = false;
+            plot.ShowLegend(Alignment.UpperRight);
             FftPlot.UserInputProcessor.Disable();
         }
 
