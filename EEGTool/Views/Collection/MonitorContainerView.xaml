@@ -19,5 +19,8 @@
         <local:FFTMonitorView
                               HorizontalAlignment="Stretch"
                               VerticalAlignment="Stretch"/>
+
+        <local:BandPowerMonitorView HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"/>
     </Grid>
 </UserControl>
