@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="EEGTool.Views.Collection.MonitorContainerView"
+<UserControl x:Class="EEGTool.Views.Collection.MonitorContainerView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -11,16 +11,270 @@
     <UserControl.DataContext>
         <vm:MonitorContainerViewModel/>
     </UserControl.DataContext>
-    <Grid Background="White">
 
-        <local:EEGMonitorView HorizontalAlignment="Stretch"
-                              VerticalAlignment="Stretch"/>
+    <UserControl.Resources>
+        <Style x:Key="LayoutButtonStyle" TargetType="Button">
+            <Setter Property="MinWidth" Value="34"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#334155"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="Background" Value="#EAF4FF"/>
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#5DA9E9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Background" Value="#D7ECFF"/>
+                    <Setter Property="BorderBrush" Value="#378CF3"/>
+                    <Setter Property="Foreground" Value="#0F4C81"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
-        <local:FFTMonitorView
-                              HorizontalAlignment="Stretch"
-                              VerticalAlignment="Stretch"/>
+        <Style x:Key="MonitorPanelStyle" TargetType="Border">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D7DEE8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+        </Style>
+    </UserControl.Resources>
 
-        <local:BandPowerMonitorView HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"/>
+    <Grid Background="#F3F7FB">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="42"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Background="White"
+                BorderBrush="#D7DEE8"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Layout"
+                           VerticalAlignment="Center"
+                           Foreground="#475569"
+                           FontSize="12"
+                           Margin="0,0,8,0"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Content="1"
+                            Style="{StaticResource LayoutButtonStyle}"
+                            Command="{Binding SetSingleLayoutCommand}"
+                            Tag="{Binding IsSingleLayout}"
+                            ToolTip="单分布"/>
+                    <Button Content="2"
+                            Style="{StaticResource LayoutButtonStyle}"
+                            Command="{Binding SetTwoLayoutCommand}"
+                            Tag="{Binding IsTwoLayout}"
+                            ToolTip="二分布"/>
+                    <Button Content="3"
+                            Style="{StaticResource LayoutButtonStyle}"
+                            Command="{Binding SetThreeLayoutCommand}"
+                            Tag="{Binding IsThreeLayout}"
+                            ToolTip="三分布"/>
+                </StackPanel>
+
+                <ComboBox Grid.Column="2"
+                          Width="130"
+                          Height="26"
+                          Margin="8,0,0,0"
+                          VerticalAlignment="Center"
+                          SelectedValue="{Binding SelectedSingleMonitor, Mode=TwoWay}"
+                          SelectedValuePath="Tag"
+                          Visibility="{Binding IsSingleLayout, Converter={StaticResource BoolToVisibleConverter}}">
+                    <ComboBoxItem Content="EEG" Tag="EEG"/>
+                    <ComboBoxItem Content="FFT" Tag="FFT"/>
+                    <ComboBoxItem Content="Band Power" Tag="BandPower"/>
+                </ComboBox>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1"
+              Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="EegPanel">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource MonitorPanelStyle}">
+                        <Setter Property="Grid.Row" Value="0"/>
+                        <Setter Property="Grid.RowSpan" Value="2"/>
+                        <Setter Property="Grid.Column" Value="0"/>
+                        <Setter Property="Grid.ColumnSpan" Value="1"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTwoLayout}" Value="True">
+                                <Setter Property="Grid.Row" Value="0"/>
+                                <Setter Property="Grid.RowSpan" Value="1"/>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleLayout}" Value="True">
+                                <Setter Property="Grid.Row" Value="0"/>
+                                <Setter Property="Grid.RowSpan" Value="2"/>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleFftVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleBandPowerVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="28"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock Text="EEG"
+                                   Margin="10,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="#334155"
+                                   FontWeight="SemiBold"/>
+                    </Border>
+                    <local:EEGMonitorView Grid.Row="1"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"/>
+                </Grid>
+            </Border>
+
+            <Border x:Name="FftPanel">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource MonitorPanelStyle}">
+                        <Setter Property="Grid.Row" Value="0"/>
+                        <Setter Property="Grid.RowSpan" Value="1"/>
+                        <Setter Property="Grid.Column" Value="1"/>
+                        <Setter Property="Grid.ColumnSpan" Value="1"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTwoLayout}" Value="True">
+                                <Setter Property="Grid.Row" Value="1"/>
+                                <Setter Property="Grid.RowSpan" Value="1"/>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleLayout}" Value="True">
+                                <Setter Property="Grid.Row" Value="0"/>
+                                <Setter Property="Grid.RowSpan" Value="2"/>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleEegVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleBandPowerVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="28"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock Text="FFT"
+                                   Margin="10,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="#334155"
+                                   FontWeight="SemiBold"/>
+                    </Border>
+                    <local:FFTMonitorView Grid.Row="1"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"/>
+                </Grid>
+            </Border>
+
+            <Border x:Name="BandPowerPanel">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource MonitorPanelStyle}">
+                        <Setter Property="Grid.Row" Value="1"/>
+                        <Setter Property="Grid.RowSpan" Value="1"/>
+                        <Setter Property="Grid.Column" Value="1"/>
+                        <Setter Property="Grid.ColumnSpan" Value="1"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTwoLayout}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleLayout}" Value="True">
+                                <Setter Property="Grid.Row" Value="0"/>
+                                <Setter Property="Grid.RowSpan" Value="2"/>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleEegVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSingleFftVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="28"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock Text="Band Power"
+                                   Margin="10,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="#334155"
+                                   FontWeight="SemiBold"/>
+                    </Border>
+                    <local:BandPowerMonitorView Grid.Row="1"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"/>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
