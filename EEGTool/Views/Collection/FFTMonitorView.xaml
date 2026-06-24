@@ -105,6 +105,13 @@
             </Grid.RowDefinitions>
 
             <Grid Background="LightGray">
+                <TextBlock Text="FFT"
+                           Margin="10,0"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"
+                           Foreground="#334155"
+                           FontWeight="SemiBold"/>
+
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="0,0,15,0"

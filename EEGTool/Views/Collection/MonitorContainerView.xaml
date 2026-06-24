@@ -128,7 +128,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -161,24 +161,8 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="28"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#F8FAFC"
-                            BorderBrush="#E2E8F0"
-                            BorderThickness="0,0,0,1">
-                        <TextBlock Text="EEG"
-                                   Margin="10,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="#334155"
-                                   FontWeight="SemiBold"/>
-                    </Border>
-                    <local:EEGMonitorView Grid.Row="1"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Stretch"/>
-                </Grid>
+                <local:EEGMonitorView HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"/>
             </Border>
 
             <Border x:Name="FftPanel">
@@ -210,24 +194,8 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="28"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#F8FAFC"
-                            BorderBrush="#E2E8F0"
-                            BorderThickness="0,0,0,1">
-                        <TextBlock Text="FFT"
-                                   Margin="10,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="#334155"
-                                   FontWeight="SemiBold"/>
-                    </Border>
-                    <local:FFTMonitorView Grid.Row="1"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Stretch"/>
-                </Grid>
+                <local:FFTMonitorView HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"/>
             </Border>
 
             <Border x:Name="BandPowerPanel">
@@ -256,24 +224,8 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="28"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#F8FAFC"
-                            BorderBrush="#E2E8F0"
-                            BorderThickness="0,0,0,1">
-                        <TextBlock Text="Band Power"
-                                   Margin="10,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="#334155"
-                                   FontWeight="SemiBold"/>
-                    </Border>
-                    <local:BandPowerMonitorView Grid.Row="1"
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"/>
-                </Grid>
+                <local:BandPowerMonitorView HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"/>
             </Border>
         </Grid>
     </Grid>
