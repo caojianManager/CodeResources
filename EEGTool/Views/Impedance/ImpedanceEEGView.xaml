@@ -223,10 +223,6 @@
                 </ComboBox>
             </StackPanel>
 
-            <Grid HorizontalAlignment="Stretch"
-                  VerticalAlignment="Bottom"
-                  Background="Gray"
-                  Height="1"></Grid>
         </Grid>
 
         <Grid Grid.Row="1">
