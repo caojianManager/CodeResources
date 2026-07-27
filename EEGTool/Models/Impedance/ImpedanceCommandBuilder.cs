@@ -2,6 +2,7 @@ using System.Linq;
 using EEGTool.Models.BLE;
 using EEGTool.Models.Collection;
 using EEGTool.Models.Template;
+using FrameWork.Common;
 using FrameWork.Log;
 
 namespace EEGTool.Models.Impedance
@@ -23,8 +24,9 @@ namespace EEGTool.Models.Impedance
             }
 
             ushort channelMask = CommandManager.BuildChannelMask(channels);
-            ushort sampleRate = collectionInfo.SampleRate > 0
-                ? checked((ushort)collectionInfo.SampleRate)
+
+            ushort sampleRate = Config.Instance.Impedance_SampleRate > 0
+                ? checked((ushort)Config.Instance.Impedance_SampleRate)
                 : (ushort)250;
             ushort durationSeconds = collectionInfo.Template.Time > 0
                 ? checked((ushort)collectionInfo.Template.Time)

@@ -42,7 +42,7 @@ namespace EEGTool.ViewModels.Collection
         private int _isPreparing;
 
         public WpfPlot FftPlot { get; } = new();
-        public ObservableCollection<int> MaxWindowHz { get; } = new() { 30, 60, 100, 125 };
+        public ObservableCollection<int> MaxWindowHz { get; } = new() { 30, 60, 100, 125,250,500,1000 };
         public ObservableCollection<int> MaxWindowUv { get; } = new() { 10, 25, 50, 100, 200, 500 };
         public ObservableCollection<string> YAxesType { get; } = new() { "Lin", "Log" };
         public ObservableCollection<double> SmoothingFactor { get; } = new() { 0, 0.25, 0.5, 0.75, 0.9 };

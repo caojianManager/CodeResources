@@ -156,7 +156,7 @@ namespace EEGTool.ViewModels.Impedance
             }
             finally
             {
-                CollectionInfoManager.GetInstance().Info.ImpedanceConfigureCommandConfirmed = false;
+                CollectionInfoManager.GetInstance().Info.ImpedanceConfigureCommandConfirmed  = false;
                 IsMonitorRunning = false;
                 StopMonitorTimer();
                 _commandStreamParser.Clear();

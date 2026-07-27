@@ -25,7 +25,8 @@ namespace EEGTool.ViewModels.Collection
         public ObservableCollection<string> SampleRateItems { get; } = new()
         {
             "500Hz",
-            "250Hz"
+            "250Hz",
+             "1000Hz"
         };
 
         private string _selectedSampleRate = "250Hz";

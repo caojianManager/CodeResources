@@ -23,14 +23,14 @@ namespace EEGTool.ViewModels.Impedance
         private long _renderVersion;
 
         public WpfPlot FftPlot { get; } = new();
-        public ObservableCollection<int> MaxWindowHz { get; } = new() { 30, 60, 100, 125 };
+        public ObservableCollection<int> MaxWindowHz { get; } = new() { 30, 60, 100, 125,250 };
         public ObservableCollection<int> MaxWindowUv { get; } = new() { 10, 25, 50, 100, 200, 500 };
         public ObservableCollection<string> YAxesType { get; } = new() { "Lin", "Log" };
         public ObservableCollection<double> SmoothingFactor { get; } = new() { 0, 0.25, 0.5, 0.75, 0.9 };
 
         private int _selectedMaxWindowHz = 60;
         public int SelectedMaxWindowHz
-        {
+        { 
             get => _selectedMaxWindowHz;
             set { if (SetProperty(ref _selectedMaxWindowHz, value)) RenderLatest(); }
         }

@@ -5,146 +5,201 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:EEGTool.ViewModels.Collection"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="1080" d:DesignWidth="1920">
 
     <UserControl.DataContext>
         <vm:BandPowerMonitorViewModel/>
     </UserControl.DataContext>
 
     <UserControl.Resources>
-        <Style x:Key="BandComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="#111827"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Template">
+        <Style
+     x:Key="ComboBoxStyle"
+     TargetType="ComboBox">
+            <Setter
+         Property="Foreground"
+         Value="Black" />
+            <Setter
+         Property="Background"
+         Value="White" />
+            <Setter
+         Property="Padding"
+         Value="0" />
+            <Setter
+         Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
+                    <ControlTemplate
+                 TargetType="ComboBox">
                         <Grid>
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="#9CA3AF"
-                                    BorderThickness="1"/>
-                            <ContentPresenter Margin="5,0,18,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding ItemTemplate}"/>
-                            <ToggleButton Focusable="False"
-                                          Cursor="Hand"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Center"
-                                          Width="{TemplateBinding Width}"
-                                          Height="{TemplateBinding Height}"
-                                          BorderThickness="0"
-                                          Background="Transparent">
+                            <!-- Border -->
+                            <Border
+                         x:Name="Border"
+                         Background="{TemplateBinding Background}"
+                         BorderBrush="{TemplateBinding BorderBrush}"
+                         BorderThickness="1"
+                         CornerRadius="2" />
+
+                            <!-- Selected item -->
+                            <ContentPresenter
+                         Margin="0,0,12,0"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Content="{TemplateBinding SelectionBoxItem}"
+                         ContentTemplate="{TemplateBinding ItemTemplate}" />
+
+
+                            <ToggleButton
+                                 x:Name="PART_DropDownToggle"
+                                 Focusable="False"
+                                 Cursor="Hand"
+                                 IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Center"
+                                 Width="{TemplateBinding Width}"
+                                 Height="{TemplateBinding Height}"
+                                 BorderThickness="0"
+                                 Background="Transparent">
                                 <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Path Data="M 0 0 L 7 7 L 14 0 Z"
-                                              Fill="#111827"
-                                              Width="8"
-                                              Height="5"
-                                              Margin="0,0,6,0"
-                                              Stretch="Uniform"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center"/>
+                                    <ControlTemplate
+                                 TargetType="ToggleButton">
+                                        <Border
+                                     x:Name="Border"
+                                     Background="Transparent"
+                                     BorderBrush="Transparent"
+                                     BorderThickness="0">
+                                            <Path
+                                         Data="M 0 0 L 8 8 L 16 0 Z"
+                                         Fill="Black"
+                                         Width="10"
+                                         Height="6"
+                                         Margin="0,0,10,0"
+                                         Stretch="Uniform"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger
+                                         Property="IsMouseOver"
+                                         Value="True">
+                                                <Setter
+                                             TargetName="Border"
+                                             Property="Background"
+                                             Value="Transparent" />
+                                            </Trigger>
+                                            <Trigger
+                                         Property="IsPressed"
+                                         Value="True">
+                                                <Setter
+                                             TargetName="Border"
+                                             Property="Background"
+                                             Value="Transparent" />
+                                            </Trigger>
+                                            <Trigger
+                                         Property="IsEnabled"
+                                         Value="False">
+                                                <Setter
+                                             TargetName="Border"
+                                             Property="Opacity"
+                                             Value="0.5" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
                             </ToggleButton>
-                            <Popup Placement="Bottom"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}">
-                                <Border Background="White"
-                                        BorderThickness="1"
-                                        BorderBrush="#9CA3AF"
-                                        MinWidth="{TemplateBinding ActualWidth}">
+
+
+                            <!-- Dropdown list -->
+                            <Popup
+                         x:Name="PART_Popup"
+                         VerticalOffset="5"
+                         Placement="Bottom"
+                         AllowsTransparency="True"
+                         Focusable="False"
+                         PopupAnimation="Slide"
+                         IsOpen="{TemplateBinding IsDropDownOpen}">
+                                <Border
+                             Background="LightGray"
+                             CornerRadius="0"
+                             BorderThickness="1"
+                             BorderBrush="LightGray"
+                             MinWidth="{TemplateBinding ActualWidth}">
                                     <ScrollViewer>
-                                        <StackPanel IsItemsHost="True"/>
+                                        <StackPanel
+                                     IsItemsHost="True" />
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
                         </Grid>
                     </ControlTemplate>
+
                 </Setter.Value>
             </Setter>
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="White">
+    <Grid Background="White" Cursor="">
         <Border BorderThickness="1"
                 BorderBrush="#72767A"/>
 
         <Grid Margin="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="605*"/>
+                <ColumnDefinition Width="62*"/>
+                <ColumnDefinition Width="1251*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="20"/>
-                <RowDefinition Height="22"/>
+                <RowDefinition Height="60"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid Background="#9B9B9B">
-                <ComboBox Width="160"
-                          Height="20"
-                          HorizontalAlignment="Left"
-                          VerticalAlignment="Center"
-                          ItemsSource="{Binding ChannelItems}"
-                          SelectedItem="{Binding SelectedChannel}"
-                          Style="{StaticResource BandComboBoxStyle}"/>
+            <Grid Background="WhiteSmoke" Grid.ColumnSpan="3">
 
-                <StackPanel Orientation="Horizontal"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border Background="#F8FAFC"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="0,0,0,1">
+                    <TextBlock Text="BandPower"
+                               Margin="10,0"
+                               VerticalAlignment="Center"
+                               Foreground="#334155"
+                               FontWeight="SemiBold"/>
+                </Border>
+                <StackPanel Grid.Row="0" Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
-                    <TextBlock Text="Smooth"
-                               Margin="0,0,8,0"
+                    <TextBlock Text="&#x5E73;"
+                               Margin="0,0,23,0"
                                VerticalAlignment="Center"
                                Foreground="#0F172A"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="Filters?"
-                               Margin="16,0,8,0"
+                    <TextBlock Text="&#x662F;&#x5426;&#x6EE4;&#x6CE2;?"
+                               Margin="16,0,25,0"
                                VerticalAlignment="Center"
                                Foreground="#0F172A"
                                FontWeight="SemiBold"/>
                 </StackPanel>
-            </Grid>
 
-            <Grid Grid.Row="1"
-                  Background="#E5E7EB">
-                <TextBlock Text="Channels"
-                           Margin="8,0,0,0"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Left"
-                           Foreground="#0F172A"/>
-
-                <Path Data="M 0 7 L 6 0 L 12 7 Z"
-                      Fill="#0F172A"
-                      Width="10"
-                      Height="6"
-                      Stretch="Uniform"
-                      Margin="64,0,0,0"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Center"/>
-
-                <StackPanel Orientation="Horizontal"
+                <StackPanel Grid.Row="1" Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
-                    <ComboBox Width="66"
-                              Height="20"
+                            VerticalAlignment="Center" Margin="0,0,10,0">
+                    <ComboBox Width="80"
+                              Height="25"
                               ItemsSource="{Binding SmoothItems}"
                               SelectedItem="{Binding SelectedSmooth}"
-                              Style="{StaticResource BandComboBoxStyle}"/>
-                    <ComboBox Width="62"
-                              Height="20"
-                              Margin="2,0,0,0"
+                              Style="{StaticResource ComboBoxStyle}"/>
+                    <ComboBox Width="80"
+                              Height="25"
+                              Margin="5,0,0,0"
                               ItemsSource="{Binding FilterItems}"
                               SelectedItem="{Binding SelectedFilter}"
-                              Style="{StaticResource BandComboBoxStyle}"/>
+                              Style="{StaticResource ComboBoxStyle}"/>
                 </StackPanel>
             </Grid>
-
-            <ContentControl Grid.Row="2"
+            <ContentControl Grid.Row="1"
                             Margin="8,8,8,10"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Content="{Binding BandPowerPlot, Mode=OneTime}"/>
+                            Content="{Binding BandPowerPlot, Mode=OneTime}" Grid.ColumnSpan="3"/>
         </Grid>
     </Grid>
 </UserControl>
