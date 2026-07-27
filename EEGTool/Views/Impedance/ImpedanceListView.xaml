@@ -15,60 +15,67 @@
 
     <Grid Background="White">
         <Grid.RowDefinitions>
-            <RowDefinition Height="39"/>
+            <RowDefinition Height="60"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Background="LightGray" Grid.ColumnSpan="2">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <StackPanel
-                Orientation="Horizontal"
-                Margin="0,0,5,0"
-                Width="180"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center">
-                    <TextBlock
-                    FontSize="14"
-                    Margin="0,0,10,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Text="良好阈值"
-                    Foreground="DarkOrange"/>
-                    <nu:BZNumericUpDown
-                    Width="100"
-                    Height="30"
+        <Grid Grid.Row="0" Background="WhiteSmoke" Grid.ColumnSpan="2">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Background="#F8FAFC"
+                     BorderBrush="#E2E8F0"
+                     BorderThickness="0,0,0,1">
+                <TextBlock Text="阻抗监测"
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            Foreground="#334155"
+                            FontWeight="SemiBold"/>
+            </Border>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Margin="0,0,15,0">
+                <TextBlock Text="良好阈值"
+                             Margin="10,0,42,0"
+                             VerticalAlignment="Center"
+                             Foreground="DarkOrange"
+                             FontWeight="SemiBold"
+                           FontSize="12"/>
+                <TextBlock Text="警告阈值"
+                             Margin="0,0,20,0"
+                             VerticalAlignment="Center"
+                             Foreground="Red"
+                             FontWeight="SemiBold"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       Margin="0,0,15,0">
+                <nu:BZNumericUpDown
+                    Width="80"
+                    Height="25"
                     MaxValue="600"
                     MinValue="1"
+                    Margin="0,0,15,0"
                     IsDecimal="False"
                     Value="{Binding ThresholdGoodKohm}"
                     Step="1" />
-                </StackPanel>
-                <StackPanel
-                Orientation="Horizontal"
-                Margin="0,0,10,0"
-                Width="180"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center">
-                    <TextBlock
-                    FontSize="14"
-                    Margin="0,0,15,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Text="警告阈值"
-                    Foreground="Red"/>
-                    <nu:BZNumericUpDown
-                    Width="100"
-                    Height="30"
-                    MaxValue="600"
-                    MinValue="1"
-                    IsDecimal="False"
-                    Value="{Binding ThresholdWarnKohm}"
-                    Step="1" />
-                </StackPanel>
+
+                <nu:BZNumericUpDown
+                       Width="80"
+                        Height="25"
+                   MaxValue="600"
+                   MinValue="1"
+                   IsDecimal="False"
+                   Value="{Binding ThresholdWarnKohm}"
+                   Step="1" />
             </StackPanel>
-            <Grid Height="1" HorizontalAlignment="Stretch"
-                  VerticalAlignment="Bottom"
-                  Background="#72767A"></Grid>
         </Grid>
 
         <Grid Grid.Row="1" Background="White" Grid.ColumnSpan="2">
