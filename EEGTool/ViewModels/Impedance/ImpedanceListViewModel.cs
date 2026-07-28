@@ -145,8 +145,7 @@ namespace EEGTool.ViewModels.Impedance
                 double sumSquares = 0;
                 for (int index = startIndex; index < endIndex; index++)
                 {
-                    // 与 Python 保持一致:
-                    // np.abs(fft_data) / (N / 2) * 2.0
+               
                     double magnitudeUv =
                         fftData[index].Magnitude / (n / 2.0) * 2.0;
                     sumSquares += magnitudeUv * magnitudeUv;
