@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockMonitorWpf", "StockMonitorWpf.csproj", "{898F8926-FD64-19D2-B1F2-4BC388F19B34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{898F8926-FD64-19D2-B1F2-4BC388F19B34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{898F8926-FD64-19D2-B1F2-4BC388F19B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{898F8926-FD64-19D2-B1F2-4BC388F19B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{898F8926-FD64-19D2-B1F2-4BC388F19B34}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1F055883-BCF5-4A8D-A000-FB90BD987F2A}
+	EndGlobalSection
+EndGlobal
