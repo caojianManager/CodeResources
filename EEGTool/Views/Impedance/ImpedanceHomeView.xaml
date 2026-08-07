@@ -13,7 +13,7 @@
         <vm:ImpedanceHomeViewModel/>
     </UserControl.DataContext>
 
-    <Grid>
+    <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="39"/>
             <RowDefinition Height="*"/>
@@ -60,9 +60,11 @@
             </Border>
             </Grid>
         
-        <Grid Grid.Row="1" Background="White">
+        <Grid Grid.Row="1" Background="White" 
+              Margin="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -70,9 +72,10 @@
                 <local:ImpedanceEEGView/>
             </Grid>
 
-            <Grid Grid.Column="1">
+            <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -80,7 +83,7 @@
                     <local:ImpedanceFFTView/>
                 </Grid>
 
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="2">
                     <local:ImpedanceListView/>
                 </Grid>
             </Grid>

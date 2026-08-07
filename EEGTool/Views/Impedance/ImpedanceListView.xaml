@@ -192,6 +192,6 @@
 
         </Grid>
 
-        <Border Grid.Row="0" Grid.RowSpan="2" BorderThickness="1,0,1,1" BorderBrush="#72767A"/>
+        <Border Grid.Row="0" Grid.RowSpan="2" BorderThickness="1,1,1,1" BorderBrush="#72767A"/>
     </Grid>
 </UserControl>
