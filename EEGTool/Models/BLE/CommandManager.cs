@@ -398,13 +398,13 @@ namespace EEGTool.Models.BLE
 
         private static byte[] BuildLengthOnlyCommand(BleCommandType commandType)
         {
-            const byte protocolFixedLength = 0x04;
+            const byte protocolFixedLength = 0x02;
             return BuildCommand(commandType, protocolFixedLength, Array.Empty<byte>(), protocolFixedLength);
         }
 
         private static byte[] BuildSpecialChecksumCommand(BleCommandType commandType, byte checksum)
         {
-            const byte protocolFixedLength = 0x04;
+            const byte protocolFixedLength = 0x02;
             return BuildCommand(commandType, protocolFixedLength, Array.Empty<byte>(), checksum);
         }
 

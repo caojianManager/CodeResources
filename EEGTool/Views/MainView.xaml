@@ -79,6 +79,8 @@
                         <RowDefinition Height="100"/>
                         <RowDefinition Height="5"/>
                         <RowDefinition Height="100"/>
+                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="100"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -167,8 +169,9 @@
                                 Style="{StaticResource RoundPaneButtonStyle}"
                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <Image Source="{x:Static rs:ResourcesImagePath.PLAYBACK}"
-                                       Width="35" Height="35"></Image>
+                                    <iconPacks:PackIconLucide Kind="Activity" 
+                                                              FontSize="120"
+                                                               Foreground="#537191"/>
                                     <TextBlock Text="回 放" FontSize="12"
                                            Margin="0,2,0,0"
                                            HorizontalAlignment="Center"
@@ -209,12 +212,57 @@
                                     Style="{StaticResource RoundPaneButtonStyle}"
                                     hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <Image Source="{x:Static rs:ResourcesImagePath.TEMPLATE}"
-                                           Width="35" Height="35"></Image>
+                                    <iconPacks:PackIconGameIcons Kind="BrainFreeze" Width="35" Height="35"
+                                                                 HorizontalAlignment="Center"
+                                                                 Foreground="#537191"/>
                                     <TextBlock Text="模板配置" FontSize="12"
                                                Margin="0,2,0,0"
                                                HorizontalAlignment="Center"
                                                Foreground="#1F456E"/>
+                                </StackPanel>
+                            </Button>
+
+                        </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="8" Margin="25,5">
+                        <Border BorderThickness="0.5" BorderBrush="LightGray" CornerRadius="10">
+
+                            <Border.Background>
+                                <LinearGradientBrush
+                         StartPoint="0,1"
+                         EndPoint="2,0">
+                                    <GradientStop
+                             Color="#FFFFFF"
+                             Offset="0" />
+                                    <GradientStop
+                             Color="#D4EAFF"
+                             Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18"
+                                       ShadowDepth="2"
+                                       Direction="270"
+                                       Opacity="0.1"
+                                       Color="#000000"/>
+                            </Border.Effect>
+
+                            <Button Background="Transparent"
+                                 Command="{Binding SettingsCommand}"
+                                 Margin="0"
+                                 Style="{StaticResource RoundPaneButtonStyle}"
+                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
+                                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <iconPacks:PackIconVaadinIcons Kind="Cogs" 
+                                                                   Width="35"
+                                                                   Height="35"
+                                                                   Foreground="#537191"/>
+                                    <TextBlock Text="设置" FontSize="12"
+                                    Margin="0,2,0,0"
+                                    HorizontalAlignment="Center"
+                                    Foreground="#1F456E"/>
                                 </StackPanel>
                             </Button>
 

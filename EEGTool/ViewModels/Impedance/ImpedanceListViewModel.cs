@@ -159,7 +159,7 @@ namespace EEGTool.ViewModels.Impedance
 
                 _impedanceValues[channelId] = impedanceKohm;
 
-                Logger.Info(
+                    Logger.Info(
                     $"[ImpedancePro] ch={channelId}, N={n}, targetFreq={targetFreq:F4}Hz, freqResolution={frequencyResolution:F6}Hz, freqIdx={frequencyIndex}, binRange=[{startIndex},{endIndex}), Vpeak={vPeakUv:F6}uV, IFundPeak={iFundPeakNa:F6}nA, seriesR={Config.Instance.series_resistor_kohm:F6}kOhm, Z={impedanceKohm:F6}kOhm");
             }
         }

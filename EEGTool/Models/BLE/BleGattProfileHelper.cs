@@ -27,7 +27,7 @@ namespace EEGTool.Models.BLE
     public static class BleGattProfileHelper
     {
         public static readonly Guid TargetServiceUuid =
-            Guid.Parse("0003cdd0-0000-1000-8000-00805f9b0131");
+            Guid.Parse("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
 
         public static async Task<BleDataChannelInfo?> GetDataChannelAsync(
             BleManager ble,
