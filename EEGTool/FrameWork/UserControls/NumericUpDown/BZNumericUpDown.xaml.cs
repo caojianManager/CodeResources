@@ -37,7 +37,7 @@ namespace FrameWork.UserControls.NumericUpDown
             get => (double)GetValue(ValueProperty);
             set
             {
-                double newVal = Math.Round(value, DecimalPlaces);
+                double newVal = IsScientificNotation ? value : Math.Round(value, DecimalPlaces);
                 if (newVal < MinValue) newVal = MinValue;
                 if (newVal > MaxValue) newVal = MaxValue;
                 SetValue(ValueProperty, newVal);
@@ -122,6 +122,15 @@ namespace FrameWork.UserControls.NumericUpDown
             set => SetValue(IsDurationProperty, value);
         }
 
+        public static readonly DependencyProperty IsScientificNotationProperty =
+            DependencyProperty.Register(nameof(IsScientificNotation), typeof(bool), typeof(BZNumericUpDown), new PropertyMetadata(false, OnDisplayModeChanged));
+
+        public bool IsScientificNotation
+        {
+            get => (bool)GetValue(IsScientificNotationProperty);
+            set => SetValue(IsScientificNotationProperty, value);
+        }
+
         private static void OnDisplayModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (BZNumericUpDown)d;
@@ -204,7 +213,7 @@ namespace FrameWork.UserControls.NumericUpDown
             {
                 if (val < MinValue) val = MinValue;
                 if (val > MaxValue) val = MaxValue;
-                Value = Math.Round(val, DecimalPlaces);
+                Value = IsScientificNotation ? val : Math.Round(val, DecimalPlaces);
             }
             else
             {
@@ -236,6 +245,9 @@ namespace FrameWork.UserControls.NumericUpDown
             if (IsDuration)
                 return IsDurationStructureValid(text);
 
+            if (IsScientificNotation)
+                return IsScientificTextAllowed(text);
+
             if (!IsDecimal || DecimalPlaces <= 0)
                 return Regex.IsMatch(text, @"^\d+$");
 
@@ -257,6 +269,12 @@ namespace FrameWork.UserControls.NumericUpDown
                 return false;
             }
 
+            if (IsScientificNotation &&
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                return true;
+            }
+
             return double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
         }
 
@@ -267,7 +285,17 @@ namespace FrameWork.UserControls.NumericUpDown
                 return FormatDuration((int)Math.Round(Value));
             }
 
+            if (IsScientificNotation)
+            {
+                return Value.ToString("0.########E+00", CultureInfo.InvariantCulture);
+            }
+
             return Value.ToString($"F{DecimalPlaces}");
+        }
+
+        private static bool IsScientificTextAllowed(string text)
+        {
+            return Regex.IsMatch(text, @"^\d*([.,]\d*)?([eE][+-]?\d*)?$");
         }
 
         private static bool IsDurationStructureValid(string text)

@@ -124,6 +124,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="35"/>
                                         <RowDefinition Height="35"/>
+                                        <RowDefinition Height="35"/>
                                     </Grid.RowDefinitions>
 
                                     <StackPanel HorizontalAlignment="Left"
@@ -133,7 +134,8 @@
                                                    Margin="0,0,10,0"/>
 
                                         <nu:BZNumericUpDown
-                                            Width="120"
+                                            VerticalAlignment="Center"
+                                            Width="125"
                                             Height="25"
                                            MaxValue="600"
                                            MinValue="0"
@@ -150,13 +152,34 @@
                                                     Margin="0,0,10,0"/>
 
                                         <nu:BZNumericUpDown
-                                            Width="120"
+                                              VerticalAlignment="Center"
+                                            HorizontalAlignment="Left"
+                                            Width="125"
                                             Height="25"
-                                           MaxValue="600"
+                                           MaxValue="0.0000006"
                                            MinValue="0"
                                            IsDecimal="True"
-                                           Value="{Binding ImpedanceTargetValue}"
-                                           Step="0.1" />
+                                           IsScientificNotation="True"
+                                           Value="{Binding ImpedanceLeafOff}"
+                                           Step="0.000000001" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                                 HorizontalAlignment="Left"
+                                                 VerticalAlignment="Top"
+                                                 Orientation="Horizontal">
+                                        <TextBlock Text="阻抗增益:" VerticalAlignment="Center"
+                                                     Margin="0,0,10,0"/>
+
+                                        <nu:BZNumericUpDown
+                                            Width="125"
+                                              VerticalAlignment="Center"
+                                            Height="25"
+                                            MaxValue="100"
+                                            MinValue="0"
+                                            IsDecimal="True"
+                                            Value="{Binding ImpedanceGainNum}"
+                                            Step="0" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
