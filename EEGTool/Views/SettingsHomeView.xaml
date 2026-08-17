@@ -98,7 +98,7 @@
 
                         <Grid HorizontalAlignment="Stretch"
                               VerticalAlignment="Top"
-                              Height="300"
+                              Height="150"
                               Margin="10,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
@@ -135,7 +135,7 @@
 
                                         <nu:BZNumericUpDown
                                             VerticalAlignment="Center"
-                                            Width="125"
+                                            Width="150"
                                             Height="25"
                                            MaxValue="600"
                                            MinValue="0"
@@ -153,8 +153,7 @@
 
                                         <nu:BZNumericUpDown
                                               VerticalAlignment="Center"
-                                            HorizontalAlignment="Left"
-                                            Width="125"
+                                            Width="150"
                                             Height="25"
                                            MaxValue="0.0000006"
                                            MinValue="0"
@@ -172,14 +171,14 @@
                                                      Margin="0,0,10,0"/>
 
                                         <nu:BZNumericUpDown
-                                            Width="125"
+                                            Width="150"
                                               VerticalAlignment="Center"
                                             Height="25"
                                             MaxValue="100"
                                             MinValue="0"
                                             IsDecimal="True"
                                             Value="{Binding ImpedanceGainNum}"
-                                            Step="0" />
+                                            Step="1" />
                                     </StackPanel>
                                 </Grid>
                             </Border>

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              x:Name="root"
-             Height="25" Width="60">
+             Height="25" MinWidth="60">
 
     <Grid Background="Transparent">
         <!-- 中间输入框 -->
