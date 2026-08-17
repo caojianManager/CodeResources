@@ -125,8 +125,10 @@
                                 Style="{StaticResource RoundPaneButtonStyle}"
                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <Image Source="{x:Static rs:ResourcesImagePath.COLLECTION}"
-                                       Width="35" Height="35"></Image>
+                                    <iconPacks:PackIconLucide Kind="BrainCog"
+                                    Width="30"
+                                    Height="30"
+                                    Foreground="#537191"/>
                                     <TextBlock Text="采 集" FontSize="12"
                                            Margin="0,2,0,0"
                                            HorizontalAlignment="Center"
@@ -169,8 +171,10 @@
                                 Style="{StaticResource RoundPaneButtonStyle}"
                                 hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <iconPacks:PackIconLucide Kind="Activity" 
-                                                              FontSize="120"
+                                    <iconPacks:PackIconLucide Kind="AudioWaveform"
+                                                             Width="30"
+                                                              Height="30"
+                                                              HorizontalAlignment="Center"
                                                                Foreground="#537191"/>
                                     <TextBlock Text="回 放" FontSize="12"
                                            Margin="0,2,0,0"
@@ -212,7 +216,7 @@
                                     Style="{StaticResource RoundPaneButtonStyle}"
                                     hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <iconPacks:PackIconGameIcons Kind="BrainFreeze" Width="35" Height="35"
+                                    <iconPacks:PackIconGameIcons Kind="BrainFreeze" Width="30" Height="30"
                                                                  HorizontalAlignment="Center"
                                                                  Foreground="#537191"/>
                                     <TextBlock Text="模板配置" FontSize="12"
@@ -256,8 +260,8 @@
                                  hp:ButtonHelper.CornerRadius="300,0,0,300">
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
                                     <iconPacks:PackIconVaadinIcons Kind="Cogs" 
-                                                                   Width="35"
-                                                                   Height="35"
+                                                                   Width="30"
+                                                                   Height="30"
                                                                    Foreground="#537191"/>
                                     <TextBlock Text="设置" FontSize="12"
                                     Margin="0,2,0,0"

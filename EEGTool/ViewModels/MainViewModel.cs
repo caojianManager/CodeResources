@@ -30,9 +30,9 @@ namespace EEGTool.ViewModels
         }
 
         public ICommand? CollectionCommand { get; set; }
-
         public ICommand? PlaybackCommand { get; set; }
         public ICommand? TemplateCommand { get; set; }
+        public ICommand? SettingsCommand { get; set; }
 
 
         public void Init()
@@ -56,6 +56,10 @@ namespace EEGTool.ViewModels
             {
                 ClickTemplateBtn();
             });
+            SettingsCommand = new RelayCommand((o) =>
+            {
+                ClickSettingsBtn();
+            });
         }
 
         private void ClickTemplateBtn()
@@ -66,6 +70,11 @@ namespace EEGTool.ViewModels
         private void ClickPlaybackBtn()
         {
 
+        }
+
+        private void ClickSettingsBtn()
+        {
+            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(SettingsHomeViewModel));
         }
 
         private void ClickCollectionBtn()

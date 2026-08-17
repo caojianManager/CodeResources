@@ -5,5 +5,6 @@
         <ResourceDictionary Source="/Views/CollectionHomeView.xaml"/>
         <ResourceDictionary Source="/Views/CollectionMonitorView.xaml"/>
         <ResourceDictionary Source="/Views/TemplateHomeView.xaml"/>
+        <ResourceDictionary Source="/Views/SettingsHomeView.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
