@@ -5,6 +5,7 @@ using FrameWork.Common;
 using FrameWork.Event;
 using FrameWork.MVVM;
 using System;
+using System.Windows;
 using System.Windows.Input;
 
 namespace EEGTool.ViewModels
@@ -27,59 +28,41 @@ namespace EEGTool.ViewModels
         }
 
         public ICommand? BackHomeCommand { get; set; }
-
-        private bool _isLoadingPreferences;
+        public ICommand? SaveCommand { get; set; }
 
         private string _bleTargetServiceUuid = string.Empty;
         public string BleTargetServiceUuid
         {
             get => _bleTargetServiceUuid;
-            set
-            {
-                if (SetProperty(ref _bleTargetServiceUuid, value))
-                {
-                    SaveBlePreferences();
-                }
-            }
+            set => SetProperty(ref _bleTargetServiceUuid, value);
+        }
+
+        private string _bleTargetServiceUuidInput = string.Empty;
+        public string BleTargetServiceUuidInput
+        {
+            get => _bleTargetServiceUuidInput;
+            set => SetProperty(ref _bleTargetServiceUuidInput, value);
         }
 
         private double _impedanceTargetValue;
         public double ImpedanceTargetValue
         {
             get => _impedanceTargetValue;
-            set
-            {
-                if (SetProperty(ref _impedanceTargetValue, value))
-                {
-                    SaveImpedancePreferences();
-                }
-            }
+            set => SetProperty(ref _impedanceTargetValue, value);
         }
 
         private double _impedanceGainNum;
         public double ImpedanceGainNum
         {
             get => _impedanceGainNum;
-            set
-            {
-                if (SetProperty(ref _impedanceGainNum, value))
-                {
-                    SaveImpedancePreferences();
-                }
-            }
+            set => SetProperty(ref _impedanceGainNum, value);
         }
 
         private double _impedanceLeafOff;
         public double ImpedanceLeafOff
         {
             get => _impedanceLeafOff;
-            set
-            {
-                if (SetProperty(ref _impedanceLeafOff, value))
-                {
-                    SaveImpedancePreferences();
-                }
-            }
+            set => SetProperty(ref _impedanceLeafOff, value);
         }
 
         public SettingsHomeViewModel()
@@ -104,45 +87,47 @@ namespace EEGTool.ViewModels
             {
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
+
+            SaveCommand = new RelayCommand((o) =>
+            {
+                SaveSettings();
+            });
         }
 
         private void LoadImpedancePreferences()
         {
-            _isLoadingPreferences = true;
-
             var config = Config.Instance;
             BleTargetServiceUuid = config.BleTargetServiceUuid;
+            BleTargetServiceUuidInput = config.BleTargetServiceUuid;
             ImpedanceTargetValue = config.Impedance_TargetFreq;
             ImpedanceGainNum = config.ImpedanceGain;
             ImpedanceLeafOff = config.Lead_Of;
-
-            _isLoadingPreferences = false;
         }
 
-        private void SaveImpedancePreferences()
+        private void SaveSettings()
         {
-            if (_isLoadingPreferences)
+            if (!Guid.TryParse(BleTargetServiceUuidInput, out _))
             {
+                MessageBox.Show("BLE目标特征格式不正确，请输入有效的UUID。", "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            var config = Config.Instance;
-            config.Impedance_TargetFreq = ImpedanceTargetValue;
-            config.ImpedanceGain = ImpedanceGainNum;
-            config.Lead_Of = ImpedanceLeafOff;
-            config.Save();
-        }
-
-        private void SaveBlePreferences()
-        {
-            if (_isLoadingPreferences || !Guid.TryParse(BleTargetServiceUuid, out _))
+            try
             {
-                return;
-            }
+                var config = Config.Instance;
+                config.BleTargetServiceUuid = BleTargetServiceUuidInput;
+                config.Impedance_TargetFreq = ImpedanceTargetValue;
+                config.ImpedanceGain = ImpedanceGainNum;
+                config.Lead_Of = ImpedanceLeafOff;
+                config.Save();
+                BleTargetServiceUuid = config.BleTargetServiceUuid;
 
-            var config = Config.Instance;
-            config.BleTargetServiceUuid = BleTargetServiceUuid;
-            config.Save();
+                MessageBox.Show("配置保存成功。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"配置保存失败：{ex.Message}", "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void ClickPlaybackBtn()
@@ -162,7 +147,7 @@ namespace EEGTool.ViewModels
 
         public void OnShow()
         {
-
+            LoadImpedancePreferences();
         }
     }
 }

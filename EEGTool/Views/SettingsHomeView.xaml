@@ -135,7 +135,7 @@
                                                 Height="25"
                                                 VerticalContentAlignment="Center"
                                                 FontSize="11"
-                                                Text="{Binding BleTargetServiceUuid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                Text="{Binding BleTargetServiceUuidInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                                 <TextBox.Style>
                                                     <Style TargetType="TextBox">
                                                         <Setter Property="BorderBrush" Value="LightGray"/>
@@ -253,15 +253,41 @@
 
                     </ScrollViewer>
 
-                    <Grid Height="50" VerticalAlignment="Bottom"
+                    <Grid Grid.Row="1"
+                        Height="50" VerticalAlignment="Bottom"
                           HorizontalAlignment="Stretch">
-                        <Button Style="{StaticResource EffectActionButtonStyle}"
-                             HorizontalAlignment="Stretch"
-                             VerticalAlignment="Stretch"
-                             Width="135"
-                             Height="35"
-                             FontSize="14"
-                             Command="{Binding CollectionCommand}" Cursor=""/>
+                        <Border x:Name="SaveButtonBorder"
+                            CornerRadius="10"
+                            BorderThickness="0.5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,20">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="LightGray"/>
+                                </Style>
+                            </Border.Style>
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Border.RenderTransformOrigin>0.5,0.5</Border.RenderTransformOrigin>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="24"
+                                  ShadowDepth="3"
+                                  Direction="270"
+                                  Opacity="0.35"
+                                  Color="#66000000"/>
+                            </Border.Effect>
+                            <Button Style="{StaticResource EffectActionButtonStyle}"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"
+                                   Width="135"
+                                   Height="35"
+                                   FontSize="14"
+                                   Content="保 存"
+                                   Command="{Binding SaveCommand}"/>
+                        </Border>
                     </Grid>
                 </Grid>
             </Grid>
