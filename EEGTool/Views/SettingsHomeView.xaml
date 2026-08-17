@@ -92,7 +92,7 @@
                                 Margin="10,0"/>
                     </Grid>
 
-                    <ScrollViewer Grid.Row="1" Margin="10"
+                    <ScrollViewer Grid.Row="1" Margin="10,0,10,50"
                                   VerticalScrollBarVisibility="Hidden">
 
                         <Grid HorizontalAlignment="Stretch"
@@ -117,6 +117,17 @@
                         </Grid>
                         
                     </ScrollViewer>
+
+                    <Grid Height="50" VerticalAlignment="Bottom"
+                          HorizontalAlignment="Stretch">
+                        <Button Style="{StaticResource EffectActionButtonStyle}"
+                             HorizontalAlignment="Stretch"
+                             VerticalAlignment="Stretch"
+                             Width="135"
+                             Height="35"
+                             FontSize="14"
+                             Command="{Binding CollectionCommand}" Cursor=""/>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>
