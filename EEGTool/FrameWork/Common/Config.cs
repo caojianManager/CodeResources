@@ -9,6 +9,7 @@ namespace FrameWork.Common
     public class Config
     {
         public const double DefaultLeadOffCurrentAmperes = 10.5e-9;
+        public const string DefaultBleTargetServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
         private static string _configFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
         private static Config _instance;
         public static Config Instance
@@ -36,6 +37,7 @@ namespace FrameWork.Common
         public int Impedance_SampleRate = 250;
         public double Impedance_TargetFreq = 31.25;
         public double Lead_Of = DefaultLeadOffCurrentAmperes;
+        public string BleTargetServiceUuid = DefaultBleTargetServiceUuid;
         // P 端与 SRB1 端串联电阻之和，单位 kΩ。
         public double series_resistor_kohm = 10;
 
@@ -68,6 +70,11 @@ namespace FrameWork.Common
                 if (config.ImpedanceGain <= 0)
                 {
                     config.ImpedanceGain = 8;
+                }
+
+                if (!Guid.TryParse(config.BleTargetServiceUuid, out _))
+                {
+                    config.BleTargetServiceUuid = DefaultBleTargetServiceUuid;
                 }
 
                 return config;

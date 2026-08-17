@@ -1,4 +1,5 @@
 using BLETool;
+using FrameWork.Common;
 using FrameWork.Log;
 using System;
 using System.Collections.Generic;
@@ -26,8 +27,15 @@ namespace EEGTool.Models.BLE
 
     public static class BleGattProfileHelper
     {
-        public static readonly Guid TargetServiceUuid =
-            Guid.Parse("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+        public static Guid TargetServiceUuid
+        {
+            get
+            {
+                return Guid.TryParse(Config.Instance.BleTargetServiceUuid, out var uuid)
+                    ? uuid
+                    : Guid.Parse(Config.DefaultBleTargetServiceUuid);
+            }
+        }
 
         public static async Task<BleDataChannelInfo?> GetDataChannelAsync(
             BleManager ble,

@@ -30,6 +30,19 @@ namespace EEGTool.ViewModels
 
         private bool _isLoadingPreferences;
 
+        private string _bleTargetServiceUuid = string.Empty;
+        public string BleTargetServiceUuid
+        {
+            get => _bleTargetServiceUuid;
+            set
+            {
+                if (SetProperty(ref _bleTargetServiceUuid, value))
+                {
+                    SaveBlePreferences();
+                }
+            }
+        }
+
         private double _impedanceTargetValue;
         public double ImpedanceTargetValue
         {
@@ -98,6 +111,7 @@ namespace EEGTool.ViewModels
             _isLoadingPreferences = true;
 
             var config = Config.Instance;
+            BleTargetServiceUuid = config.BleTargetServiceUuid;
             ImpedanceTargetValue = config.Impedance_TargetFreq;
             ImpedanceGainNum = config.ImpedanceGain;
             ImpedanceLeafOff = config.Lead_Of;
@@ -116,6 +130,18 @@ namespace EEGTool.ViewModels
             config.Impedance_TargetFreq = ImpedanceTargetValue;
             config.ImpedanceGain = ImpedanceGainNum;
             config.Lead_Of = ImpedanceLeafOff;
+            config.Save();
+        }
+
+        private void SaveBlePreferences()
+        {
+            if (_isLoadingPreferences || !Guid.TryParse(BleTargetServiceUuid, out _))
+            {
+                return;
+            }
+
+            var config = Config.Instance;
+            config.BleTargetServiceUuid = BleTargetServiceUuid;
             config.Save();
         }
 
