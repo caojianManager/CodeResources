@@ -96,94 +96,136 @@
                     <ScrollViewer Grid.Row="1" Margin="10,0,10,50"
                                   VerticalScrollBarVisibility="Hidden">
 
-                        <Grid HorizontalAlignment="Stretch"
-                              VerticalAlignment="Top"
-                              Height="150"
-                              Margin="10,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                        <StackPanel>
+                            <Grid HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Top"
+                                    Height="150"
+                                    Margin="10,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                            <TextBlock HorizontalAlignment="Left"
-                                       VerticalAlignment="Bottom"
-                                       Margin="5,0,0,5"
-                                       Text="阻抗监测"
-                                       Opacity="0.5"
-                                       Foreground="Orange"/>
+                                <TextBlock HorizontalAlignment="Left"
+                                         VerticalAlignment="Bottom"
+                                         Margin="5,0,0,5"
+                                         Text="BLE配置"
+                                         Foreground="CadetBlue"/>
 
-                            <Border Grid.Row="1" 
-                                    BorderThickness="1" 
-                                    CornerRadius="5"
-                                    BorderBrush="Orange"
-                                    Opacity="0.5">
+                                <Border Grid.Row="1" 
+                                          BorderThickness="1" 
+                                          CornerRadius="5"
+                                          BorderBrush="CadetBlue">
 
-                                <Grid HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Stretch"
-                                      Margin="10">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="35"/>
-                                        <RowDefinition Height="35"/>
-                                        <RowDefinition Height="35"/>
-                                    </Grid.RowDefinitions>
+                                    <Grid HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="35"/>
+                                        </Grid.RowDefinitions>
 
-                                    <StackPanel HorizontalAlignment="Left"
-                                                VerticalAlignment="Top"
-                                                Orientation="Horizontal">
-                                        <TextBlock Text="目标频率:" VerticalAlignment="Center"
-                                                   Margin="0,0,10,0"/>
+                                        <StackPanel HorizontalAlignment="Left"
+                                                  VerticalAlignment="Top"
+                                                  Orientation="Horizontal">
+                                            <TextBlock Text="BLE目标特征:" VerticalAlignment="Center"
+                                                       Margin="0,0,10,0"/>
 
-                                        <nu:BZNumericUpDown
-                                            VerticalAlignment="Center"
-                                            Width="150"
-                                            Height="25"
-                                           MaxValue="600"
-                                           MinValue="0"
-                                           IsDecimal="True"
-                                           Value="{Binding ImpedanceTargetValue}"
-                                           Step="0.1" />
-                                    </StackPanel>
+                      
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
 
-                                    <StackPanel Grid.Row="1"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Top"
-                                                Orientation="Horizontal">
-                                        <TextBlock Text="电流数值:" VerticalAlignment="Center"
-                                                    Margin="0,0,10,0"/>
 
-                                        <nu:BZNumericUpDown
-                                              VerticalAlignment="Center"
-                                            Width="150"
-                                            Height="25"
-                                           MaxValue="0.0000006"
-                                           MinValue="0"
-                                           IsDecimal="True"
-                                           IsScientificNotation="True"
-                                           Value="{Binding ImpedanceLeafOff}"
-                                           Step="0.000000001" />
-                                    </StackPanel>
+                            <Grid HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Top"
+                                    Height="150"
+                                    Margin="10,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                                    <StackPanel Grid.Row="2"
-                                                 HorizontalAlignment="Left"
-                                                 VerticalAlignment="Top"
-                                                 Orientation="Horizontal">
-                                        <TextBlock Text="阻抗增益:" VerticalAlignment="Center"
+                                <TextBlock HorizontalAlignment="Left"
+                                         VerticalAlignment="Bottom"
+                                         Margin="5,0,0,5"
+                                         Text="阻抗监测"
+                                         Opacity="0.8"
+                                         Foreground="Orange"/>
+
+                                <Border Grid.Row="1" 
+                                          BorderThickness="1" 
+                                          CornerRadius="5"
+                                          BorderBrush="Orange"
+                                          Opacity="0.8">
+
+                                    <Grid HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="35"/>
+                                            <RowDefinition Height="35"/>
+                                            <RowDefinition Height="35"/>
+                                        </Grid.RowDefinitions>
+
+                                        <StackPanel HorizontalAlignment="Left"
+                                                      VerticalAlignment="Top"
+                                                      Orientation="Horizontal">
+                                            <TextBlock Text="目标频率:" VerticalAlignment="Center"
+                                                        Margin="0,0,10,0"/>
+
+                                            <nu:BZNumericUpDown
+                                                  VerticalAlignment="Center"
+                                                  Width="150"
+                                                  Height="25"
+                                                 MaxValue="600"
+                                                 MinValue="0"
+                                                 IsDecimal="True"
+                                                 Value="{Binding ImpedanceTargetValue}"
+                                                 Step="0.1" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top"
+                                                    Orientation="Horizontal">
+                                            <TextBlock Text="电流数值:" VerticalAlignment="Center"
                                                      Margin="0,0,10,0"/>
 
-                                        <nu:BZNumericUpDown
-                                            Width="150"
-                                              VerticalAlignment="Center"
-                                            Height="25"
-                                            MaxValue="100"
-                                            MinValue="0"
-                                            IsDecimal="True"
-                                            Value="{Binding ImpedanceGainNum}"
-                                            Step="1" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </Grid>
-                        
+                                            <nu:BZNumericUpDown
+                                                     VerticalAlignment="Center"
+                                                     Width="150"
+                                                     Height="25"
+                                                     MaxValue="0.0000006"
+                                                     MinValue="0"
+                                                     IsDecimal="True"
+                                                     IsScientificNotation="True"
+                                                     Value="{Binding ImpedanceLeafOff}"
+                                                     Step="0.000000001" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="2"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top"
+                                                   Orientation="Horizontal">
+                                            <TextBlock Text="阻抗增益:" VerticalAlignment="Center"
+                                                   Margin="0,0,10,0"/>
+
+                                            <nu:BZNumericUpDown
+                                                  Width="150"
+                                                  VerticalAlignment="Center"
+                                                  Height="25"
+                                                  MaxValue="100"
+                                                  MinValue="0"
+                                                  IsDecimal="True"
+                                                  Value="{Binding ImpedanceGainNum}"
+                                                  Step="1" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+
                     </ScrollViewer>
 
                     <Grid Height="50" VerticalAlignment="Bottom"
