@@ -65,6 +65,13 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _impedanceLeafOff, value);
         }
 
+        private double _seriesResistorKohm;
+        public double SeriesResistorKohm
+        {
+            get => _seriesResistorKohm;
+            set => SetProperty(ref _seriesResistorKohm, value);
+        }
+
         public SettingsHomeViewModel()
         {
             ConfigureCommands();
@@ -102,6 +109,7 @@ namespace EEGTool.ViewModels
             ImpedanceTargetValue = config.Impedance_TargetFreq;
             ImpedanceGainNum = config.ImpedanceGain;
             ImpedanceLeafOff = config.Lead_Of;
+            SeriesResistorKohm = config.series_resistor_kohm;
         }
 
         private void SaveSettings()
@@ -119,6 +127,7 @@ namespace EEGTool.ViewModels
                 config.Impedance_TargetFreq = ImpedanceTargetValue;
                 config.ImpedanceGain = ImpedanceGainNum;
                 config.Lead_Of = ImpedanceLeafOff;
+                config.series_resistor_kohm = SeriesResistorKohm;
                 config.Save();
                 BleTargetServiceUuid = config.BleTargetServiceUuid;
 

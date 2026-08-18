@@ -93,7 +93,7 @@
                                 Margin="10,0"/>
                     </Grid>
 
-                    <ScrollViewer Grid.Row="1" Margin="10,0,10,50"
+                    <ScrollViewer Grid.Row="1" Margin="10,0,10,88"
                                   VerticalScrollBarVisibility="Hidden">
 
                         <StackPanel>
@@ -164,7 +164,7 @@
 
                             <Grid HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"
-                                    Height="150"
+                                    Height="185"
                                     Margin="10,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="30"/>
@@ -188,6 +188,7 @@
                                             VerticalAlignment="Stretch"
                                             Margin="10">
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="35"/>
                                             <RowDefinition Height="35"/>
                                             <RowDefinition Height="35"/>
                                             <RowDefinition Height="35"/>
@@ -246,6 +247,24 @@
                                                   Value="{Binding ImpedanceGainNum}"
                                                   Step="1" />
                                         </StackPanel>
+
+                                        <StackPanel Grid.Row="3"
+                                                     HorizontalAlignment="Left"
+                                                     VerticalAlignment="Top"
+                                                     Orientation="Horizontal">
+                                            <TextBlock Text="串联电阻:" VerticalAlignment="Center"
+                                                        Margin="0,0,10,0"/>
+
+                                            <nu:BZNumericUpDown
+                                                    Width="150"
+                                                    VerticalAlignment="Center"
+                                                    Height="25"
+                                                    MaxValue="100"
+                                                    MinValue="0"
+                                                    IsDecimal="True"
+                                                    Value="{Binding SeriesResistorKohm}"
+                                                    Step="1" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -254,13 +273,13 @@
                     </ScrollViewer>
 
                     <Grid Grid.Row="1"
-                        Height="50" VerticalAlignment="Bottom"
+                        Height="88" VerticalAlignment="Bottom"
                           HorizontalAlignment="Stretch">
                         <Border x:Name="SaveButtonBorder"
                             CornerRadius="10"
                             BorderThickness="0.5"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Bottom"
+                            VerticalAlignment="Center"
                             Margin="0,0,0,20">
                             <Border.Style>
                                 <Style TargetType="Border">
