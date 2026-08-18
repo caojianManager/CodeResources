@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using EEGTool.ViewModels.Collection;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EEGTool.Views.Collection
 {
@@ -23,6 +12,15 @@ namespace EEGTool.Views.Collection
         public MonitorContainerView()
         {
             InitializeComponent();
+        }
+
+        private void LayoutIconButton_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (DataContext is MonitorContainerViewModel viewModel &&
+                viewModel.ShowLayoutFlyoutCommand.CanExecute(null))
+            {
+                viewModel.ShowLayoutFlyoutCommand.Execute(null);
+            }
         }
     }
 }

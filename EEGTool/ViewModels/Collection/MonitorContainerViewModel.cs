@@ -1,6 +1,8 @@
 using Framework.MVVM.Commands;
 using FrameWork.MVVM;
+using System;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace EEGTool.ViewModels.Collection
 {
@@ -17,19 +19,26 @@ namespace EEGTool.ViewModels.Collection
         private string _layoutMode = ThreeLayout;
         private string _selectedSingleMonitor = EegMonitor;
         private bool _isLayoutFlyoutOpen;
+        private readonly DispatcherTimer _layoutFlyoutCloseTimer;
 
         public MonitorContainerViewModel()
         {
-            SetSingleLayoutCommand = new RelayCommand(_ => LayoutMode = SingleLayout);
-            SetTwoLayoutCommand = new RelayCommand(_ => LayoutMode = TwoLayout);
-            SetThreeLayoutCommand = new RelayCommand(_ => LayoutMode = ThreeLayout);
-            ToggleLayoutFlyoutCommand = new RelayCommand(_ => IsLayoutFlyoutOpen = !IsLayoutFlyoutOpen);
+            _layoutFlyoutCloseTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            _layoutFlyoutCloseTimer.Tick += (_, _) => CloseLayoutFlyout();
+
+            SetSingleLayoutCommand = new RelayCommand(_ => SetLayoutAndClose(SingleLayout));
+            SetTwoLayoutCommand = new RelayCommand(_ => SetLayoutAndClose(TwoLayout));
+            SetThreeLayoutCommand = new RelayCommand(_ => SetLayoutAndClose(ThreeLayout));
+            ShowLayoutFlyoutCommand = new RelayCommand(_ => ShowLayoutFlyout());
         }
 
         public ICommand SetSingleLayoutCommand { get; }
         public ICommand SetTwoLayoutCommand { get; }
         public ICommand SetThreeLayoutCommand { get; }
-        public ICommand ToggleLayoutFlyoutCommand { get; }
+        public ICommand ShowLayoutFlyoutCommand { get; }
 
         public bool IsLayoutFlyoutOpen
         {
@@ -58,6 +67,25 @@ namespace EEGTool.ViewModels.Collection
         public bool IsSingleEegVisible => IsSingleLayout && SelectedSingleMonitor == EegMonitor;
         public bool IsSingleFftVisible => IsSingleLayout && SelectedSingleMonitor == FftMonitor;
         public bool IsSingleBandPowerVisible => IsSingleLayout && SelectedSingleMonitor == BandPowerMonitor;
+
+        private void ShowLayoutFlyout()
+        {
+            IsLayoutFlyoutOpen = true;
+            _layoutFlyoutCloseTimer.Stop();
+            _layoutFlyoutCloseTimer.Start();
+        }
+
+        private void CloseLayoutFlyout()
+        {
+            _layoutFlyoutCloseTimer.Stop();
+            IsLayoutFlyoutOpen = false;
+        }
+
+        private void SetLayoutAndClose(string layoutMode)
+        {
+            LayoutMode = layoutMode;
+            CloseLayoutFlyout();
+        }
 
         private string LayoutMode
         {
