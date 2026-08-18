@@ -17,11 +17,11 @@ namespace EEGTool.ViewModels.Collection
     {
         private static readonly BandInfo[] Bands =
         {
-            new("DELTA", "0.5-4Hz", 0.5, 4, "#EF5350"),
-            new("THETA", "4-8Hz", 4, 8, "#F4D03F"),
-            new("ALPHA", "8-13Hz", 8, 13, "#5D8F7B"),
-            new("BETA", "13-32Hz", 13, 32, "#5E78B4"),
-            new("GAMMA", "32-100Hz", 32, 100, "#8E68A7")
+            new("DELTA", "0.5-4Hz" , 0.5, 4,  "#EF5350"),
+            new("THETA", "4-8Hz"   , 4,   8,  "#F4D03F"),
+            new("ALPHA", "8-13Hz"  , 8,   13, "#5D8F7B"),
+            new("BETA" , "13-32Hz" , 13,  32, "#5E78B4"),
+            new("GAMMA", "32-100Hz", 32,  100,"#8E68A7")
         };
 
         private readonly object _dataLock = new();
