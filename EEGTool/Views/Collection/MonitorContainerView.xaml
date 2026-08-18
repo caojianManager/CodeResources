@@ -102,7 +102,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid >
+        <Grid Cursor="" >
             <Button Style="{StaticResource LayoutIconButtonStyle}"
                     Margin="15,0,0,0"
                     HorizontalAlignment="Left"
@@ -116,7 +116,7 @@
 
             <ComboBox Width="130"
                 Height="26"
-                Margin="25,0,0,0"
+                Margin="58,0,0,0"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Left"
                 SelectedValue="{Binding SelectedSingleMonitor, Mode=TwoWay}"
@@ -131,15 +131,15 @@
                   VerticalAlignment="Bottom"
                   HorizontalAlignment="Stretch"/>
             <Border x:Name="LayoutFlyout"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Top"
-                   Margin="0,12,12,0"
-                   Padding="2"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"   
+                   Margin="55,0,0,0"
+                   Padding="5"
                    Background="#FDFEFF"
                    BorderBrush="#C7D7EA"
                    BorderThickness="1"
                    CornerRadius="4"
-                   Panel.ZIndex="20"
+                   Panel.ZIndex="36"
                    Visibility="{Binding IsLayoutFlyoutOpen, Converter={StaticResource BoolToVisibleConverter}}" Cursor=""
                    >
                 <Border.Effect>
@@ -151,22 +151,34 @@
                 </Border.Effect>
                 <StackPanel Orientation="Horizontal"
                VerticalAlignment="Center">
-                    <Button Content="1"
+                    <Button 
                Style="{StaticResource LayoutButtonStyle}"
                Command="{Binding SetSingleLayoutCommand}"
                Tag="{Binding IsSingleLayout}"
-               ToolTip="单分布"/>
-                    <Button Content="2"
+               ToolTip="单分布">
+                        <Button.Content>
+                            <iconPacks:PackIconForkAwesome Kind="Stop" Width="20" Height="20"/>
+                        </Button.Content>
+                    </Button>
+                    <Button
                Style="{StaticResource LayoutButtonStyle}"
                Command="{Binding SetTwoLayoutCommand}"
                Tag="{Binding IsTwoLayout}"
-               ToolTip="二分布"/>
-                    <Button Content="3"
-               Style="{StaticResource LayoutButtonStyle}"
-               Command="{Binding SetThreeLayoutCommand}"
-               Tag="{Binding IsThreeLayout}"
-               ToolTip="三分布"/>
-                  
+               ToolTip="二分布">
+                        <Button.Content>
+                            <iconPacks:PackIconPhosphorIcons Kind="RowsFill" Width="20" Height="20"/>
+                        </Button.Content>
+                    </Button>
+                    <Button 
+                           Style="{StaticResource LayoutButtonStyle}"
+                           Command="{Binding SetThreeLayoutCommand}"
+                           Tag="{Binding IsThreeLayout}"
+                           ToolTip="三分布">
+                        <Button.Content>
+                            <iconPacks:PackIconUnicons Kind="WindowGridSolid" Width="20" Height="20" Cursor=""/>
+                        </Button.Content>
+                    </Button>
+
                 </StackPanel>
             </Border>
         </Grid>
