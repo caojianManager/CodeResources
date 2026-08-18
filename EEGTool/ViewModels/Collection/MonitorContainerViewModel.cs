@@ -16,17 +16,26 @@ namespace EEGTool.ViewModels.Collection
 
         private string _layoutMode = ThreeLayout;
         private string _selectedSingleMonitor = EegMonitor;
+        private bool _isLayoutFlyoutOpen;
 
         public MonitorContainerViewModel()
         {
             SetSingleLayoutCommand = new RelayCommand(_ => LayoutMode = SingleLayout);
             SetTwoLayoutCommand = new RelayCommand(_ => LayoutMode = TwoLayout);
             SetThreeLayoutCommand = new RelayCommand(_ => LayoutMode = ThreeLayout);
+            ToggleLayoutFlyoutCommand = new RelayCommand(_ => IsLayoutFlyoutOpen = !IsLayoutFlyoutOpen);
         }
 
         public ICommand SetSingleLayoutCommand { get; }
         public ICommand SetTwoLayoutCommand { get; }
         public ICommand SetThreeLayoutCommand { get; }
+        public ICommand ToggleLayoutFlyoutCommand { get; }
+
+        public bool IsLayoutFlyoutOpen
+        {
+            get => _isLayoutFlyoutOpen;
+            set => SetProperty(ref _isLayoutFlyoutOpen, value);
+        }
 
         public string SelectedSingleMonitor
         {

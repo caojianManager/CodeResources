@@ -99,7 +99,7 @@
                         <StackPanel>
                             <Grid HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"
-                                    Height="150"
+                                    Height="80"
                                     Margin="10,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="30"/>
@@ -127,7 +127,7 @@
                                         <StackPanel HorizontalAlignment="Left"
                                                   VerticalAlignment="Top"
                                                   Orientation="Horizontal">
-                                            <TextBlock Text="BLE目标特征:" VerticalAlignment="Center"
+                                            <TextBlock Text="目标特征:" VerticalAlignment="Center"
                                                        Margin="0,0,10,0"/>
 
                                             <TextBox
@@ -175,14 +175,14 @@
                                          VerticalAlignment="Bottom"
                                          Margin="5,0,0,5"
                                          Text="阻抗监测"
-                                         Opacity="0.8"
+                                         Opacity="1"
                                          Foreground="Orange"/>
 
                                 <Border Grid.Row="1" 
                                           BorderThickness="1" 
                                           CornerRadius="5"
                                           BorderBrush="Orange"
-                                          Opacity="0.8">
+                                          Opacity="1">
 
                                     <Grid HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
