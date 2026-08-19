@@ -476,6 +476,7 @@ namespace EEGTool.ViewModels.Collection
             EegPlot.Plot.Axes.SetLimitsX(GetCurrentXMin(), GetCurrentXMax());
             SetTimeAxisTicks();
             UpdateTimeGridLines();
+            ApplyPlotLayerOrder();
         }
 
         private void AddPendingPlotSamples()
@@ -641,6 +642,7 @@ namespace EEGTool.ViewModels.Collection
             ApplyAxisRules(EegPlot.Plot, GetCurrentXMin(), GetCurrentXMax());
             EegPlot.Plot.Axes.SetLimitsY(0, yMax);
             UpdateChannelCenterLines();
+            ApplyPlotLayerOrder();
         }
 
         private void EnsureWaveHeaderItems(int channelCount)
@@ -765,6 +767,7 @@ namespace EEGTool.ViewModels.Collection
                 line.EnableAutoscale = false;
                 line.ExcludeFromLegend = true;
                 _timeGridLines.Add(line);
+                plot.MoveToBack(line);
             }
         }
 
@@ -787,6 +790,31 @@ namespace EEGTool.ViewModels.Collection
                 line.EnableAutoscale = false;
                 line.ExcludeFromLegend = true;
                 _channelCenterLines.Add(line);
+                plot.MoveToBack(line);
+            }
+        }
+
+        private void ApplyPlotLayerOrder()
+        {
+            var plot = EegPlot.Plot;
+            foreach (VerticalLine line in _timeGridLines)
+            {
+                plot.MoveToBack(line);
+            }
+
+            foreach (HorizontalLine line in _channelCenterLines)
+            {
+                plot.MoveToBack(line);
+            }
+
+            foreach (DataStreamer streamer in _streamers.Values)
+            {
+                plot.MoveToFront(streamer);
+            }
+
+            if (_wipeLine != null)
+            {
+                plot.MoveToFront(_wipeLine);
             }
         }
 
@@ -826,6 +854,7 @@ namespace EEGTool.ViewModels.Collection
             SetTimeAxisTicks();
             UpdateTimeGridLines();
             UpdateChannelCenterLines();
+            ApplyPlotLayerOrder();
 
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
