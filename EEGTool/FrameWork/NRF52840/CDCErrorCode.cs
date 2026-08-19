@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace BrainZoneMultichannel.FrameWork.NRF52840
 {
-    internal class CDCErrorCode
+    public enum CDCErrorCode
     {
+        OpenFailed = 0,
+        CloseFailed = 1,
+        SendFailed = 2,
+        ReceiveFailed = 3,
+        PortNotOpen = 4,
+        PortAlreadyOpen = 5
     }
 }
