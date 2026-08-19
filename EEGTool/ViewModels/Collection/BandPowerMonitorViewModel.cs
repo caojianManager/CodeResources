@@ -146,21 +146,33 @@ namespace EEGTool.ViewModels.Collection
             BandPowerPlot.Plot.Remove<BarPlot>();
 
             double[] displayValues = values
-                .Select(value => Math.Log10(Math.Max(value, 0.1)))
+                .Select(ToLogAxisValue)
                 .ToArray();
 
             BarPlot bars = BandPowerPlot.Plot.Add.Bars(displayValues);
-            bars.Color = ScottPlot.Color.FromHex("#5E78B4");
+            for (int index = 0; index < bars.Bars.Count && index < Bands.Length; index++)
+            {
+                bars.Bars[index].ValueBase = 0;
+                bars.Bars[index].FillColor = ScottPlot.Color.FromHex(Bands[index].Color);
+                bars.Bars[index].LineColor = ScottPlot.Color.FromHex(Bands[index].Color);
+                bars.Bars[index].LineWidth = 0;
+                bars.Bars[index].Size = 0.95;
+            }
 
             double[] tickPositions = Enumerable.Range(0, Bands.Length).Select(index => (double)index).ToArray();
             string[] tickLabels = Bands.Select(band => $"{band.Name}\n{band.Range}").ToArray();
             BandPowerPlot.Plot.Axes.Bottom.SetTicks(tickPositions, tickLabels);
             BandPowerPlot.Plot.Axes.Left.SetTicks(
-                new[] { Math.Log10(0.1), Math.Log10(1), Math.Log10(10), Math.Log10(100) },
+                new[] { ToLogAxisValue(0.1), ToLogAxisValue(1), ToLogAxisValue(10), ToLogAxisValue(100) },
                 new[] { "0.1", "1", "10", "100" });
             BandPowerPlot.Plot.Axes.SetLimitsX(-0.6, Bands.Length - 0.4);
-            BandPowerPlot.Plot.Axes.SetLimitsY(Math.Log10(0.1), Math.Log10(100));
+            BandPowerPlot.Plot.Axes.SetLimitsY(0, ToLogAxisValue(100));
             BandPowerPlot.Refresh();
+        }
+
+        private static double ToLogAxisValue(double value)
+        {
+            return Math.Log10(Math.Max(0, value) + 1);
         }
 
         private void ConfigurePlot()
@@ -175,7 +187,7 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Bottom.Label.Text = "EEG Power Bands";
             plot.Benchmark.IsVisible = false;
             BandPowerPlot.UserInputProcessor.Disable();
-            DrawBars(new[] { 0.1, 0.1, 0.1, 0.1, 0.1 });
+            DrawBars(new double[Bands.Length]);
         }
 
         private sealed record BandInfo(string Name, string Range, double LowHz, double HighHz, string Color);

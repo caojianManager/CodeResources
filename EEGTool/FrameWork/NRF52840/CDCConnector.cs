@@ -1,4 +1,5 @@
-﻿using RJCP.IO.Ports;
+﻿using FrameWork.Log;
+using RJCP.IO.Ports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
