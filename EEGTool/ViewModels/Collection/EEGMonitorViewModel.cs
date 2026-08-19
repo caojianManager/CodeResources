@@ -35,6 +35,8 @@ namespace EEGTool.ViewModels.Collection
         private const double WipeBlankFraction = 0.000001;
         private readonly object _onDataLock = new();
         private readonly Dictionary<int, DataStreamer> _streamers = new();
+        private readonly List<VerticalLine> _timeGridLines = new();
+        private readonly List<HorizontalLine> _channelCenterLines = new();
         private readonly Dictionary<int, int> _autoValues = new();
         private readonly Queue<double[]> _pendingPlotSamples = new();
         private readonly DispatcherTimer _addNewDataTimer = new() { Interval = TimeSpan.FromMilliseconds(10) };
@@ -47,6 +49,8 @@ namespace EEGTool.ViewModels.Collection
         private int _sampleRate = 250;
         private int _lastAxisSampleRate;
         private int _lastAxisWindowSec;
+        private int _lastStreamerSampleRate;
+        private int _lastStreamerWindowSec;
         private int _lastAxisChannelCount;
         private bool _scrollMode;
         private bool _axisRefreshPending;
@@ -82,7 +86,16 @@ namespace EEGTool.ViewModels.Collection
         public int WindowSec
         {
             get => _windowSec;
-            set => SetProperty(ref _windowSec, Math.Max(1, value));
+            set
+            {
+                if (SetProperty(ref _windowSec, Math.Max(1, value)))
+                {
+                    _lastAxisWindowSec = 0;
+                    ApplyStreamerViewMode();
+                    ConfigSecondTicks();
+                    _axisRefreshPending = true;
+                }
+            }
         }
 
         private int _vertScale = 100;
@@ -363,8 +376,8 @@ namespace EEGTool.ViewModels.Collection
             int sampleRate = Math.Max(1, _sampleRate);
             int capacity = Math.Max(sampleRate, WindowSec * sampleRate);
             if (_streamers.Count == channelCount &&
-                _lastAxisSampleRate == sampleRate &&
-                _lastAxisWindowSec == WindowSec)
+                _lastStreamerSampleRate == sampleRate &&
+                _lastStreamerWindowSec == WindowSec)
             {
                 return false;
             }
@@ -375,6 +388,8 @@ namespace EEGTool.ViewModels.Collection
             _lastQueuedSampleVersion = 0;
             _plotPumpRemainder = 0;
             _lastPlotPumpTime = DateTime.UtcNow;
+            _lastStreamerSampleRate = sampleRate;
+            _lastStreamerWindowSec = WindowSec;
 
             for (int ch = 0; ch < channelCount; ch++)
             {
@@ -382,6 +397,7 @@ namespace EEGTool.ViewModels.Collection
                 streamer.LineWidth = 1;
                 streamer.LineColor = Constants.ChannelColors[ch % Constants.ChannelColors.Length];
                 streamer.ManageAxisLimits = false;
+                streamer.Period = 1.0 / sampleRate;
                 _streamers[ch] = streamer;
             }
 
@@ -431,8 +447,13 @@ namespace EEGTool.ViewModels.Collection
 
         private void ApplyStreamerViewMode()
         {
+            double xOffset = _streamerViewMode == StreamerViewMode.Scroll
+                ? -Math.Max(1, WindowSec)
+                : 0;
+
             foreach (DataStreamer streamer in _streamers.Values)
             {
+                streamer.Data.OffsetX = xOffset;
                 switch (_streamerViewMode)
                 {
                     case StreamerViewMode.Scroll:
@@ -450,6 +471,11 @@ namespace EEGTool.ViewModels.Collection
             {
                 _wipeLine.IsVisible = _streamerViewMode == StreamerViewMode.Wipe;
             }
+
+            ApplyAxisRules(EegPlot.Plot, GetCurrentXMin(), GetCurrentXMax());
+            EegPlot.Plot.Axes.SetLimitsX(GetCurrentXMin(), GetCurrentXMax());
+            SetTimeAxisTicks();
+            UpdateTimeGridLines();
         }
 
         private void AddPendingPlotSamples()
@@ -584,7 +610,8 @@ namespace EEGTool.ViewModels.Collection
         private void ConfigSecondTicks()
         {
             int sampleRate = Math.Max(1, _sampleRate);
-            int xMax = Math.Max(sampleRate, WindowSec * sampleRate);
+            double xMin = GetCurrentXMin();
+            double xMax = GetCurrentXMax();
             var plot = EegPlot.Plot;
 
             if (_lastAxisSampleRate == sampleRate && _lastAxisWindowSec == WindowSec)
@@ -594,8 +621,11 @@ namespace EEGTool.ViewModels.Collection
 
             _lastAxisSampleRate = sampleRate;
             _lastAxisWindowSec = WindowSec;
-            ApplyAxisRules(plot, xMax);
-            plot.Axes.SetLimitsX(0, xMax);
+            ApplyStreamerViewMode();
+            ApplyAxisRules(plot, xMin, xMax);
+            plot.Axes.SetLimitsX(xMin, xMax);
+            SetTimeAxisTicks();
+            UpdateTimeGridLines();
         }
 
         private void UpdatePlotVertTextLabel(int channelCount)
@@ -608,8 +638,9 @@ namespace EEGTool.ViewModels.Collection
 
             _lastAxisChannelCount = channelCount;
             double yMax = GetMaxVisiblePlotY();
-            ApplyAxisRules(EegPlot.Plot, GetCurrentXMax());
+            ApplyAxisRules(EegPlot.Plot, GetCurrentXMin(), GetCurrentXMax());
             EegPlot.Plot.Axes.SetLimitsY(0, yMax);
+            UpdateChannelCenterLines();
         }
 
         private void EnsureWaveHeaderItems(int channelCount)
@@ -677,24 +708,96 @@ namespace EEGTool.ViewModels.Collection
             return Math.Max(1, _lastAxisChannelCount) * ChannelHeight;
         }
 
-        private int GetCurrentXMax()
+        private double GetCurrentXMin()
         {
-            return Math.Max(Math.Max(1, _sampleRate), Math.Max(1, WindowSec) * Math.Max(1, _sampleRate));
+            return _streamerViewMode == StreamerViewMode.Scroll
+                ? -Math.Max(1, WindowSec)
+                : 0;
         }
 
-        private void ApplyAxisRules(Plot plot, int xMax)
+        private double GetCurrentXMax()
+        {
+            return _streamerViewMode == StreamerViewMode.Scroll
+                ? 0
+                : Math.Max(1, WindowSec);
+        }
+
+        private void ApplyAxisRules(Plot plot, double xMin, double xMax)
         {
             plot.Axes.Rules.Clear();
-            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, 0, xMax));
+            plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedHorizontal(plot.Axes.Bottom, xMin, xMax));
+        }
+
+        private void SetTimeAxisTicks()
+        {
+            int windowSec = Math.Max(1, WindowSec);
+            int start = _streamerViewMode == StreamerViewMode.Scroll ? -windowSec : 0;
+            int end = _streamerViewMode == StreamerViewMode.Scroll ? 0 : windowSec;
+
+            double[] ticks = Enumerable.Range(start, end - start + 1)
+                .Select(value => (double)value)
+                .ToArray();
+            string[] labels = ticks
+                .Select(value => value.ToString("0"))
+                .ToArray();
+
+            EegPlot.Plot.Axes.Bottom.SetTicks(ticks, labels);
+        }
+
+        private void UpdateTimeGridLines()
+        {
+            var plot = EegPlot.Plot;
+            foreach (VerticalLine line in _timeGridLines)
+            {
+                plot.Remove(line);
+            }
+
+            _timeGridLines.Clear();
+
+            int windowSec = Math.Max(1, WindowSec);
+            for (int i = 1; i < windowSec; i++)
+            {
+                double x = _streamerViewMode == StreamerViewMode.Scroll
+                    ? -windowSec + i
+                    : i;
+                VerticalLine line = plot.Add.VerticalLine(x, 1, ScottPlot.Color.FromHex("#C8CDD3"));
+                line.LinePattern = LinePattern.DenselyDashed;
+                line.EnableAutoscale = false;
+                line.ExcludeFromLegend = true;
+                _timeGridLines.Add(line);
+            }
+        }
+
+        private void UpdateChannelCenterLines()
+        {
+            var plot = EegPlot.Plot;
+            foreach (HorizontalLine line in _channelCenterLines)
+            {
+                plot.Remove(line);
+            }
+
+            _channelCenterLines.Clear();
+
+            int channelCount = Math.Max(1, _lastAxisChannelCount);
+            for (int ch = 0; ch < channelCount; ch++)
+            {
+                double y = GetChannelPlotCenterY(ch, channelCount);
+                HorizontalLine line = plot.Add.HorizontalLine(y, 1, ScottPlot.Color.FromHex("#D6DBE1"));
+                line.LinePattern = LinePattern.DenselyDashed;
+                line.EnableAutoscale = false;
+                line.ExcludeFromLegend = true;
+                _channelCenterLines.Add(line);
+            }
         }
 
         private void ConfigPlot()
         {
             var plot = EegPlot.Plot;
 
-            int xMax = GetCurrentXMax();
-            ApplyAxisRules(plot, xMax);
-            plot.Axes.SetLimitsX(0, xMax);
+            double xMin = GetCurrentXMin();
+            double xMax = GetCurrentXMax();
+            ApplyAxisRules(plot, xMin, xMax);
+            plot.Axes.SetLimitsX(xMin, xMax);
             plot.Axes.SetLimitsY(0, ChannelHeight);
             plot.Grid.MajorLineWidth = 0;
             _wipeLine = plot.Add.VerticalLine(0, 2, ScottPlot.Colors.Red);
@@ -719,7 +822,10 @@ namespace EEGTool.ViewModels.Collection
             plot.Axes.Left.MinorTickStyle.Length = 0;
             plot.Axes.Bottom.MajorTickStyle.Length = 0;
             plot.Axes.Bottom.MinorTickStyle.Length = 0;
-            plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
+            plot.Axes.Bottom.TickLabelStyle.IsVisible = true;
+            SetTimeAxisTicks();
+            UpdateTimeGridLines();
+            UpdateChannelCenterLines();
 
             plot.Benchmark.IsVisible = false;
             plot.RenderManager.RenderActions.RemoveAll(x => x.GetType().Name.Contains("Benchmark"));
