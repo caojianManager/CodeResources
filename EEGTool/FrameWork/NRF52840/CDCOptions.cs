@@ -19,6 +19,8 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
         public int ReadBufferSize { get; set; } = 64 * 1024;
         public int WriteBufferSize { get; set; } = 16 * 1024;
         public int ReceiveBufferSize { get; set; } = 4096;
+        public int ReceiveQueueCapacity { get; set; } = 256;
+        public bool DropOldestWhenReceiveQueueFull { get; set; }
         public bool DtrEnable { get; set; } = true;
         public bool RtsEnable { get; set; }
         public Encoding TextEncoding { get; set; } = Encoding.UTF8;

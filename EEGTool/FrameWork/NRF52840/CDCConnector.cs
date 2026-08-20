@@ -4,16 +4,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BrainZoneMultichannel.FrameWork.NRF52840
 {
     public sealed class CDCConnector : IDisposable
     {
+        private const int MaxLoggedBytes = 64;
+
         private readonly SemaphoreSlim _syncLock = new(1, 1);
         private SerialPortStream? _serialPort;
         private CancellationTokenSource? _receiveCancellation;
         private Task? _receiveTask;
+        private Task? _dispatchTask;
+        private Channel<byte[]>? _receiveChannel;
         private bool _disposed;
 
         public string? PortName { get; private set; }
@@ -37,12 +42,14 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(options);
 
+            string? errorMessage = null;
+
             await _syncLock.WaitAsync();
             try
             {
                 if (IsOpen)
                 {
-                    RaiseError(CDCErrorCode.PortAlreadyOpen, $"串口 {PortName} 已打开");
+                    errorMessage = $"串口 {PortName} 已打开";
                     return false;
                 }
 
@@ -67,21 +74,34 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                 port.Open();
                 _serialPort = port;
                 _receiveCancellation = new CancellationTokenSource();
+                _receiveChannel = CreateReceiveChannel(options);
+                _dispatchTask = Task.Run(() => DispatchLoopAsync(_receiveChannel.Reader));
                 _receiveTask = Task.Run(() => ReceiveLoopAsync(_receiveCancellation.Token));
 
                 Logger.Info($"[CDC] 串口 {PortName} 已连接");
-                Connected?.Invoke();
                 return true;
             }
             catch (Exception ex)
             {
                 CleanupPort();
-                RaiseError(CDCErrorCode.OpenFailed, $"打开串口 {options.PortName} 失败: {ex.Message}");
+                errorMessage = $"打开串口 {options.PortName} 失败: {ex.Message}";
                 return false;
             }
             finally
             {
                 _syncLock.Release();
+
+                if (errorMessage != null)
+                {
+                    var errorCode = errorMessage.Contains("已打开", StringComparison.Ordinal)
+                        ? CDCErrorCode.PortAlreadyOpen
+                        : CDCErrorCode.OpenFailed;
+                    RaiseError(errorCode, errorMessage);
+                }
+                else if (IsOpen)
+                {
+                    InvokeSafely(Connected, "串口连接事件处理失败");
+                }
             }
         }
 
@@ -108,9 +128,9 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                     return;
                 }
 
-                await _serialPort.WriteAsync(data, 0, data.Length);
+                await _serialPort.WriteAsync(data, 0, data.Length, cancellationToken);
                 await _serialPort.FlushAsync(cancellationToken);
-                Logger.Debug($"[CDC] 发送 {data.Length} 字节: {BitConverter.ToString(data)}");
+                Logger.Debug($"[CDC] 发送 {data.Length} 字节: {FormatBytesForLog(data)}");
             }
             catch (Exception ex)
             {
@@ -157,13 +177,13 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                     var received = new byte[bytesRead];
                     Buffer.BlockCopy(buffer, 0, received, 0, bytesRead);
 
-                    BytesReceived?.Invoke(received);
-
-                    if (TextReceived != null)
+                    var writer = _receiveChannel?.Writer;
+                    if (writer == null)
                     {
-                        var encoding = Options?.TextEncoding ?? Encoding.UTF8;
-                        TextReceived.Invoke(encoding.GetString(received));
+                        break;
                     }
+
+                    await writer.WriteAsync(received, token);
                 }
                 catch (TimeoutException)
                 {
@@ -188,10 +208,24 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                 }
             }
 
-            await CloseInternalAsync(false);
+            await CloseInternalAsync(false, false);
         }
 
-        private async Task CloseInternalAsync(bool reportCloseError)
+        private async Task DispatchLoopAsync(ChannelReader<byte[]> reader)
+        {
+            await foreach (var received in reader.ReadAllAsync())
+            {
+                InvokeSafely(BytesReceived, received, "串口数据事件处理失败");
+
+                if (TextReceived != null)
+                {
+                    var encoding = Options?.TextEncoding ?? Encoding.UTF8;
+                    InvokeSafely(TextReceived, encoding.GetString(received), "串口文本事件处理失败");
+                }
+            }
+        }
+
+        private async Task CloseInternalAsync(bool reportCloseError, bool waitForReceiveTask = true)
         {
             if (_disposed)
             {
@@ -199,7 +233,9 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
             }
 
             Task? receiveTaskToWait = null;
-            bool calledFromReceiveTask = false;
+            Task? dispatchTaskToWait = null;
+            bool disconnected = false;
+            string? closedPortName = null;
 
             await _syncLock.WaitAsync();
             try
@@ -210,8 +246,10 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                 }
 
                 receiveTaskToWait = _receiveTask;
-                calledFromReceiveTask = receiveTaskToWait != null && Task.CurrentId == receiveTaskToWait.Id;
+                dispatchTaskToWait = _dispatchTask;
+                closedPortName = PortName;
                 _receiveCancellation?.Cancel();
+                _receiveChannel?.Writer.TryComplete();
 
                 try
                 {
@@ -221,7 +259,7 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                     }
 
                     Logger.Info($"[CDC] 串口 {PortName} 已关闭");
-                    Disconnected?.Invoke();
+                    disconnected = true;
                 }
                 catch (Exception ex) when (reportCloseError)
                 {
@@ -237,11 +275,27 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
                 _syncLock.Release();
             }
 
-            if (receiveTaskToWait != null && !calledFromReceiveTask)
+            if (disconnected)
+            {
+                InvokeSafely(Disconnected, $"串口 {closedPortName} 断开事件处理失败");
+            }
+
+            if (waitForReceiveTask && receiveTaskToWait != null)
             {
                 try
                 {
                     await receiveTaskToWait;
+                }
+                catch
+                {
+                }
+            }
+
+            if (waitForReceiveTask && dispatchTaskToWait != null)
+            {
+                try
+                {
+                    await dispatchTaskToWait;
                 }
                 catch
                 {
@@ -254,6 +308,8 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
             _receiveCancellation?.Dispose();
             _receiveCancellation = null;
             _receiveTask = null;
+            _dispatchTask = null;
+            _receiveChannel = null;
             _serialPort?.Dispose();
             _serialPort = null;
         }
@@ -262,6 +318,67 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
         {
             Logger.Error($"[CDC] {message}");
             ErrorOccurred?.Invoke(code, message);
+        }
+
+        private void InvokeSafely(Action? handler, string errorMessage)
+        {
+            if (handler == null)
+            {
+                return;
+            }
+
+            try
+            {
+                handler.Invoke();
+            }
+            catch (Exception ex)
+            {
+                RaiseError(CDCErrorCode.ReceiveFailed, $"{errorMessage}: {ex.Message}");
+            }
+        }
+
+        private void InvokeSafely<T>(Action<T>? handler, T value, string errorMessage)
+        {
+            if (handler == null)
+            {
+                return;
+            }
+
+            try
+            {
+                handler.Invoke(value);
+            }
+            catch (Exception ex)
+            {
+                RaiseError(CDCErrorCode.ReceiveFailed, $"{errorMessage}: {ex.Message}");
+            }
+        }
+
+        private static Channel<byte[]> CreateReceiveChannel(CDCOptions options)
+        {
+            var capacity = Math.Max(1, options.ReceiveQueueCapacity);
+            var fullMode = options.DropOldestWhenReceiveQueueFull
+                ? BoundedChannelFullMode.DropOldest
+                : BoundedChannelFullMode.Wait;
+
+            return Channel.CreateBounded<byte[]>(new BoundedChannelOptions(capacity)
+            {
+                SingleReader = true,
+                SingleWriter = true,
+                FullMode = fullMode
+            });
+        }
+
+        private static string FormatBytesForLog(byte[] data)
+        {
+            if (data.Length <= MaxLoggedBytes)
+            {
+                return BitConverter.ToString(data);
+            }
+
+            var preview = new byte[MaxLoggedBytes];
+            Buffer.BlockCopy(data, 0, preview, 0, MaxLoggedBytes);
+            return $"{BitConverter.ToString(preview)}... (+{data.Length - MaxLoggedBytes} 字节)";
         }
 
         private void ThrowIfDisposed()
@@ -278,6 +395,7 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
 
             _disposed = true;
             _receiveCancellation?.Cancel();
+            _receiveChannel?.Writer.TryComplete();
             CleanupPort();
             _syncLock.Dispose();
         }
