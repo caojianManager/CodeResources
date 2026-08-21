@@ -72,6 +72,7 @@ namespace EEGTool.ViewModels
             yield return new TemplateHomeViewModel();
             yield return new CollectionMonitorViewModel();
             yield return new SettingsHomeViewModel();
+            yield return new YellowSpotHomeViewModel();
         }
 
         private void SwithViewPortPage(Type type)
