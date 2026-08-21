@@ -58,6 +58,12 @@
     <Content Remove="Resources\images\eeg_auto_off.png" />
     <Content Remove="Resources\images\eeg_auto_on.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="node_modules\**\*.cs" />
+    <Content Remove="node_modules\**\*" />
+    <EmbeddedResource Remove="node_modules\**\*" />
+    <None Remove="node_modules\**\*" />
+  </ItemGroup>
 
   <!-- 配置文件 -->
   <ItemGroup>
@@ -75,6 +81,7 @@
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="6.2.1" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="MediaFoundation" Version="3.1.0" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NumSharp" Version="0.30.0" />

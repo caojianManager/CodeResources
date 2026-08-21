@@ -7,7 +7,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace FrameWork.View
+namespace EEGTool.FrameWork.View
 {
     public partial class BaseWindow : Window
     {

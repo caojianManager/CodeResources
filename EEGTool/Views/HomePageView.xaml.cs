@@ -1,5 +1,5 @@
 ﻿using EegAcquisitionSystem;
-using FrameWork.View;
+using EEGTool.FrameWork.View;
 using MahApps.Metro.IconPacks;
 using OpenTK.Windowing.Common;
 using System.Diagnostics;
