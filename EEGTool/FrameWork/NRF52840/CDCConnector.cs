@@ -109,7 +109,7 @@ namespace BrainZoneMultichannel.FrameWork.NRF52840
         {
             await CloseInternalAsync(true);
         }
-
+       
         public async Task SendBytesAsync(byte[] data, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
