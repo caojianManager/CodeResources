@@ -61,6 +61,27 @@
                     </Button>
                 </StackPanel>
             </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Background="Green"
+                      Width="800" Height="600">
+                    <Image Source="{Binding CameraImageSource}"
+                            Stretch="Uniform" 
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+                </Grid>
+             
+                <TextBlock Text="{Binding CameraErrorMessage}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Bottom"
+                           Margin="0,0,0,24"
+                           Foreground="#C62828"
+                           FontSize="14"
+                           TextWrapping="Wrap"
+                           MaxWidth="520"/>
+            </Grid>
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

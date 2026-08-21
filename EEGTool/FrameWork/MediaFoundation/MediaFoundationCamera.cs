@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ public sealed class MediaFoundationCamera : IDisposable
 
     private CancellationTokenSource? _cts;
     private Task? _captureTask;
+    private Thread? _captureThread;
 
     private bool _mfStarted;
     private bool _disposed;
@@ -26,13 +28,39 @@ public sealed class MediaFoundationCamera : IDisposable
 
     public int Height { get; private set; }
 
-    public bool IsRunning => _captureTask != null && !_captureTask.IsCompleted;
+    public Guid CurrentSubtype { get; private set; }
+
+    public bool IsRunning =>
+        (_captureThread != null && _captureThread.IsAlive) ||
+        (_captureTask != null && !_captureTask.IsCompleted);
 
     /// <summary>
     /// 采集到一帧图像时触发。
     /// 数据格式为 RGB32/BGRA，每像素 4 字节。
     /// </summary>
     public event Action<CameraFrame>? FrameArrived;
+
+    public event Action<Exception>? CaptureFailed;
+
+    public void StartCapture(int cameraIndex = 0, int width = 1280, int height = 720)
+    {
+        ThrowIfDisposed();
+
+        if (IsRunning)
+            return;
+
+        _cts = new CancellationTokenSource();
+        CancellationToken token = _cts.Token;
+
+        _captureThread = new Thread(() => CaptureThreadLoop(cameraIndex, width, height, token))
+        {
+            IsBackground = true,
+            Name = "MediaFoundationCameraCapture"
+        };
+
+        _captureThread.SetApartmentState(ApartmentState.MTA);
+        _captureThread.Start();
+    }
 
     public void Open(int cameraIndex = 0, int width = 1280, int height = 720)
     {
@@ -59,17 +87,42 @@ public sealed class MediaFoundationCamera : IDisposable
 
         _mediaSource = (IMFMediaSource)sourceObject;
 
-        hr = MFExtern.MFCreateSourceReaderFromMediaSource(
-            _mediaSource,
-            null,
-            out _reader);
+        IMFAttributes? readerAttributes = null;
 
-        MFError.ThrowExceptionForHR(hr);
+        try
+        {
+            hr = MFExtern.MFCreateAttributes(out readerAttributes, 3);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = readerAttributes.SetUINT32(
+                MFAttributesClsid.MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING,
+                1);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = readerAttributes.SetUINT32(
+                MFAttributesClsid.MF_SOURCE_READER_DISABLE_DXVA,
+                1);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = readerAttributes.SetUINT32(
+                MFAttributesClsid.MF_SOURCE_READER_DISCONNECT_MEDIASOURCE_ON_SHUTDOWN,
+                1);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = MFExtern.MFCreateSourceReaderFromMediaSource(
+                _mediaSource,
+                readerAttributes,
+                out _reader);
+
+            MFError.ThrowExceptionForHR(hr);
+        }
+        finally
+        {
+            if (readerAttributes != null)
+                Marshal.ReleaseComObject(readerAttributes);
+        }
 
         ConfigureVideoFormat(width, height);
-
-        Width = width;
-        Height = height;
     }
 
     public void Start()
@@ -97,6 +150,11 @@ public sealed class MediaFoundationCamera : IDisposable
 
         try
         {
+            if (_captureThread != null && _captureThread != Thread.CurrentThread)
+            {
+                _captureThread.Join(1000);
+            }
+
             _captureTask?.Wait(1000);
         }
         catch
@@ -104,6 +162,7 @@ public sealed class MediaFoundationCamera : IDisposable
             // ignored
         }
 
+        _captureThread = null;
         _captureTask = null;
 
         _cts.Dispose();
@@ -113,28 +172,24 @@ public sealed class MediaFoundationCamera : IDisposable
     public void Close()
     {
         Stop();
+        ReleaseResources();
+    }
 
-        if (_reader != null)
+    private void CaptureThreadLoop(int cameraIndex, int width, int height, CancellationToken token)
+    {
+        try
         {
-            Marshal.ReleaseComObject(_reader);
-            _reader = null;
+            Open(cameraIndex, width, height);
+            CaptureLoop(token);
         }
-
-        if (_mediaSource != null)
+        catch (Exception ex) when (!token.IsCancellationRequested)
         {
-            _mediaSource.Shutdown();
-            Marshal.ReleaseComObject(_mediaSource);
-            _mediaSource = null;
+            CaptureFailed?.Invoke(ex);
         }
-
-        if (_devices != null)
+        finally
         {
-            foreach (IMFActivate device in _devices)
-            {
-                Marshal.ReleaseComObject(device);
-            }
-
-            _devices = null;
+            ReleaseResources();
+            ShutdownMediaFoundation();
         }
     }
 
@@ -142,11 +197,27 @@ public sealed class MediaFoundationCamera : IDisposable
     {
         while (!token.IsCancellationRequested)
         {
-            CameraFrame? frame = ReadFrame();
-
-            if (frame != null)
+            try
             {
-                FrameArrived?.Invoke(frame);
+                CameraFrame? frame = ReadFrame();
+
+                if (frame != null)
+                {
+                    FrameArrived?.Invoke(frame);
+                }
+            }
+            catch (COMException) when (token.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (ObjectDisposedException) when (token.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                CaptureFailed?.Invoke(ex);
+                break;
             }
         }
     }
@@ -184,7 +255,16 @@ public sealed class MediaFoundationCamera : IDisposable
 
         try
         {
-            hr = sample.ConvertToContiguousBuffer(out buffer);
+            hr = sample.GetTotalLength(out int totalLength);
+            MFError.ThrowExceptionForHR(hr);
+
+            int expectedLength = Width * Height * 4;
+            int bufferLength = totalLength > 0 ? totalLength : expectedLength;
+
+            hr = MFExtern.MFCreateMemoryBuffer(bufferLength, out buffer);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = sample.CopyToBuffer(buffer);
             MFError.ThrowExceptionForHR(hr);
 
             IntPtr dataPtr;
@@ -196,8 +276,15 @@ public sealed class MediaFoundationCamera : IDisposable
 
             try
             {
-                byte[] data = new byte[currentLength];
-                Marshal.Copy(dataPtr, data, 0, currentLength);
+                int copyLength = expectedLength > 0
+                    ? Math.Min(currentLength, expectedLength)
+                    : currentLength;
+
+                byte[] data = expectedLength > 0
+                    ? new byte[expectedLength]
+                    : new byte[copyLength];
+
+                Marshal.Copy(dataPtr, data, 0, copyLength);
 
                 return new CameraFrame(data, Width, Height, timestamp);
             }
@@ -215,14 +302,38 @@ public sealed class MediaFoundationCamera : IDisposable
         }
     }
 
+    private void ReleaseResources()
+    {
+        if (_reader != null)
+        {
+            Marshal.ReleaseComObject(_reader);
+            _reader = null;
+        }
+
+        if (_mediaSource != null)
+        {
+            _mediaSource.Shutdown();
+            Marshal.ReleaseComObject(_mediaSource);
+            _mediaSource = null;
+        }
+
+        if (_devices != null)
+        {
+            foreach (IMFActivate device in _devices)
+            {
+                Marshal.ReleaseComObject(device);
+            }
+
+            _devices = null;
+        }
+    }
+
     private void ConfigureVideoFormat(int width, int height)
     {
         if (_reader == null)
             throw new InvalidOperationException("SourceReader is null.");
 
-        HResult hr;
-
-        hr = _reader.SetStreamSelection(
+        HResult hr = _reader.SetStreamSelection(
             (int)MF_SOURCE_READER.AllStreams,
             false);
 
@@ -234,11 +345,42 @@ public sealed class MediaFoundationCamera : IDisposable
 
         MFError.ThrowExceptionForHR(hr);
 
+        if (TrySetVideoFormat(width, height, out int actualWidth, out int actualHeight, out Guid subtype))
+        {
+            Width = actualWidth;
+            Height = actualHeight;
+            CurrentSubtype = subtype;
+            return;
+        }
+
+        VideoFormat fallbackFormat = GetBestNativeVideoFormat(width, height);
+
+        if (TrySetVideoFormat(fallbackFormat.Width, fallbackFormat.Height, out actualWidth, out actualHeight, out subtype))
+        {
+            Width = actualWidth;
+            Height = actualHeight;
+            CurrentSubtype = subtype;
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Camera does not support RGB32 output near {width}x{height}.");
+    }
+
+    private bool TrySetVideoFormat(int width, int height, out int actualWidth, out int actualHeight, out Guid subtype)
+    {
+        if (_reader == null)
+            throw new InvalidOperationException("SourceReader is null.");
+
+        actualWidth = width;
+        actualHeight = height;
+        subtype = MFMediaType.RGB32;
+
         IMFMediaType? mediaType = null;
 
         try
         {
-            hr = MFExtern.MFCreateMediaType(out mediaType);
+            HResult hr = MFExtern.MFCreateMediaType(out mediaType);
             MFError.ThrowExceptionForHR(hr);
 
             hr = mediaType.SetGUID(
@@ -267,13 +409,117 @@ public sealed class MediaFoundationCamera : IDisposable
                 null,
                 mediaType);
 
-            MFError.ThrowExceptionForHR(hr);
+            if (MFError.Failed(hr))
+                return false;
+
+            IMFMediaType? currentMediaType = null;
+
+            try
+            {
+                hr = _reader.GetCurrentMediaType(
+                    (int)MF_SOURCE_READER.FirstVideoStream,
+                    out currentMediaType);
+
+                if (MFError.Succeeded(hr) && currentMediaType != null)
+                {
+                    MFExtern.MFGetAttributeSize(
+                        currentMediaType,
+                        MFAttributesClsid.MF_MT_FRAME_SIZE,
+                        out actualWidth,
+                        out actualHeight);
+
+                    currentMediaType.GetGUID(
+                        MFAttributesClsid.MF_MT_SUBTYPE,
+                        out subtype);
+                }
+            }
+            finally
+            {
+                if (currentMediaType != null)
+                    Marshal.ReleaseComObject(currentMediaType);
+            }
+
+            return true;
         }
         finally
         {
             if (mediaType != null)
                 Marshal.ReleaseComObject(mediaType);
         }
+    }
+
+    private VideoFormat GetBestNativeVideoFormat(int preferredWidth, int preferredHeight)
+    {
+        if (_reader == null)
+            throw new InvalidOperationException("SourceReader is null.");
+
+        var formats = new List<VideoFormat>();
+
+        for (int index = 0; ; index++)
+        {
+            IMFMediaType? nativeType = null;
+
+            try
+            {
+                HResult hr = _reader.GetNativeMediaType(
+                    (int)MF_SOURCE_READER.FirstVideoStream,
+                    index,
+                    out nativeType);
+
+                if (hr == HResult.MF_E_NO_MORE_TYPES)
+                    break;
+
+                if (MFError.Failed(hr) || nativeType == null)
+                    continue;
+
+                int nativeWidth = 0;
+                int nativeHeight = 0;
+                MFExtern.MFGetAttributeSize(
+                    nativeType,
+                    MFAttributesClsid.MF_MT_FRAME_SIZE,
+                    out nativeWidth,
+                    out nativeHeight);
+
+                if (nativeWidth <= 0 || nativeHeight <= 0)
+                    continue;
+
+                nativeType.GetGUID(
+                    MFAttributesClsid.MF_MT_SUBTYPE,
+                    out Guid nativeSubtype);
+
+                formats.Add(new VideoFormat(nativeWidth, nativeHeight, nativeSubtype));
+            }
+            finally
+            {
+                if (nativeType != null)
+                    Marshal.ReleaseComObject(nativeType);
+            }
+        }
+
+        if (formats.Count == 0)
+            throw new InvalidOperationException("No video format found for camera.");
+
+        VideoFormat bestFormat = formats[0];
+        long bestScore = GetFormatScore(bestFormat, preferredWidth, preferredHeight);
+
+        for (int i = 1; i < formats.Count; i++)
+        {
+            long score = GetFormatScore(formats[i], preferredWidth, preferredHeight);
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestFormat = formats[i];
+            }
+        }
+
+        return bestFormat;
+    }
+
+    private static long GetFormatScore(VideoFormat format, int preferredWidth, int preferredHeight)
+    {
+        long widthDelta = format.Width - preferredWidth;
+        long heightDelta = format.Height - preferredHeight;
+        return widthDelta * widthDelta + heightDelta * heightDelta;
     }
 
     private IMFActivate[] EnumerateVideoDevices()
@@ -342,6 +588,22 @@ public sealed class MediaFoundationCamera : IDisposable
         ShutdownMediaFoundation();
 
         _disposed = true;
+    }
+
+    private readonly struct VideoFormat
+    {
+        public VideoFormat(int width, int height, Guid subtype)
+        {
+            Width = width;
+            Height = height;
+            Subtype = subtype;
+        }
+
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public Guid Subtype { get; }
     }
 }
 }

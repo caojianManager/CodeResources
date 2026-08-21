@@ -1,4 +1,5 @@
-﻿using EEGTool.Views.Basics;
+﻿using EEGTool.FrameWork.MediaFoundation;
+using EEGTool.Views.Basics;
 using Framework.Event;
 using Framework.MVVM.Commands;
 using FrameWork.Event;
@@ -9,6 +10,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace EEGTool.ViewModels
 {
@@ -30,8 +33,30 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
+        private ImageSource? _cameraImageSource;
+
+        public ImageSource? CameraImageSource
+        {
+            get => _cameraImageSource;
+            set
+            {
+                _cameraImageSource = value;
+                OnPropertyChanged(nameof(CameraImageSource));
+            }
+        }
+
+        private string? _cameraErrorMessage;
+
+        public string? CameraErrorMessage
+        {
+            get => _cameraErrorMessage;
+            set => SetProperty(ref _cameraErrorMessage, value);
+        }
+
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? RecordVideoCommand { get; set; }
+
+        private MediaFoundationCamera? _camera;
 
         public YellowSpotHomeViewModel()
         {
@@ -62,7 +87,57 @@ namespace EEGTool.ViewModels
 
         private void ClickRecordVideoBtn()
         {
+            if (_camera?.IsRunning == true)
+            {
+                StopCamera();
+                return;
+            }
 
+            StartCamera();
+        }
+
+        private void StartCamera()
+        {
+            StopCamera();
+            CameraErrorMessage = null;
+
+            var camera = new MediaFoundationCamera();
+            _camera = camera;
+
+            camera.FrameArrived += frame =>
+            {
+                App.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    CameraImageSource = BitmapSource.Create(
+                        frame.Width,
+                        frame.Height,
+                        96,
+                        96,
+                        PixelFormats.Bgr32,
+                        null,
+                        frame.Data,
+                        frame.Width * 4);
+                });
+            };
+
+            camera.CaptureFailed += ex =>
+            {
+                App.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    CameraErrorMessage = $"摄像头采集失败：{ex.Message}";
+                    StopCamera();
+                });
+            };
+
+            camera.StartCapture(cameraIndex: 0, width: 1280, height: 720);
+        }
+
+        private void StopCamera()
+        {
+            _camera?.Stop();
+            _camera?.Dispose();
+            _camera = null;
+            CameraImageSource = null;
         }
 
         public void OnHide()
