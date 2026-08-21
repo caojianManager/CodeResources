@@ -31,6 +31,7 @@ namespace EEGTool.ViewModels
         }
 
         public ICommand? BackHomeCommand { get; set; }
+        public ICommand? RecordVideoCommand { get; set; }
 
         public YellowSpotHomeViewModel()
         {
@@ -53,6 +54,15 @@ namespace EEGTool.ViewModels
             {
                 EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
             });
+            RecordVideoCommand = new RelayCommand((o) =>
+            {
+                ClickRecordVideoBtn();
+            });
+        }
+
+        private void ClickRecordVideoBtn()
+        {
+
         }
 
         public void OnHide()
