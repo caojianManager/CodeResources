@@ -30,9 +30,29 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
+        public ICommand? BackHomeCommand { get; set; }
+
+        public YellowSpotHomeViewModel()
+        {
+            ConfigureCommands();
+        }
+
         public void Init()
         {
- 
+
+        }
+
+        private void ConfigureCommands()
+        {
+            if (BackHomeCommand != null)
+            {
+                return;
+            }
+
+            BackHomeCommand = new RelayCommand((o) =>
+            {
+                EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(MainViewModel));
+            });
         }
 
         public void OnHide()

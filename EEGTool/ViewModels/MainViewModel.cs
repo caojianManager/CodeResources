@@ -33,6 +33,7 @@ namespace EEGTool.ViewModels
         public ICommand? PlaybackCommand { get; set; }
         public ICommand? TemplateCommand { get; set; }
         public ICommand? SettingsCommand { get; set; }
+        public ICommand? YellowSpotCommand { get; set; }
 
 
         public void Init()
@@ -52,14 +53,11 @@ namespace EEGTool.ViewModels
                 ClickCollectionBtn();
             });
 
-            TemplateCommand = new RelayCommand((o) =>
-            {
+            TemplateCommand = new RelayCommand((o) =>{
                 ClickTemplateBtn();
             });
-            SettingsCommand = new RelayCommand((o) =>
-            {
-                ClickSettingsBtn();
-            });
+            SettingsCommand = new RelayCommand((o) =>{ ClickSettingsBtn();});
+            YellowSpotCommand = new RelayCommand((o) => { ClickYellowSpotBtn();});
         }
 
         private void ClickTemplateBtn()
@@ -83,6 +81,11 @@ namespace EEGTool.ViewModels
 
             //Todo:cajian-临时测试地方后面恢复
             //EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(CollectionMonitorViewModel));
+        }
+
+        private void ClickYellowSpotBtn()
+        {
+            EventUtilManager.EventUitl.OnEvent<Type>(EventName.SWITCH_PAGE_WITH_TYPE, typeof(YellowSpotHomeViewModel));
         }
 
         public void OnHide()
