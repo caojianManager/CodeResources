@@ -137,7 +137,7 @@ namespace EEGTool.ViewModels
                 });
             };
 
-            camera.StartCapture(cameraIndex: 0, width: 1280, height: 720);
+            camera.StartCapture(cameraIndex: 0, width: 1920, height: 1080);
             IsRecording = true;
         }
 

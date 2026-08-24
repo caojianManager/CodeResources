@@ -92,12 +92,10 @@
             </Grid>
 
             <Grid Grid.Row="1">
-                <Grid HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Background="Green"
-                      Width="800" Height="600">
+                <Grid HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch">
                     <Image Source="{Binding CameraImageSource}"
-                            Stretch="Uniform" 
+                            Stretch="Fill" 
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"/>
                 </Grid>

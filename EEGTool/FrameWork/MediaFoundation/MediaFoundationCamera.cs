@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,7 +92,7 @@ public sealed class MediaFoundationCamera : IDisposable
 
         try
         {
-            hr = MFExtern.MFCreateAttributes(out readerAttributes, 3);
+            hr = MFExtern.MFCreateAttributes(out readerAttributes, 4);
             MFError.ThrowExceptionForHR(hr);
 
             hr = readerAttributes.SetUINT32(
@@ -100,7 +101,12 @@ public sealed class MediaFoundationCamera : IDisposable
             MFError.ThrowExceptionForHR(hr);
 
             hr = readerAttributes.SetUINT32(
-                MFAttributesClsid.MF_SOURCE_READER_DISABLE_DXVA,
+                MFAttributesClsid.MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS,
+                1);
+            MFError.ThrowExceptionForHR(hr);
+
+            hr = readerAttributes.SetUINT32(
+                MFAttributesClsid.MF_SOURCE_READER_ENABLE_TRANSCODE_ONLY_TRANSFORMS,
                 1);
             MFError.ThrowExceptionForHR(hr);
 
@@ -345,22 +351,25 @@ public sealed class MediaFoundationCamera : IDisposable
 
         MFError.ThrowExceptionForHR(hr);
 
-        if (TrySetVideoFormat(width, height, out int actualWidth, out int actualHeight, out Guid subtype))
+        foreach (VideoFormat nativeFormat in GetNativeVideoFormats(width, height))
         {
-            Width = actualWidth;
-            Height = actualHeight;
-            CurrentSubtype = subtype;
-            return;
-        }
+            Debug.WriteLine(
+                $"[MediaFoundationCamera] Try {nativeFormat.Width}x{nativeFormat.Height} {GetSubtypeName(nativeFormat.Subtype)} {nativeFormat.FrameRateNumerator}/{nativeFormat.FrameRateDenominator}");
 
-        VideoFormat fallbackFormat = GetBestNativeVideoFormat(width, height);
+            if (TrySetVideoFormat(nativeFormat, out int actualWidth, out int actualHeight, out Guid subtype))
+            {
+                Width = actualWidth;
+                Height = actualHeight;
+                CurrentSubtype = subtype;
 
-        if (TrySetVideoFormat(fallbackFormat.Width, fallbackFormat.Height, out actualWidth, out actualHeight, out subtype))
-        {
-            Width = actualWidth;
-            Height = actualHeight;
-            CurrentSubtype = subtype;
-            return;
+                Debug.WriteLine(
+                    $"[MediaFoundationCamera] Selected {Width}x{Height} {GetSubtypeName(CurrentSubtype)}");
+
+                return;
+            }
+
+            Debug.WriteLine(
+                $"[MediaFoundationCamera] Rejected {nativeFormat.Width}x{nativeFormat.Height} {GetSubtypeName(nativeFormat.Subtype)}");
         }
 
         throw new InvalidOperationException(
@@ -369,19 +378,42 @@ public sealed class MediaFoundationCamera : IDisposable
 
     private bool TrySetVideoFormat(int width, int height, out int actualWidth, out int actualHeight, out Guid subtype)
     {
+        return TrySetVideoFormat(
+            new VideoFormat(width, height, Guid.Empty, 0, 0, -1),
+            out actualWidth,
+            out actualHeight,
+            out subtype);
+    }
+
+    private bool TrySetVideoFormat(VideoFormat format, out int actualWidth, out int actualHeight, out Guid subtype)
+    {
         if (_reader == null)
             throw new InvalidOperationException("SourceReader is null.");
 
-        actualWidth = width;
-        actualHeight = height;
+        actualWidth = format.Width;
+        actualHeight = format.Height;
         subtype = MFMediaType.RGB32;
 
         IMFMediaType? mediaType = null;
+        IMFMediaType? nativeType = null;
 
         try
         {
             HResult hr = MFExtern.MFCreateMediaType(out mediaType);
             MFError.ThrowExceptionForHR(hr);
+
+            if (format.NativeTypeIndex >= 0)
+            {
+                hr = _reader.GetNativeMediaType(
+                    (int)MF_SOURCE_READER.FirstVideoStream,
+                    format.NativeTypeIndex,
+                    out nativeType);
+
+                MFError.ThrowExceptionForHR(hr);
+
+                hr = nativeType.CopyAllItems(mediaType);
+                MFError.ThrowExceptionForHR(hr);
+            }
 
             hr = mediaType.SetGUID(
                 MFAttributesClsid.MF_MT_MAJOR_TYPE,
@@ -399,10 +431,21 @@ public sealed class MediaFoundationCamera : IDisposable
             hr = MFExtern.MFSetAttributeSize(
                 mediaType,
                 MFAttributesClsid.MF_MT_FRAME_SIZE,
-                width,
-                height);
+                format.Width,
+                format.Height);
 
             MFError.ThrowExceptionForHR(hr);
+
+            if (format.FrameRateNumerator > 0 && format.FrameRateDenominator > 0)
+            {
+                hr = MFExtern.MFSetAttributeRatio(
+                    mediaType,
+                    MFAttributesClsid.MF_MT_FRAME_RATE,
+                    format.FrameRateNumerator,
+                    format.FrameRateDenominator);
+
+                MFError.ThrowExceptionForHR(hr);
+            }
 
             hr = _reader.SetCurrentMediaType(
                 (int)MF_SOURCE_READER.FirstVideoStream,
@@ -439,16 +482,19 @@ public sealed class MediaFoundationCamera : IDisposable
                     Marshal.ReleaseComObject(currentMediaType);
             }
 
-            return true;
+            return actualWidth == format.Width && actualHeight == format.Height;
         }
         finally
         {
+            if (nativeType != null)
+                Marshal.ReleaseComObject(nativeType);
+
             if (mediaType != null)
                 Marshal.ReleaseComObject(mediaType);
         }
     }
 
-    private VideoFormat GetBestNativeVideoFormat(int preferredWidth, int preferredHeight)
+    private List<VideoFormat> GetNativeVideoFormats(int preferredWidth, int preferredHeight)
     {
         if (_reader == null)
             throw new InvalidOperationException("SourceReader is null.");
@@ -487,7 +533,22 @@ public sealed class MediaFoundationCamera : IDisposable
                     MFAttributesClsid.MF_MT_SUBTYPE,
                     out Guid nativeSubtype);
 
-                formats.Add(new VideoFormat(nativeWidth, nativeHeight, nativeSubtype));
+                int frameRateNumerator = 0;
+                int frameRateDenominator = 0;
+
+                MFExtern.MFGetAttributeRatio(
+                    nativeType,
+                    MFAttributesClsid.MF_MT_FRAME_RATE,
+                    out frameRateNumerator,
+                    out frameRateDenominator);
+
+                formats.Add(new VideoFormat(
+                    nativeWidth,
+                    nativeHeight,
+                    nativeSubtype,
+                    frameRateNumerator,
+                    frameRateDenominator,
+                    index));
             }
             finally
             {
@@ -499,20 +560,11 @@ public sealed class MediaFoundationCamera : IDisposable
         if (formats.Count == 0)
             throw new InvalidOperationException("No video format found for camera.");
 
-        VideoFormat bestFormat = formats[0];
-        long bestScore = GetFormatScore(bestFormat, preferredWidth, preferredHeight);
+        formats.Sort((left, right) =>
+            GetFormatScore(left, preferredWidth, preferredHeight)
+                .CompareTo(GetFormatScore(right, preferredWidth, preferredHeight)));
 
-        for (int i = 1; i < formats.Count; i++)
-        {
-            long score = GetFormatScore(formats[i], preferredWidth, preferredHeight);
-            if (score < bestScore)
-            {
-                bestScore = score;
-                bestFormat = formats[i];
-            }
-        }
-
-        return bestFormat;
+        return formats;
     }
 
     private static long GetFormatScore(VideoFormat format, int preferredWidth, int preferredHeight)
@@ -520,6 +572,26 @@ public sealed class MediaFoundationCamera : IDisposable
         long widthDelta = format.Width - preferredWidth;
         long heightDelta = format.Height - preferredHeight;
         return widthDelta * widthDelta + heightDelta * heightDelta;
+    }
+
+    private static string GetSubtypeName(Guid subtype)
+    {
+        if (subtype == MFMediaType.RGB32)
+            return "RGB32";
+
+        if (subtype == MFMediaType.MJPG)
+            return "MJPG";
+
+        if (subtype == MFMediaType.NV12)
+            return "NV12";
+
+        if (subtype == MFMediaType.YUY2)
+            return "YUY2";
+
+        if (subtype == MFMediaType.UYVY)
+            return "UYVY";
+
+        return subtype.ToString();
     }
 
     private IMFActivate[] EnumerateVideoDevices()
@@ -592,11 +664,20 @@ public sealed class MediaFoundationCamera : IDisposable
 
     private readonly struct VideoFormat
     {
-        public VideoFormat(int width, int height, Guid subtype)
+        public VideoFormat(
+            int width,
+            int height,
+            Guid subtype,
+            int frameRateNumerator,
+            int frameRateDenominator,
+            int nativeTypeIndex)
         {
             Width = width;
             Height = height;
             Subtype = subtype;
+            FrameRateNumerator = frameRateNumerator;
+            FrameRateDenominator = frameRateDenominator;
+            NativeTypeIndex = nativeTypeIndex;
         }
 
         public int Width { get; }
@@ -604,6 +685,12 @@ public sealed class MediaFoundationCamera : IDisposable
         public int Height { get; }
 
         public Guid Subtype { get; }
+
+        public int FrameRateNumerator { get; }
+
+        public int FrameRateDenominator { get; }
+
+        public int NativeTypeIndex { get; }
     }
 }
 }
