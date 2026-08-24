@@ -1,6 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                    xmlns:ysv="clr-namespace:EEGTool.Views.YelloSpot"
                     xmlns:vm="clr-namespace:EEGTool.ViewModels">
 
     <DataTemplate DataType="{x:Type vm:YellowSpotHomeViewModel}">
@@ -112,13 +113,15 @@
             </Grid>
 
             <Grid Grid.Row="1">
-                <Grid HorizontalAlignment="Stretch"
+                <ysv:YelloSpotCaptureView HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"/>
+                <!--<Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch">
                     <Image Source="{Binding CameraImageSource}"
                             Stretch="Uniform" 
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"/>
-                </Grid>
+                </Grid>-->
              
                 <TextBlock Text="{Binding CameraErrorMessage}"
                            HorizontalAlignment="Center"
