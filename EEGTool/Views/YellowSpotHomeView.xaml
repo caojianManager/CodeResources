@@ -54,10 +54,39 @@
                             VerticalAlignment="Bottom"
                             Command="{Binding RecordVideoCommand}"
                             ToolTip="开始/暂停">
-                        <iconPacks:PackIconEntypo Kind="Camera"
-                                 Width="20"
-                                 Height="20"
-                                 Foreground="#4D4D4D" />
+                        <Grid Width="20" Height="20">
+                            <iconPacks:PackIconEntypo Kind="Camera"
+                                      Width="20"
+                                      Height="20"
+                                      Foreground="#4D4D4D">
+                                <iconPacks:PackIconEntypo.Style>
+                                    <Style TargetType="{x:Type iconPacks:PackIconEntypo}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </iconPacks:PackIconEntypo.Style>
+                            </iconPacks:PackIconEntypo>
+
+                            <iconPacks:PackIconPhosphorIcons Kind="CameraSlashBold" 
+                                      Width="20"
+                                      Height="20"
+                                      Foreground="#4D4D4D">
+                                <iconPacks:PackIconPhosphorIcons.Style>
+                                    <Style TargetType="{x:Type iconPacks:PackIconPhosphorIcons}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </iconPacks:PackIconPhosphorIcons.Style>
+                            </iconPacks:PackIconPhosphorIcons>
+                        </Grid>
                     </Button>
                 </StackPanel>
             </Grid>

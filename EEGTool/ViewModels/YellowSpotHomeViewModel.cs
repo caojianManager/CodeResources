@@ -53,6 +53,14 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _cameraErrorMessage, value);
         }
 
+        private bool _isRecording;
+
+        public bool IsRecording
+        {
+            get => _isRecording;
+            set => SetProperty(ref _isRecording, value);
+        }
+
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? RecordVideoCommand { get; set; }
 
@@ -87,7 +95,7 @@ namespace EEGTool.ViewModels
 
         private void ClickRecordVideoBtn()
         {
-            if (_camera?.IsRunning == true)
+            if (IsRecording || _camera?.IsRunning == true)
             {
                 StopCamera();
                 return;
@@ -130,6 +138,7 @@ namespace EEGTool.ViewModels
             };
 
             camera.StartCapture(cameraIndex: 0, width: 1280, height: 720);
+            IsRecording = true;
         }
 
         private void StopCamera()
@@ -138,6 +147,7 @@ namespace EEGTool.ViewModels
             _camera?.Dispose();
             _camera = null;
             CameraImageSource = null;
+            IsRecording = false;
         }
 
         public void OnHide()
