@@ -88,6 +88,26 @@
                             </iconPacks:PackIconPhosphorIcons>
                         </Grid>
                     </Button>
+
+                    <ComboBox Width="150"
+                              Height="24"
+                              Margin="8,0,0,3"
+                              VerticalAlignment="Bottom"
+                              ItemsSource="{Binding CameraQualityOptions}"
+                              SelectedItem="{Binding SelectedCameraQuality}"
+                              DisplayMemberPath="Name"
+                              ToolTip="视频质量">
+                        <ComboBox.Style>
+                            <Style TargetType="{x:Type ComboBox}">
+                                <Setter Property="IsEnabled" Value="True"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
                 </StackPanel>
             </Grid>
 
@@ -95,7 +115,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch">
                     <Image Source="{Binding CameraImageSource}"
-                            Stretch="Fill" 
+                            Stretch="Uniform" 
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"/>
                 </Grid>

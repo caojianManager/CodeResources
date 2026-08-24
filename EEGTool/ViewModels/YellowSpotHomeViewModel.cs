@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -61,13 +62,34 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isRecording, value);
         }
 
+        public IReadOnlyList<CameraQualityOption> CameraQualityOptions { get; } =
+            new[]
+            {
+                new CameraQualityOption("1080p 16:9 30fps", 1920, 1080, 30),
+                new CameraQualityOption("720p 16:9 30fps", 1280, 720, 30),
+                new CameraQualityOption("360p 16:9 30fps", 640, 360, 30),
+                new CameraQualityOption("960p 4:3 30fps", 1280, 960, 30),
+                new CameraQualityOption("480p 4:3 30fps", 640, 480, 30)
+            };
+
+        private CameraQualityOption _selectedCameraQuality;
+
+        public CameraQualityOption SelectedCameraQuality
+        {
+            get => _selectedCameraQuality;
+            set => SetProperty(ref _selectedCameraQuality, value);
+        }
+
         public ICommand? BackHomeCommand { get; set; }
         public ICommand? RecordVideoCommand { get; set; }
 
         private MediaFoundationCamera? _camera;
+        private int _isPreviewUpdateQueued;
+        private long _lastPreviewUpdateMilliseconds;
 
         public YellowSpotHomeViewModel()
         {
+            _selectedCameraQuality = CameraQualityOptions[0];
             ConfigureCommands();
         }
 
@@ -114,17 +136,40 @@ namespace EEGTool.ViewModels
 
             camera.FrameArrived += frame =>
             {
+                long now = Environment.TickCount64;
+                if (now - _lastPreviewUpdateMilliseconds < 33)
+                {
+                    return;
+                }
+
+                _lastPreviewUpdateMilliseconds = now;
+
+                if (Interlocked.Exchange(ref _isPreviewUpdateQueued, 1) == 1)
+                {
+                    return;
+                }
+
                 App.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    CameraImageSource = BitmapSource.Create(
-                        frame.Width,
-                        frame.Height,
-                        96,
-                        96,
-                        PixelFormats.Bgr32,
-                        null,
-                        frame.Data,
-                        frame.Width * 4);
+                    try
+                    {
+                        BitmapSource imageSource = BitmapSource.Create(
+                            frame.Width,
+                            frame.Height,
+                            96,
+                            96,
+                            PixelFormats.Bgr32,
+                            null,
+                            frame.Data,
+                            frame.Width * 4);
+
+                        imageSource.Freeze();
+                        CameraImageSource = imageSource;
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _isPreviewUpdateQueued, 0);
+                    }
                 });
             };
 
@@ -137,7 +182,12 @@ namespace EEGTool.ViewModels
                 });
             };
 
-            camera.StartCapture(cameraIndex: 0, width: 1920, height: 1080);
+            camera.StartCaptureSystemQuality(
+                cameraIndex: 0,
+                width: SelectedCameraQuality.Width,
+                height: SelectedCameraQuality.Height,
+                frameRate: SelectedCameraQuality.FrameRate);
+
             IsRecording = true;
         }
 
@@ -148,6 +198,8 @@ namespace EEGTool.ViewModels
             _camera = null;
             CameraImageSource = null;
             IsRecording = false;
+            Interlocked.Exchange(ref _isPreviewUpdateQueued, 0);
+            _lastPreviewUpdateMilliseconds = 0;
         }
 
         public void OnHide()
@@ -159,5 +211,24 @@ namespace EEGTool.ViewModels
         {
 
         }
+    }
+
+    public sealed class CameraQualityOption
+    {
+        public CameraQualityOption(string name, int width, int height, int frameRate)
+        {
+            Name = name;
+            Width = width;
+            Height = height;
+            FrameRate = frameRate;
+        }
+
+        public string Name { get; }
+
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public int FrameRate { get; }
     }
 }
