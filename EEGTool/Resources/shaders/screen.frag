@@ -16,6 +16,7 @@ uniform float uBrightness;
 uniform float uContrast;
 uniform float uSaturation;
 uniform float uSharpness;
+uniform float uOutline;
 
 vec4 sampleAdjustedColor(vec2 uv)
 {
@@ -28,12 +29,21 @@ vec4 sampleAdjustedColor(vec2 uv)
     vec3 down = texture(uFrameTexture, clamp(uv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0))).rgb;
 
     vec3 edgeDetail = center.rgb * 4.0 - left - right - up - down;
+    float centerGray = dot(center.rgb, vec3(0.299, 0.587, 0.114));
+    float edge =
+        abs(centerGray - dot(left, vec3(0.299, 0.587, 0.114))) +
+        abs(centerGray - dot(right, vec3(0.299, 0.587, 0.114))) +
+        abs(centerGray - dot(up, vec3(0.299, 0.587, 0.114))) +
+        abs(centerGray - dot(down, vec3(0.299, 0.587, 0.114)));
+
     vec3 rgb = center.rgb + edgeDetail * uSharpness * 0.25;
 
     rgb = (rgb - vec3(0.5)) * uContrast + vec3(0.5);
-    float gray = dot(rgb, vec3(0.299, 0.587, 0.114));
-    rgb = mix(vec3(gray), rgb, uSaturation);
+    float adjustedGray = dot(rgb, vec3(0.299, 0.587, 0.114));
+    rgb = mix(vec3(adjustedGray), rgb, uSaturation);
     rgb += vec3(uBrightness);
+    float outlineMask = smoothstep(0.12, 0.35, edge * uOutline * 5.0);
+    rgb = mix(rgb, vec3(0.0), outlineMask * uOutline);
 
     return vec4(clamp(rgb, vec3(0.0), vec3(1.0)), center.a);
 }

@@ -101,6 +101,13 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+        public static readonly DependencyProperty ImageOutlineProperty =
+            DependencyProperty.Register(
+                nameof(ImageOutline),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int virtualKey);
 
@@ -133,6 +140,7 @@ namespace EEGTool.Views.YelloSpot
         private int _contrastLoc;
         private int _saturationLoc;
         private int _sharpnessLoc;
+        private int _outlineLoc;
         private int _indexCount;
         private bool _glResourcesInitialized;
         private byte[]? _pendingFrameData;
@@ -230,6 +238,12 @@ namespace EEGTool.Views.YelloSpot
             set => SetValue(ImageSharpnessProperty, value);
         }
 
+        public double ImageOutline
+        {
+            get => (double)GetValue(ImageOutlineProperty);
+            set => SetValue(ImageOutlineProperty, value);
+        }
+
         private static void OnCameraDepthRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((YelloSpotCaptureView)d).LimitCameraZoom();
@@ -320,6 +334,7 @@ namespace EEGTool.Views.YelloSpot
             _contrastLoc = GL.GetUniformLocation(_shaderProgram, "uContrast");
             _saturationLoc = GL.GetUniformLocation(_shaderProgram, "uSaturation");
             _sharpnessLoc = GL.GetUniformLocation(_shaderProgram, "uSharpness");
+            _outlineLoc = GL.GetUniformLocation(_shaderProgram, "uOutline");
 
             GL.BindTexture(TextureTarget.Texture2D, _textureId);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -415,6 +430,7 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform1(_contrastLoc, (float)Math.Clamp(ImageContrast / 100.0, 0.0, 2.0));
             GL.Uniform1(_saturationLoc, (float)Math.Clamp(ImageSaturation / 100.0, 0.0, 2.0));
             GL.Uniform1(_sharpnessLoc, (float)Math.Clamp(ImageSharpness / 20.0, 0.0, 5.0));
+            GL.Uniform1(_outlineLoc, (float)Math.Clamp(ImageOutline / 100.0, 0.0, 1.0));
         }
 
         private void DetailPanel_Click(object sender, RoutedEventArgs e)

@@ -122,6 +122,14 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _imageSharpness, value);
         }
 
+        private double _imageOutline;
+
+        public double ImageOutline
+        {
+            get => _imageOutline;
+            set => SetProperty(ref _imageOutline, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage
