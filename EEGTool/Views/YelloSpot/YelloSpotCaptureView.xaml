@@ -10,8 +10,8 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <Style x:Key="MagnifierSwitchStyle" TargetType="{x:Type ToggleButton}">
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Height" Value="24"/>
+            <Setter Property="Width" Value="45"/>
+            <Setter Property="Height" Value="20"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -22,10 +22,10 @@
                               Height="{TemplateBinding Height}">
                             <Border x:Name="Track"
                                     Background="LightGray"
-                                    CornerRadius="12"/>
+                                    CornerRadius="10"/>
                             <Border x:Name="Thumb"
-                                    Width="20"
-                                    Height="20"
+                                    Width="15"
+                                    Height="15"
                                     Margin="3,0,0,0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
@@ -77,6 +77,24 @@
                                               Style="{StaticResource MagnifierSwitchStyle}"
                                               VerticalAlignment="Center"
                                               IsChecked="{Binding IsMagnifierEnabled, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="半径数值:" FontSize="12"
+                                           VerticalAlignment="Center"/>
+                                <Slider Width="150"
+                                        Minimum="0"
+                                        Maximum="50"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Value="{Binding MagnifierRadius, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
+                                <TextBlock Width="32"
+                                           Margin="8,0,0,0"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding MagnifierRadius, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, StringFormat={}{0:0}}"/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>

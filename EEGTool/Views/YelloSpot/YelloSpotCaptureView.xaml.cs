@@ -33,6 +33,13 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new PropertyMetadata(true));
 
+        public static readonly DependencyProperty MagnifierRadiusProperty =
+            DependencyProperty.Register(
+                nameof(MagnifierRadius),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new PropertyMetadata(28.0));
+
         private readonly float[] vertices = new float[]
         {
             -1f, -1f, 0f, 1f,
@@ -91,6 +98,12 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (bool)GetValue(IsMagnifierEnabledProperty);
             set => SetValue(IsMagnifierEnabledProperty, value);
+        }
+
+        public double MagnifierRadius
+        {
+            get => (double)GetValue(MagnifierRadiusProperty);
+            set => SetValue(MagnifierRadiusProperty, value);
         }
 
         private static void OnCameraFrameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -247,7 +260,7 @@ namespace EEGTool.Views.YelloSpot
         {
             GL.Uniform2(_magnifierCenterUvLoc, _magnifierCenterUvX, _magnifierCenterUvY);
             GL.Uniform2(_magnifierCenterLocalLoc, _magnifierCenterLocalX, _magnifierCenterLocalY);
-            GL.Uniform1(_magnifierRadiusLoc, 0.28f);
+            GL.Uniform1(_magnifierRadiusLoc, (float)Math.Clamp(MagnifierRadius / 100.0, 0.0, 0.5));
             GL.Uniform1(_magnificationLoc, 2.2f);
             GL.Uniform1(_magnifierEnabledLoc, IsMagnifierEnabled && _isMagnifierActive ? 1 : 0);
             GL.Uniform1(_viewportAspectLoc, (float)viewportWidth / viewportHeight);

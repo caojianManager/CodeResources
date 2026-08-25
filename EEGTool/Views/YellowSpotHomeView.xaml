@@ -116,7 +116,8 @@
                 <ysv:YelloSpotCaptureView HorizontalAlignment="Stretch"
                                           VerticalAlignment="Stretch"
                                           CameraFrame="{Binding LatestCameraFrame}"
-                                          IsMagnifierEnabled="{Binding IsMagnifierEnabled}"/>
+                                          IsMagnifierEnabled="{Binding IsMagnifierEnabled}"
+                                          MagnifierRadius="{Binding MagnifierRadius}"/>
                 <TextBlock Text="{Binding CameraErrorMessage}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"
