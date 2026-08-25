@@ -73,6 +73,34 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+        public static readonly DependencyProperty ImageBrightnessProperty =
+            DependencyProperty.Register(
+                nameof(ImageBrightness),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public static readonly DependencyProperty ImageContrastProperty =
+            DependencyProperty.Register(
+                nameof(ImageContrast),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(100.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public static readonly DependencyProperty ImageSaturationProperty =
+            DependencyProperty.Register(
+                nameof(ImageSaturation),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(100.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public static readonly DependencyProperty ImageSharpnessProperty =
+            DependencyProperty.Register(
+                nameof(ImageSharpness),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int virtualKey);
 
@@ -101,6 +129,10 @@ namespace EEGTool.Views.YelloSpot
         private int _magnificationLoc;
         private int _magnifierEnabledLoc;
         private int _viewportAspectLoc;
+        private int _brightnessLoc;
+        private int _contrastLoc;
+        private int _saturationLoc;
+        private int _sharpnessLoc;
         private int _indexCount;
         private bool _glResourcesInitialized;
         private byte[]? _pendingFrameData;
@@ -172,6 +204,30 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (double)GetValue(CameraOffsetYProperty);
             set => SetValue(CameraOffsetYProperty, value);
+        }
+
+        public double ImageBrightness
+        {
+            get => (double)GetValue(ImageBrightnessProperty);
+            set => SetValue(ImageBrightnessProperty, value);
+        }
+
+        public double ImageContrast
+        {
+            get => (double)GetValue(ImageContrastProperty);
+            set => SetValue(ImageContrastProperty, value);
+        }
+
+        public double ImageSaturation
+        {
+            get => (double)GetValue(ImageSaturationProperty);
+            set => SetValue(ImageSaturationProperty, value);
+        }
+
+        public double ImageSharpness
+        {
+            get => (double)GetValue(ImageSharpnessProperty);
+            set => SetValue(ImageSharpnessProperty, value);
         }
 
         private static void OnCameraDepthRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -260,6 +316,10 @@ namespace EEGTool.Views.YelloSpot
             _magnificationLoc = GL.GetUniformLocation(_shaderProgram, "uMagnification");
             _magnifierEnabledLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierEnabled");
             _viewportAspectLoc = GL.GetUniformLocation(_shaderProgram, "uViewportAspect");
+            _brightnessLoc = GL.GetUniformLocation(_shaderProgram, "uBrightness");
+            _contrastLoc = GL.GetUniformLocation(_shaderProgram, "uContrast");
+            _saturationLoc = GL.GetUniformLocation(_shaderProgram, "uSaturation");
+            _sharpnessLoc = GL.GetUniformLocation(_shaderProgram, "uSharpness");
 
             GL.BindTexture(TextureTarget.Texture2D, _textureId);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -300,6 +360,7 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform1(_textureLoc, 0);
             SetUniformScale(viewportWidth, viewportHeight);
             SetMagnifierUniforms(viewportWidth, viewportHeight);
+            SetImageAdjustmentUniforms();
             GL.BindVertexArray(_vao);
 
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
@@ -346,6 +407,14 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform1(_magnificationLoc, 2.2f);
             GL.Uniform1(_magnifierEnabledLoc, IsMagnifierEnabled && _isMagnifierActive ? 1 : 0);
             GL.Uniform1(_viewportAspectLoc, (float)viewportWidth / viewportHeight);
+        }
+
+        private void SetImageAdjustmentUniforms()
+        {
+            GL.Uniform1(_brightnessLoc, (float)Math.Clamp(ImageBrightness / 100.0, -1.0, 1.0));
+            GL.Uniform1(_contrastLoc, (float)Math.Clamp(ImageContrast / 100.0, 0.0, 2.0));
+            GL.Uniform1(_saturationLoc, (float)Math.Clamp(ImageSaturation / 100.0, 0.0, 2.0));
+            GL.Uniform1(_sharpnessLoc, (float)Math.Clamp(ImageSharpness / 20.0, 0.0, 5.0));
         }
 
         private void DetailPanel_Click(object sender, RoutedEventArgs e)

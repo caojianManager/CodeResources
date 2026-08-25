@@ -90,6 +90,38 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _cameraOffsetY, value);
         }
 
+        private double _imageBrightness;
+
+        public double ImageBrightness
+        {
+            get => _imageBrightness;
+            set => SetProperty(ref _imageBrightness, value);
+        }
+
+        private double _imageContrast = 100.0;
+
+        public double ImageContrast
+        {
+            get => _imageContrast;
+            set => SetProperty(ref _imageContrast, value);
+        }
+
+        private double _imageSaturation = 100.0;
+
+        public double ImageSaturation
+        {
+            get => _imageSaturation;
+            set => SetProperty(ref _imageSaturation, value);
+        }
+
+        private double _imageSharpness;
+
+        public double ImageSharpness
+        {
+            get => _imageSharpness;
+            set => SetProperty(ref _imageSharpness, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage

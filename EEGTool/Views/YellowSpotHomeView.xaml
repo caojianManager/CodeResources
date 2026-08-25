@@ -121,7 +121,11 @@
                                           CameraZoom="{Binding CameraZoom, Mode=TwoWay}"
                                           CameraDepthRange="{Binding CameraDepthRange}"
                                           CameraOffsetX="{Binding CameraOffsetX, Mode=TwoWay}"
-                                          CameraOffsetY="{Binding CameraOffsetY, Mode=TwoWay}"/>
+                                          CameraOffsetY="{Binding CameraOffsetY, Mode=TwoWay}"
+                                          ImageBrightness="{Binding ImageBrightness, Mode=TwoWay}"
+                                          ImageContrast="{Binding ImageContrast, Mode=TwoWay}"
+                                          ImageSaturation="{Binding ImageSaturation, Mode=TwoWay}"
+                                          ImageSharpness="{Binding ImageSharpness, Mode=TwoWay}"/>
                 <TextBlock Text="{Binding CameraErrorMessage}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"
