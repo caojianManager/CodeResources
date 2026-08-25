@@ -46,6 +46,14 @@ namespace EEGTool.ViewModels
             }
         }
 
+        private CameraFrame? _latestCameraFrame;
+
+        public CameraFrame? LatestCameraFrame
+        {
+            get => _latestCameraFrame;
+            set => SetProperty(ref _latestCameraFrame, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage
@@ -153,18 +161,7 @@ namespace EEGTool.ViewModels
                 {
                     try
                     {
-                        BitmapSource imageSource = BitmapSource.Create(
-                            frame.Width,
-                            frame.Height,
-                            96,
-                            96,
-                            PixelFormats.Bgr32,
-                            null,
-                            frame.Data,
-                            frame.Width * 4);
-
-                        imageSource.Freeze();
-                        CameraImageSource = imageSource;
+                        LatestCameraFrame = frame;
                     }
                     finally
                     {
@@ -197,6 +194,7 @@ namespace EEGTool.ViewModels
             _camera?.Dispose();
             _camera = null;
             CameraImageSource = null;
+            LatestCameraFrame = null;
             IsRecording = false;
             Interlocked.Exchange(ref _isPreviewUpdateQueued, 0);
             _lastPreviewUpdateMilliseconds = 0;

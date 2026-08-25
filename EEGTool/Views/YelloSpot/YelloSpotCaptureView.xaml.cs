@@ -1,20 +1,9 @@
-﻿using FrameWork.Tools;
+using EEGTool.FrameWork.MediaFoundation;
+using FrameWork.Tools;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EEGTool.Views.YelloSpot
 {
@@ -23,32 +12,68 @@ namespace EEGTool.Views.YelloSpot
     /// </summary>
     public partial class YelloSpotCaptureView : UserControl
     {
-        //1.顶点数据:矩形屏幕,顶点数据/索引
-        private float[] vertices = new float[]
+        public static readonly DependencyProperty CameraFrameProperty =
+            DependencyProperty.Register(
+                nameof(CameraFrame),
+                typeof(CameraFrame),
+                typeof(YelloSpotCaptureView),
+                new PropertyMetadata(null, OnCameraFrameChanged));
+
+        private readonly float[] vertices = new float[]
         {
-            0,0,0,
-            0,1,0,
-            1,1,0,
-            1,0,0,
-        };
-        private int[] indices = new int[]
-        {
-            0,1,2,
-            0,2,3,
+            -1f, -1f, 0f, 1f,
+            -1f,  1f, 0f, 0f,
+             1f,  1f, 1f, 0f,
+             1f, -1f, 1f, 1f,
         };
 
-        private int _vao, _vbo, _ebo, _shaderProgram; //VAO,VBO,EBO,Shader
-        private int _modelLoc, _viewLoc, _projLoc;    //M-V-P 模型-观察-投影矩阵的句柄
-        private int _indexCount;                      //索引的数量
-        private bool _glResourcesInitialized = false; //资源是否进行了初始化
+        private readonly int[] indices = new int[]
+        {
+            0, 1, 2,
+            0, 2, 3,
+        };
 
+        private readonly object _frameLock = new object();
+        private int _vao, _vbo, _ebo, _shaderProgram, _textureId;
+        private int _textureLoc;
+        private int _scaleLoc;
+        private int _indexCount;
+        private bool _glResourcesInitialized;
+        private byte[]? _pendingFrameData;
+        private int _pendingFrameWidth;
+        private int _pendingFrameHeight;
+        private bool _hasPendingFrame;
+        private int _textureWidth;
+        private int _textureHeight;
+        private bool _hasTextureFrame;
 
         public YelloSpotCaptureView()
         {
             InitializeComponent();
         }
 
-        //Step 2: 初始化绘制所需要的资源
+        public CameraFrame? CameraFrame
+        {
+            get => (CameraFrame?)GetValue(CameraFrameProperty);
+            set => SetValue(CameraFrameProperty, value);
+        }
+
+        private static void OnCameraFrameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((YelloSpotCaptureView)d).QueueFrame(e.NewValue as CameraFrame);
+        }
+
+        private void QueueFrame(CameraFrame? frame)
+        {
+            lock (_frameLock)
+            {
+                _pendingFrameData = frame?.Data;
+                _pendingFrameWidth = frame?.Width ?? 0;
+                _pendingFrameHeight = frame?.Height ?? 0;
+                _hasPendingFrame = true;
+            }
+        }
+
         private void OpenTkControl_Init()
         {
             InitGLResources();
@@ -56,11 +81,17 @@ namespace EEGTool.Views.YelloSpot
 
         private void InitGLResources()
         {
+            if (_glResourcesInitialized)
+            {
+                return;
+            }
+
             _indexCount = indices.Length;
 
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();
             _ebo = GL.GenBuffer();
+            _textureId = GL.GenTexture();
 
             GL.BindVertexArray(_vao);
 
@@ -70,12 +101,13 @@ namespace EEGTool.Views.YelloSpot
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
 
+            int stride = 4 * sizeof(float);
 
-            int stride = 3 * sizeof(float);
-
-            // 位置
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, stride, 0);
             GL.EnableVertexAttribArray(0);
+
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride, 2 * sizeof(float));
+            GL.EnableVertexAttribArray(1);
 
             string vertexShaderSource = ShaderTool.LoadShaderSource("screen.vert");
             string fragmentShaderSource = ShaderTool.LoadShaderSource("screen.frag");
@@ -83,12 +115,12 @@ namespace EEGTool.Views.YelloSpot
             int vertexShader = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vertexShader, vertexShaderSource);
             GL.CompileShader(vertexShader);
-            var isVertOK = ShaderTool.CheckShaderCompile(vertexShader);
+            ShaderTool.CheckShaderCompile(vertexShader);
 
             int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
             GL.ShaderSource(fragmentShader, fragmentShaderSource);
             GL.CompileShader(fragmentShader);
-            var isFragOK = ShaderTool.CheckShaderCompile(fragmentShader);
+            ShaderTool.CheckShaderCompile(fragmentShader);
 
             _shaderProgram = GL.CreateProgram();
             GL.AttachShader(_shaderProgram, vertexShader);
@@ -98,40 +130,135 @@ namespace EEGTool.Views.YelloSpot
             GL.DeleteShader(vertexShader);
             GL.DeleteShader(fragmentShader);
 
-            _modelLoc = GL.GetUniformLocation(_shaderProgram, "model");
-            _viewLoc = GL.GetUniformLocation(_shaderProgram, "view");
-            _projLoc = GL.GetUniformLocation(_shaderProgram, "projection");
+            _textureLoc = GL.GetUniformLocation(_shaderProgram, "uFrameTexture");
+            _scaleLoc = GL.GetUniformLocation(_shaderProgram, "uScale");
+
+            GL.BindTexture(TextureTarget.Texture2D, _textureId);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
 
             _glResourcesInitialized = true;
-
         }
 
-        //Step 3:渲染帧
         private void OpenTkControl_OnRender(TimeSpan obj)
         {
             if (!_glResourcesInitialized)
             {
-                InitGLResources(); // 初始化一次
+                InitGLResources();
             }
 
-            GL.Viewport(0, 0, (int)ActualWidth, (int)ActualHeight);
-            GL.ClearColor(1f, 1f, 1f, 1.0f);
+            UploadPendingFrame();
+
+            int viewportWidth = Math.Max(1, (int)ActualWidth);
+            int viewportHeight = Math.Max(1, (int)ActualHeight);
+
+            GL.Viewport(0, 0, viewportWidth, viewportHeight);
+            GL.ClearColor(0f, 0f, 0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.DepthTest);
+
+            if (!_hasTextureFrame)
+            {
+                return;
+            }
 
             GL.UseProgram(_shaderProgram);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, _textureId);
+            GL.Uniform1(_textureLoc, 0);
+            SetUniformScale(viewportWidth, viewportHeight);
             GL.BindVertexArray(_vao);
 
-            Matrix4 model = Matrix4.Identity * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
-            Vector3 camPos = new Vector3(0, 0, 0.5f);
-            Matrix4 view = Matrix4.LookAt(camPos, Vector3.Zero, Vector3.UnitY);
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, (float)ActualWidth / (float)ActualHeight, 0.1f, 100.0f);
-
-            GL.UniformMatrix4(_modelLoc, false, ref model);
-            GL.UniformMatrix4(_viewLoc, false, ref view);
-            GL.UniformMatrix4(_projLoc, false, ref projection);
-
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
+        }
+
+        private void SetUniformScale(int viewportWidth, int viewportHeight)
+        {
+            float scaleX = 1f;
+            float scaleY = 1f;
+
+            if (_textureWidth > 0 && _textureHeight > 0)
+            {
+                float viewportAspect = (float)viewportWidth / viewportHeight;
+                float textureAspect = (float)_textureWidth / _textureHeight;
+
+                if (viewportAspect > textureAspect)
+                {
+                    scaleX = textureAspect / viewportAspect;
+                }
+                else
+                {
+                    scaleY = viewportAspect / textureAspect;
+                }
+            }
+
+            GL.Uniform2(_scaleLoc, scaleX, scaleY);
+        }
+
+        private void UploadPendingFrame()
+        {
+            byte[]? data;
+            int width;
+            int height;
+
+            lock (_frameLock)
+            {
+                if (!_hasPendingFrame)
+                {
+                    return;
+                }
+
+                data = _pendingFrameData;
+                width = _pendingFrameWidth;
+                height = _pendingFrameHeight;
+                _hasPendingFrame = false;
+            }
+
+            if (data == null || width <= 0 || height <= 0)
+            {
+                _hasTextureFrame = false;
+                _textureWidth = 0;
+                _textureHeight = 0;
+                return;
+            }
+
+            GL.BindTexture(TextureTarget.Texture2D, _textureId);
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
+
+            if (!_hasTextureFrame || width != _textureWidth || height != _textureHeight)
+            {
+                GL.TexImage2D(
+                    TextureTarget.Texture2D,
+                    0,
+                    PixelInternalFormat.Rgba,
+                    width,
+                    height,
+                    0,
+                    PixelFormat.Bgra,
+                    PixelType.UnsignedByte,
+                    data);
+
+                _textureWidth = width;
+                _textureHeight = height;
+            }
+            else
+            {
+                GL.TexSubImage2D(
+                    TextureTarget.Texture2D,
+                    0,
+                    0,
+                    0,
+                    width,
+                    height,
+                    PixelFormat.Bgra,
+                    PixelType.UnsignedByte,
+                    data);
+            }
+
+            _hasTextureFrame = true;
         }
     }
 }
