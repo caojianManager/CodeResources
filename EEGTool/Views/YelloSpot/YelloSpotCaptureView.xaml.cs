@@ -1,4 +1,7 @@
-﻿using System;
+﻿using FrameWork.Tools;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,8 +15,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 
 namespace EEGTool.Views.YelloSpot
 {
@@ -76,12 +77,61 @@ namespace EEGTool.Views.YelloSpot
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
             GL.EnableVertexAttribArray(0);
 
+            string vertexShaderSource = ShaderTool.LoadShaderSource("screen.vert");
+            string fragmentShaderSource = ShaderTool.LoadShaderSource("screen.frag");
+
+            int vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexShaderSource);
+            GL.CompileShader(vertexShader);
+            var isVertOK = ShaderTool.CheckShaderCompile(vertexShader);
+
+            int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentShaderSource);
+            GL.CompileShader(fragmentShader);
+            var isFragOK = ShaderTool.CheckShaderCompile(fragmentShader);
+
+            _shaderProgram = GL.CreateProgram();
+            GL.AttachShader(_shaderProgram, vertexShader);
+            GL.AttachShader(_shaderProgram, fragmentShader);
+            GL.LinkProgram(_shaderProgram);
+
+            GL.DeleteShader(vertexShader);
+            GL.DeleteShader(fragmentShader);
+
+            _modelLoc = GL.GetUniformLocation(_shaderProgram, "model");
+            _viewLoc = GL.GetUniformLocation(_shaderProgram, "view");
+            _projLoc = GL.GetUniformLocation(_shaderProgram, "projection");
+
+            _glResourcesInitialized = true;
+
         }
 
         //Step 3:渲染帧
         private void OpenTkControl_OnRender(TimeSpan obj)
         {
+            if (!_glResourcesInitialized)
+            {
+                InitGLResources(); // 初始化一次
+            }
 
+            GL.Viewport(0, 0, (int)ActualWidth, (int)ActualHeight);
+            GL.ClearColor(1f, 1f, 1f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.Enable(EnableCap.DepthTest);
+
+            GL.UseProgram(_shaderProgram);
+            GL.BindVertexArray(_vao);
+
+            Matrix4 model = Matrix4.Identity * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
+            Vector3 camPos = new Vector3(0, 0, 0.5f);
+            Matrix4 view = Matrix4.LookAt(camPos, Vector3.Zero, Vector3.UnitY);
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, (float)ActualWidth / (float)ActualHeight, 0.1f, 100.0f);
+
+            GL.UniformMatrix4(_modelLoc, false, ref model);
+            GL.UniformMatrix4(_viewLoc, false, ref view);
+            GL.UniformMatrix4(_projLoc, false, ref projection);
+
+            GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
         }
     }
 }
