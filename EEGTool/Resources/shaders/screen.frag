@@ -15,26 +15,21 @@ uniform float uViewportAspect;
 
 void main()
 {
-    vec2 sampleUv = vUV;
     vec2 screenDelta = (vLocalPos - uMagnifierCenterLocal) * uScale;
     screenDelta.x *= uViewportAspect;
     float lensDistance = length(screenDelta);
 
-    if (uMagnifierEnabled == 1 && lensDistance < uMagnifierRadius)
-    {
-        sampleUv = uMagnifierCenterUv + (vUV - uMagnifierCenterUv) / uMagnification;
-        sampleUv = clamp(sampleUv, vec2(0.0), vec2(1.0));
-    }
+    vec2 magnifiedUv = uMagnifierCenterUv + (vUV - uMagnifierCenterUv) / uMagnification;
+    magnifiedUv = clamp(magnifiedUv, vec2(0.0), vec2(1.0));
 
-    vec4 color = texture(uFrameTexture, sampleUv);
+    vec4 normalColor = texture(uFrameTexture, vUV);
+    vec4 magnifiedColor = texture(uFrameTexture, magnifiedUv);
 
-    if (uMagnifierEnabled == 1)
-    {
-        float border = smoothstep(uMagnifierRadius, uMagnifierRadius - 0.012, lensDistance);
-        float outer = smoothstep(uMagnifierRadius + 0.012, uMagnifierRadius, lensDistance);
-        float ring = outer * (1.0 - border);
-        color.rgb = mix(color.rgb, vec3(1.0, 0.95, 0.25), ring * 0.85);
-    }
+    float feather = 0.025;
+    float lensMask = 1.0 - smoothstep(uMagnifierRadius - feather, uMagnifierRadius, lensDistance);
+    lensMask *= float(uMagnifierEnabled);
+
+    vec4 color = mix(normalColor, magnifiedColor, lensMask);
 
     FragColor = color;
 }
