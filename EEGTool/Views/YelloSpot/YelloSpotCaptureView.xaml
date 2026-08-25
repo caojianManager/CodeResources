@@ -8,6 +8,43 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <Style x:Key="MagnifierSwitchStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Grid Width="{TemplateBinding Width}"
+                              Height="{TemplateBinding Height}">
+                            <Border x:Name="Track"
+                                    Background="LightGray"
+                                    CornerRadius="12"/>
+                            <Border x:Name="Thumb"
+                                    Width="20"
+                                    Height="20"
+                                    Margin="3,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Background="#EEF4F8"
+                                    CornerRadius="10"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="#8DCCFA"/>
+                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                            </Trigger>
+                  
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <gl:OpenGLWindows  RenderAction="OpenTkControl_OnRender" Init="OpenTkControl_Init"/>
 
@@ -36,9 +73,10 @@
                             <StackPanel Orientation="Horizontal" Margin="10,5">
                                 <TextBlock Text="是否开启:" FontSize="12"
                                            VerticalAlignment="Center"/>
-                                <CheckBox Margin="8,0,0,0"
-                                          VerticalAlignment="Center"
-                                          IsChecked="{Binding IsMagnifierEnabled, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
+                                <ToggleButton Margin="8,0,0,0"
+                                              Style="{StaticResource MagnifierSwitchStyle}"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding IsMagnifierEnabled, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
