@@ -40,6 +40,13 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new PropertyMetadata(28.0));
 
+        public static readonly DependencyProperty CameraZoomProperty =
+            DependencyProperty.Register(
+                nameof(CameraZoom),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new PropertyMetadata(1.0));
+
         private readonly float[] vertices = new float[]
         {
             -1f, -1f, 0f, 1f,
@@ -86,6 +93,7 @@ namespace EEGTool.Views.YelloSpot
             InitializeComponent();
             MouseMove += YelloSpotCaptureView_MouseMove;
             MouseLeave += YelloSpotCaptureView_MouseLeave;
+            PreviewMouseWheel += YelloSpotCaptureView_PreviewMouseWheel;
         }
 
         public CameraFrame? CameraFrame
@@ -104,6 +112,12 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (double)GetValue(MagnifierRadiusProperty);
             set => SetValue(MagnifierRadiusProperty, value);
+        }
+
+        public double CameraZoom
+        {
+            get => (double)GetValue(CameraZoomProperty);
+            set => SetValue(CameraZoomProperty, value);
         }
 
         private static void OnCameraFrameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -250,6 +264,10 @@ namespace EEGTool.Views.YelloSpot
                 }
             }
 
+            float zoom = (float)Math.Clamp(CameraZoom, 0.5, 3.0);
+            scaleX *= zoom;
+            scaleY *= zoom;
+
             GL.Uniform2(_scaleLoc, scaleX, scaleY);
             _scaleX = scaleX;
             _scaleY = scaleY;
@@ -382,6 +400,19 @@ namespace EEGTool.Views.YelloSpot
         private void YelloSpotCaptureView_MouseLeave(object sender, MouseEventArgs e)
         {
             _isMagnifierActive = false;
+        }
+
+        private void YelloSpotCaptureView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            Point position = e.GetPosition(this);
+            if (position.X <= LeftColumn.ActualWidth)
+            {
+                return;
+            }
+
+            double step = e.Delta > 0 ? 0.1 : -0.1;
+            CameraZoom = Math.Clamp(CameraZoom + step, 0.5, 3.0);
+            e.Handled = true;
         }
 
         private void UpdateMagnifierPosition(Point position)

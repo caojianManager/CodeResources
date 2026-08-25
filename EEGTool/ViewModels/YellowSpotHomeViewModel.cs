@@ -58,6 +58,14 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _magnifierRadius, value);
         }
 
+        private double _cameraZoom = 1.0;
+
+        public double CameraZoom
+        {
+            get => _cameraZoom;
+            set => SetProperty(ref _cameraZoom, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage
