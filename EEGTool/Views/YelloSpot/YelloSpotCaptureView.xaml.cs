@@ -2,6 +2,8 @@ using EEGTool.FrameWork.MediaFoundation;
 using FrameWork.Tools;
 using OpenTK.Graphics.OpenGL;
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,6 +20,9 @@ namespace EEGTool.Views.YelloSpot
         private bool _isShowDetailPanel = true;
         private bool _isAnimationing;
         private Storyboard? _currentAnimation;
+        private Window? _ownerWindow;
+        private long _lastCameraMoveTimestamp;
+        private bool _isCameraKeyboardControlActive;
 
         public static readonly DependencyProperty CameraFrameProperty =
             DependencyProperty.Register(
@@ -54,6 +59,23 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new PropertyMetadata(3.0, OnCameraDepthRangeChanged));
 
+        public static readonly DependencyProperty CameraOffsetXProperty =
+            DependencyProperty.Register(
+                nameof(CameraOffsetX),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public static readonly DependencyProperty CameraOffsetYProperty =
+            DependencyProperty.Register(
+                nameof(CameraOffsetY),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int virtualKey);
+
         private readonly float[] vertices = new float[]
         {
             -1f, -1f, 0f, 1f,
@@ -72,6 +94,7 @@ namespace EEGTool.Views.YelloSpot
         private int _vao, _vbo, _ebo, _shaderProgram, _textureId;
         private int _textureLoc;
         private int _scaleLoc;
+        private int _offsetLoc;
         private int _magnifierCenterUvLoc;
         private int _magnifierCenterLocalLoc;
         private int _magnifierRadiusLoc;
@@ -89,6 +112,8 @@ namespace EEGTool.Views.YelloSpot
         private bool _hasTextureFrame;
         private float _scaleX = 1f;
         private float _scaleY = 1f;
+        private float _offsetX;
+        private float _offsetY;
         private float _magnifierCenterUvX = 0.5f;
         private float _magnifierCenterUvY = 0.5f;
         private float _magnifierCenterLocalX;
@@ -98,9 +123,13 @@ namespace EEGTool.Views.YelloSpot
         public YelloSpotCaptureView()
         {
             InitializeComponent();
+            Focusable = true;
             MouseMove += YelloSpotCaptureView_MouseMove;
             MouseLeave += YelloSpotCaptureView_MouseLeave;
             PreviewMouseWheel += YelloSpotCaptureView_PreviewMouseWheel;
+            PreviewMouseDown += YelloSpotCaptureView_PreviewMouseDown;
+            Loaded += YelloSpotCaptureView_Loaded;
+            Unloaded += YelloSpotCaptureView_Unloaded;
         }
 
         public CameraFrame? CameraFrame
@@ -131,6 +160,18 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (double)GetValue(CameraDepthRangeProperty);
             set => SetValue(CameraDepthRangeProperty, value);
+        }
+
+        public double CameraOffsetX
+        {
+            get => (double)GetValue(CameraOffsetXProperty);
+            set => SetValue(CameraOffsetXProperty, value);
+        }
+
+        public double CameraOffsetY
+        {
+            get => (double)GetValue(CameraOffsetYProperty);
+            set => SetValue(CameraOffsetYProperty, value);
         }
 
         private static void OnCameraDepthRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -212,6 +253,7 @@ namespace EEGTool.Views.YelloSpot
 
             _textureLoc = GL.GetUniformLocation(_shaderProgram, "uFrameTexture");
             _scaleLoc = GL.GetUniformLocation(_shaderProgram, "uScale");
+            _offsetLoc = GL.GetUniformLocation(_shaderProgram, "uOffset");
             _magnifierCenterUvLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierCenterUv");
             _magnifierCenterLocalLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierCenterLocal");
             _magnifierRadiusLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierRadius");
@@ -237,6 +279,7 @@ namespace EEGTool.Views.YelloSpot
             }
 
             UploadPendingFrame();
+            UpdateCameraOffsetByKeyboard();
 
             int viewportWidth = Math.Max(1, (int)ActualWidth);
             int viewportHeight = Math.Max(1, (int)ActualHeight);
@@ -286,9 +329,12 @@ namespace EEGTool.Views.YelloSpot
             scaleX *= zoom;
             scaleY *= zoom;
 
-            GL.Uniform2(_scaleLoc, scaleX, scaleY);
             _scaleX = scaleX;
             _scaleY = scaleY;
+            _offsetX = (float)Math.Clamp(CameraOffsetX, -2.0, 2.0);
+            _offsetY = (float)Math.Clamp(CameraOffsetY, -2.0, 2.0);
+            GL.Uniform2(_scaleLoc, scaleX, scaleY);
+            GL.Uniform2(_offsetLoc, _offsetX, _offsetY);
             UpdateMagnifierPosition(Mouse.GetPosition(this));
         }
 
@@ -412,12 +458,18 @@ namespace EEGTool.Views.YelloSpot
 
         private void YelloSpotCaptureView_MouseMove(object sender, MouseEventArgs e)
         {
+            if (IsPointInVideoArea(e.GetPosition(this)))
+            {
+                _isCameraKeyboardControlActive = true;
+            }
+
             UpdateMagnifierPosition(e.GetPosition(this));
         }
 
         private void YelloSpotCaptureView_MouseLeave(object sender, MouseEventArgs e)
         {
             _isMagnifierActive = false;
+            _isCameraKeyboardControlActive = false;
         }
 
         private void YelloSpotCaptureView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -428,9 +480,111 @@ namespace EEGTool.Views.YelloSpot
                 return;
             }
 
+            Focus();
+            _isCameraKeyboardControlActive = true;
             double step = e.Delta > 0 ? 0.1 : -0.1;
             CameraZoom = Math.Clamp(CameraZoom + step, 0.5, GetMaximumCameraZoom());
             e.Handled = true;
+        }
+
+        private void YelloSpotCaptureView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (IsPointInVideoArea(e.GetPosition(this)))
+            {
+                Focus();
+                _isCameraKeyboardControlActive = true;
+                return;
+            }
+
+            _isCameraKeyboardControlActive = false;
+        }
+
+        private void YelloSpotCaptureView_Loaded(object sender, RoutedEventArgs e)
+        {
+            Window? window = Window.GetWindow(this);
+            if (window == null || ReferenceEquals(_ownerWindow, window))
+            {
+                return;
+            }
+
+            _ownerWindow = window;
+        }
+
+        private void YelloSpotCaptureView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (_ownerWindow == null)
+            {
+                return;
+            }
+
+            _ownerWindow = null;
+        }
+
+        private void UpdateCameraOffsetByKeyboard()
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (_lastCameraMoveTimestamp == 0)
+            {
+                _lastCameraMoveTimestamp = now;
+                return;
+            }
+
+            double elapsedSeconds = (double)(now - _lastCameraMoveTimestamp) / Stopwatch.Frequency;
+            _lastCameraMoveTimestamp = now;
+
+            if (!_isCameraKeyboardControlActive || _ownerWindow?.IsActive != true)
+            {
+                return;
+            }
+
+            double xDirection = 0.0;
+            double yDirection = 0.0;
+
+            if (IsKeyPressed(Key.A))
+            {
+                xDirection -= 1.0;
+            }
+            if (IsKeyPressed(Key.D))
+            {
+                xDirection += 1.0;
+            }
+            if (IsKeyPressed(Key.W))
+            {
+                yDirection += 1.0;
+            }
+            if (IsKeyPressed(Key.S))
+            {
+                yDirection -= 1.0;
+            }
+
+            if (xDirection == 0.0 && yDirection == 0.0)
+            {
+                return;
+            }
+
+            double length = Math.Sqrt(xDirection * xDirection + yDirection * yDirection);
+            double distance = Math.Min(elapsedSeconds, 0.05) * 0.85;
+            CameraOffsetX = Math.Clamp(CameraOffsetX + xDirection / length * distance, -2.0, 2.0);
+            CameraOffsetY = Math.Clamp(CameraOffsetY + yDirection / length * distance, -2.0, 2.0);
+        }
+
+        private static bool IsKeyPressed(Key key)
+        {
+            int virtualKey = KeyInterop.VirtualKeyFromKey(key);
+            return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+        }
+
+        private bool IsMouseOverVideoArea()
+        {
+            return IsPointInVideoArea(Mouse.GetPosition(this));
+        }
+
+        private bool IsPointInVideoArea(Point position)
+        {
+            return position.X > LeftColumn.ActualWidth
+                   && position.X <= ActualWidth
+                   && position.Y >= 0
+                   && position.Y <= ActualHeight;
         }
 
         private double GetMaximumCameraZoom()
@@ -457,14 +611,17 @@ namespace EEGTool.Views.YelloSpot
             float ndcX = (float)(position.X / width * 2.0 - 1.0);
             float ndcY = (float)(1.0 - position.Y / height * 2.0);
 
-            if (Math.Abs(ndcX) > _scaleX || Math.Abs(ndcY) > _scaleY)
+            float localX = (ndcX - _offsetX) / _scaleX;
+            float localY = (ndcY - _offsetY) / _scaleY;
+
+            if (Math.Abs(localX) > 1f || Math.Abs(localY) > 1f)
             {
                 _isMagnifierActive = false;
                 return;
             }
 
-            _magnifierCenterLocalX = ndcX / _scaleX;
-            _magnifierCenterLocalY = ndcY / _scaleY;
+            _magnifierCenterLocalX = localX;
+            _magnifierCenterLocalY = localY;
             _magnifierCenterUvX = (_magnifierCenterLocalX + 1f) * 0.5f;
             _magnifierCenterUvY = (1f - _magnifierCenterLocalY) * 0.5f;
             _isMagnifierActive = true;

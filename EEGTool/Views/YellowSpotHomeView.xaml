@@ -118,8 +118,10 @@
                                           CameraFrame="{Binding LatestCameraFrame}"
                                           IsMagnifierEnabled="{Binding IsMagnifierEnabled}"
                                           MagnifierRadius="{Binding MagnifierRadius}"
-                                          CameraZoom="{Binding CameraZoom}"
-                                          CameraDepthRange="{Binding CameraDepthRange}"/>
+                                          CameraZoom="{Binding CameraZoom, Mode=TwoWay}"
+                                          CameraDepthRange="{Binding CameraDepthRange}"
+                                          CameraOffsetX="{Binding CameraOffsetX, Mode=TwoWay}"
+                                          CameraOffsetY="{Binding CameraOffsetY, Mode=TwoWay}"/>
                 <TextBlock Text="{Binding CameraErrorMessage}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"

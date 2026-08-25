@@ -6,10 +6,11 @@ out vec2 vUV;
 out vec2 vLocalPos;
 
 uniform vec2 uScale;
+uniform vec2 uOffset;
 
 void main()
 {
     vUV = aUV;
     vLocalPos = aPos;
-    gl_Position = vec4(aPos * uScale, 0.0, 1.0);
+    gl_Position = vec4(aPos * uScale + uOffset, 0.0, 1.0);
 }

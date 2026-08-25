@@ -74,6 +74,22 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _cameraDepthRange, value);
         }
 
+        private double _cameraOffsetX;
+
+        public double CameraOffsetX
+        {
+            get => _cameraOffsetX;
+            set => SetProperty(ref _cameraOffsetX, value);
+        }
+
+        private double _cameraOffsetY;
+
+        public double CameraOffsetY
+        {
+            get => _cameraOffsetY;
+            set => SetProperty(ref _cameraOffsetY, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage
