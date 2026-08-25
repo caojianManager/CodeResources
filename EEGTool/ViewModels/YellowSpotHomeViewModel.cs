@@ -66,6 +66,14 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _cameraZoom, value);
         }
 
+        private double _cameraDepthRange = 3.0;
+
+        public double CameraDepthRange
+        {
+            get => _cameraDepthRange;
+            set => SetProperty(ref _cameraDepthRange, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage

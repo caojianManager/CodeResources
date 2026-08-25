@@ -96,6 +96,31 @@
                                            VerticalAlignment="Center"
                                            Text="{Binding MagnifierRadius, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, StringFormat={}{0:0}}"/>
                             </StackPanel>
+
+                            <TextBlock Text="摄像机深度" Foreground="Gray"
+                                FontSize="14"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
+                                Margin="10,15,0,0"/>
+                            <Grid Height="0.5" Margin="10,5,10,0" Background="LightGray"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="深度值范围:" FontSize="12"
+                                           VerticalAlignment="Center"/>
+                                <Slider Width="150"
+                                        Minimum="1"
+                                        Maximum="5"
+                                        TickFrequency="0.1"
+                                        IsSnapToTickEnabled="True"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Value="{Binding CameraDepthRange, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
+                                <TextBlock Width="32"
+                                           Margin="8,0,0,0"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding CameraDepthRange, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, StringFormat={}{0:0.0}x}"/>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

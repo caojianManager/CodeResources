@@ -47,6 +47,13 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new PropertyMetadata(1.0));
 
+        public static readonly DependencyProperty CameraDepthRangeProperty =
+            DependencyProperty.Register(
+                nameof(CameraDepthRange),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new PropertyMetadata(3.0, OnCameraDepthRangeChanged));
+
         private readonly float[] vertices = new float[]
         {
             -1f, -1f, 0f, 1f,
@@ -118,6 +125,17 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (double)GetValue(CameraZoomProperty);
             set => SetValue(CameraZoomProperty, value);
+        }
+
+        public double CameraDepthRange
+        {
+            get => (double)GetValue(CameraDepthRangeProperty);
+            set => SetValue(CameraDepthRangeProperty, value);
+        }
+
+        private static void OnCameraDepthRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((YelloSpotCaptureView)d).LimitCameraZoom();
         }
 
         private static void OnCameraFrameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -264,7 +282,7 @@ namespace EEGTool.Views.YelloSpot
                 }
             }
 
-            float zoom = (float)Math.Clamp(CameraZoom, 0.5, 3.0);
+            float zoom = (float)Math.Clamp(CameraZoom, 0.5, GetMaximumCameraZoom());
             scaleX *= zoom;
             scaleY *= zoom;
 
@@ -411,8 +429,18 @@ namespace EEGTool.Views.YelloSpot
             }
 
             double step = e.Delta > 0 ? 0.1 : -0.1;
-            CameraZoom = Math.Clamp(CameraZoom + step, 0.5, 3.0);
+            CameraZoom = Math.Clamp(CameraZoom + step, 0.5, GetMaximumCameraZoom());
             e.Handled = true;
+        }
+
+        private double GetMaximumCameraZoom()
+        {
+            return Math.Clamp(CameraDepthRange, 1.0, 5.0);
+        }
+
+        private void LimitCameraZoom()
+        {
+            CameraZoom = Math.Clamp(CameraZoom, 0.5, GetMaximumCameraZoom());
         }
 
         private void UpdateMagnifierPosition(Point position)
