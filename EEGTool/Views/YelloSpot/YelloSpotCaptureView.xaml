@@ -5,9 +5,36 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EEGTool.Views.YelloSpot"
              xmlns:gl="clr-namespace:FrameWork.OpenGLWindows"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <gl:OpenGLWindows  RenderAction="OpenTkControl_OnRender" Init="OpenTkControl_Init"/>
+
+        <Grid HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftColumn" Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Background="WhiteSmoke">
+                <Grid Width="10" VerticalAlignment="Stretch" HorizontalAlignment="Right" Background="#BADEFF">
+                    <Button Margin="0"
+                           Padding="0"
+                           Background="Transparent"
+                           BorderBrush="Transparent"
+                           BorderThickness="0"
+                             Click="DetailPanel_Click"
+                           HorizontalAlignment="Stretch" 
+                           VerticalAlignment="Stretch">
+                        <iconPacks:PackIconForkAwesome  x:Name="DetailPanelBtnArrow"
+                             Kind="AngleDoubleLeft" 
+                              Width="8" Height="13"
+                              Foreground="Black"/>
+                    </Button>
+                </Grid>
+            </Grid>
+            <Grid Grid.Column="1"></Grid>
+        </Grid>
     </Grid>
 </UserControl>

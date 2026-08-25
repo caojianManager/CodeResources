@@ -5,6 +5,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 
 namespace EEGTool.Views.YelloSpot
 {
@@ -13,6 +14,11 @@ namespace EEGTool.Views.YelloSpot
     /// </summary>
     public partial class YelloSpotCaptureView : UserControl
     {
+
+        private bool _isShowDetailPanel = true;
+        private bool _isAnimationing;
+        private Storyboard? _currentAnimation;
+
         public static readonly DependencyProperty CameraFrameProperty =
             DependencyProperty.Register(
                 nameof(CameraFrame),
@@ -232,6 +238,51 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform1(_magnificationLoc, 2.2f);
             GL.Uniform1(_magnifierEnabledLoc, _isMagnifierEnabled ? 1 : 0);
             GL.Uniform1(_viewportAspectLoc, (float)viewportWidth / viewportHeight);
+        }
+
+        private void DetailPanel_Click(object sender, RoutedEventArgs e)
+        {
+            SettingPanelAnimation();
+        }
+
+        private void SettingPanelAnimation()
+        {
+            if (_isAnimationing)
+                return;
+
+            _isAnimationing = true;
+
+            _currentAnimation?.Stop();
+
+            _isShowDetailPanel = !_isShowDetailPanel;
+
+            int fromValue = _isShowDetailPanel ? 10 : 343;
+            int toValue = _isShowDetailPanel ? 343 : 10;
+
+            var anim = new GridLengthAnimation
+            {
+                From = new GridLength(fromValue),
+                To = new GridLength(toValue),
+                Duration = TimeSpan.FromMilliseconds(400),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            anim.Completed += (_, __) =>
+            {
+                _isAnimationing = false;
+            };
+
+            _currentAnimation = new Storyboard();
+            Storyboard.SetTarget(anim, LeftColumn);
+            Storyboard.SetTargetProperty(anim, new PropertyPath(ColumnDefinition.WidthProperty));
+            _currentAnimation.Children.Add(anim);
+            _currentAnimation.Begin();
+
+            DetailPanelBtnArrow.Kind = _isShowDetailPanel
+                ? MahApps.Metro.IconPacks.PackIconForkAwesomeKind.AngleDoubleLeft
+                : MahApps.Metro.IconPacks.PackIconForkAwesomeKind.AngleDoubleRight;
+
+
         }
 
         private void UploadPendingFrame()
