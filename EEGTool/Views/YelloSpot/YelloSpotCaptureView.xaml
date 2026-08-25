@@ -121,6 +121,34 @@
                                            VerticalAlignment="Center"
                                            Text="{Binding CameraDepthRange, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, StringFormat={}{0:0.0}x}"/>
                             </StackPanel>
+
+                            <TextBlock Text="图像调整" Foreground="Gray"
+                                      FontSize="14"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Top"
+                                      Margin="10,15,0,0"/>
+                            <Grid Height="0.5" Margin="10,5,10,0" Background="LightGray"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="亮度:" FontSize="12"
+                               VerticalAlignment="Center"/>
+                            </StackPanel>
+
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="对比度:" FontSize="12"
+                               VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="饱和度:" FontSize="12"
+                                            VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="锐度:" FontSize="12"
+                                        VerticalAlignment="Center"/>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
