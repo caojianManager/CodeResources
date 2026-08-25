@@ -50,6 +50,7 @@ namespace EEGTool.Views.YelloSpot
         //Step 2: 初始化绘制所需要的资源
         private void OpenTkControl_Init()
         {
+            InitGLResources();
         }
 
         private void InitGLResources()
@@ -63,10 +64,18 @@ namespace EEGTool.Views.YelloSpot
             GL.BindVertexArray(_vao);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices,BufferUsage.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsage.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
+
+
+            int stride = 3 * sizeof(float);
+
+            // 位置
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+            GL.EnableVertexAttribArray(0);
+
         }
 
         //Step 3:渲染帧
