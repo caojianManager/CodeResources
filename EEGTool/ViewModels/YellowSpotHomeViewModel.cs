@@ -192,7 +192,7 @@ namespace EEGTool.ViewModels
 
         }
 
-        public void OnShow()
+        public void OnShow() 
         {
 
         }

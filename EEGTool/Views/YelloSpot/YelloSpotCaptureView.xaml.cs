@@ -4,6 +4,7 @@ using OpenTK.Graphics.OpenGL;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EEGTool.Views.YelloSpot
 {
@@ -37,6 +38,12 @@ namespace EEGTool.Views.YelloSpot
         private int _vao, _vbo, _ebo, _shaderProgram, _textureId;
         private int _textureLoc;
         private int _scaleLoc;
+        private int _magnifierCenterUvLoc;
+        private int _magnifierCenterLocalLoc;
+        private int _magnifierRadiusLoc;
+        private int _magnificationLoc;
+        private int _magnifierEnabledLoc;
+        private int _viewportAspectLoc;
         private int _indexCount;
         private bool _glResourcesInitialized;
         private byte[]? _pendingFrameData;
@@ -46,10 +53,19 @@ namespace EEGTool.Views.YelloSpot
         private int _textureWidth;
         private int _textureHeight;
         private bool _hasTextureFrame;
+        private float _scaleX = 1f;
+        private float _scaleY = 1f;
+        private float _magnifierCenterUvX = 0.5f;
+        private float _magnifierCenterUvY = 0.5f;
+        private float _magnifierCenterLocalX;
+        private float _magnifierCenterLocalY;
+        private bool _isMagnifierEnabled;
 
         public YelloSpotCaptureView()
         {
             InitializeComponent();
+            MouseMove += YelloSpotCaptureView_MouseMove;
+            MouseLeave += YelloSpotCaptureView_MouseLeave;
         }
 
         public CameraFrame? CameraFrame
@@ -132,6 +148,12 @@ namespace EEGTool.Views.YelloSpot
 
             _textureLoc = GL.GetUniformLocation(_shaderProgram, "uFrameTexture");
             _scaleLoc = GL.GetUniformLocation(_shaderProgram, "uScale");
+            _magnifierCenterUvLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierCenterUv");
+            _magnifierCenterLocalLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierCenterLocal");
+            _magnifierRadiusLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierRadius");
+            _magnificationLoc = GL.GetUniformLocation(_shaderProgram, "uMagnification");
+            _magnifierEnabledLoc = GL.GetUniformLocation(_shaderProgram, "uMagnifierEnabled");
+            _viewportAspectLoc = GL.GetUniformLocation(_shaderProgram, "uViewportAspect");
 
             GL.BindTexture(TextureTarget.Texture2D, _textureId);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -170,6 +192,7 @@ namespace EEGTool.Views.YelloSpot
             GL.BindTexture(TextureTarget.Texture2D, _textureId);
             GL.Uniform1(_textureLoc, 0);
             SetUniformScale(viewportWidth, viewportHeight);
+            SetMagnifierUniforms(viewportWidth, viewportHeight);
             GL.BindVertexArray(_vao);
 
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
@@ -196,6 +219,19 @@ namespace EEGTool.Views.YelloSpot
             }
 
             GL.Uniform2(_scaleLoc, scaleX, scaleY);
+            _scaleX = scaleX;
+            _scaleY = scaleY;
+            UpdateMagnifierPosition(Mouse.GetPosition(this));
+        }
+
+        private void SetMagnifierUniforms(int viewportWidth, int viewportHeight)
+        {
+            GL.Uniform2(_magnifierCenterUvLoc, _magnifierCenterUvX, _magnifierCenterUvY);
+            GL.Uniform2(_magnifierCenterLocalLoc, _magnifierCenterLocalX, _magnifierCenterLocalY);
+            GL.Uniform1(_magnifierRadiusLoc, 0.28f);
+            GL.Uniform1(_magnificationLoc, 2.2f);
+            GL.Uniform1(_magnifierEnabledLoc, _isMagnifierEnabled ? 1 : 0);
+            GL.Uniform1(_viewportAspectLoc, (float)viewportWidth / viewportHeight);
         }
 
         private void UploadPendingFrame()
@@ -259,6 +295,43 @@ namespace EEGTool.Views.YelloSpot
             }
 
             _hasTextureFrame = true;
+        }
+
+        private void YelloSpotCaptureView_MouseMove(object sender, MouseEventArgs e)
+        {
+            UpdateMagnifierPosition(e.GetPosition(this));
+        }
+
+        private void YelloSpotCaptureView_MouseLeave(object sender, MouseEventArgs e)
+        {
+            _isMagnifierEnabled = false;
+        }
+
+        private void UpdateMagnifierPosition(Point position)
+        {
+            double width = ActualWidth;
+            double height = ActualHeight;
+
+            if (width <= 0 || height <= 0 || _scaleX <= 0f || _scaleY <= 0f)
+            {
+                _isMagnifierEnabled = false;
+                return;
+            }
+
+            float ndcX = (float)(position.X / width * 2.0 - 1.0);
+            float ndcY = (float)(1.0 - position.Y / height * 2.0);
+
+            if (Math.Abs(ndcX) > _scaleX || Math.Abs(ndcY) > _scaleY)
+            {
+                _isMagnifierEnabled = false;
+                return;
+            }
+
+            _magnifierCenterLocalX = ndcX / _scaleX;
+            _magnifierCenterLocalY = ndcY / _scaleY;
+            _magnifierCenterUvX = (_magnifierCenterLocalX + 1f) * 0.5f;
+            _magnifierCenterUvY = (1f - _magnifierCenterLocalY) * 0.5f;
+            _isMagnifierEnabled = true;
         }
     }
 }
