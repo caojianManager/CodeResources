@@ -34,18 +34,6 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _isInit, value);
         }
 
-        private ImageSource? _cameraImageSource;
-
-        public ImageSource? CameraImageSource
-        {
-            get => _cameraImageSource;
-            set
-            {
-                _cameraImageSource = value;
-                OnPropertyChanged(nameof(CameraImageSource));
-            }
-        }
-
         private CameraFrame? _latestCameraFrame;
 
         public CameraFrame? LatestCameraFrame
@@ -193,7 +181,6 @@ namespace EEGTool.ViewModels
             _camera?.Stop();
             _camera?.Dispose();
             _camera = null;
-            CameraImageSource = null;
             LatestCameraFrame = null;
             IsRecording = false;
             Interlocked.Exchange(ref _isPreviewUpdateQueued, 0);
