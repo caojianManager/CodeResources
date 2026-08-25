@@ -42,6 +42,14 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _latestCameraFrame, value);
         }
 
+        private bool _isMagnifierEnabled = true;
+
+        public bool IsMagnifierEnabled
+        {
+            get => _isMagnifierEnabled;
+            set => SetProperty(ref _isMagnifierEnabled, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage

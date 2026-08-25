@@ -32,6 +32,14 @@
                                        VerticalAlignment="Top"
                                        Margin="10,15,0,0"/>
                             <Grid Height="0.5" Margin="10,5,10,0" Background="LightGray"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="10,5">
+                                <TextBlock Text="是否开启:" FontSize="12"
+                                           VerticalAlignment="Center"/>
+                                <CheckBox Margin="8,0,0,0"
+                                          VerticalAlignment="Center"
+                                          IsChecked="{Binding IsMagnifierEnabled, RelativeSource={RelativeSource AncestorType={x:Type local:YelloSpotCaptureView}}, Mode=TwoWay}"/>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

@@ -26,6 +26,13 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new PropertyMetadata(null, OnCameraFrameChanged));
 
+        public static readonly DependencyProperty IsMagnifierEnabledProperty =
+            DependencyProperty.Register(
+                nameof(IsMagnifierEnabled),
+                typeof(bool),
+                typeof(YelloSpotCaptureView),
+                new PropertyMetadata(true));
+
         private readonly float[] vertices = new float[]
         {
             -1f, -1f, 0f, 1f,
@@ -65,7 +72,7 @@ namespace EEGTool.Views.YelloSpot
         private float _magnifierCenterUvY = 0.5f;
         private float _magnifierCenterLocalX;
         private float _magnifierCenterLocalY;
-        private bool _isMagnifierEnabled;
+        private bool _isMagnifierActive;
 
         public YelloSpotCaptureView()
         {
@@ -78,6 +85,12 @@ namespace EEGTool.Views.YelloSpot
         {
             get => (CameraFrame?)GetValue(CameraFrameProperty);
             set => SetValue(CameraFrameProperty, value);
+        }
+
+        public bool IsMagnifierEnabled
+        {
+            get => (bool)GetValue(IsMagnifierEnabledProperty);
+            set => SetValue(IsMagnifierEnabledProperty, value);
         }
 
         private static void OnCameraFrameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -236,7 +249,7 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform2(_magnifierCenterLocalLoc, _magnifierCenterLocalX, _magnifierCenterLocalY);
             GL.Uniform1(_magnifierRadiusLoc, 0.28f);
             GL.Uniform1(_magnificationLoc, 2.2f);
-            GL.Uniform1(_magnifierEnabledLoc, _isMagnifierEnabled ? 1 : 0);
+            GL.Uniform1(_magnifierEnabledLoc, IsMagnifierEnabled && _isMagnifierActive ? 1 : 0);
             GL.Uniform1(_viewportAspectLoc, (float)viewportWidth / viewportHeight);
         }
 
@@ -355,7 +368,7 @@ namespace EEGTool.Views.YelloSpot
 
         private void YelloSpotCaptureView_MouseLeave(object sender, MouseEventArgs e)
         {
-            _isMagnifierEnabled = false;
+            _isMagnifierActive = false;
         }
 
         private void UpdateMagnifierPosition(Point position)
@@ -365,7 +378,7 @@ namespace EEGTool.Views.YelloSpot
 
             if (width <= 0 || height <= 0 || _scaleX <= 0f || _scaleY <= 0f)
             {
-                _isMagnifierEnabled = false;
+                _isMagnifierActive = false;
                 return;
             }
 
@@ -374,7 +387,7 @@ namespace EEGTool.Views.YelloSpot
 
             if (Math.Abs(ndcX) > _scaleX || Math.Abs(ndcY) > _scaleY)
             {
-                _isMagnifierEnabled = false;
+                _isMagnifierActive = false;
                 return;
             }
 
@@ -382,7 +395,7 @@ namespace EEGTool.Views.YelloSpot
             _magnifierCenterLocalY = ndcY / _scaleY;
             _magnifierCenterUvX = (_magnifierCenterLocalX + 1f) * 0.5f;
             _magnifierCenterUvY = (1f - _magnifierCenterLocalY) * 0.5f;
-            _isMagnifierEnabled = true;
+            _isMagnifierActive = true;
         }
     }
 }
