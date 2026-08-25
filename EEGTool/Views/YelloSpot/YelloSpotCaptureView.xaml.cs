@@ -108,6 +108,20 @@ namespace EEGTool.Views.YelloSpot
                 typeof(YelloSpotCaptureView),
                 new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+        public static readonly DependencyProperty ImageEmbossProperty =
+            DependencyProperty.Register(
+                nameof(ImageEmboss),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public static readonly DependencyProperty ImageMosaicProperty =
+            DependencyProperty.Register(
+                nameof(ImageMosaic),
+                typeof(double),
+                typeof(YelloSpotCaptureView),
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int virtualKey);
 
@@ -141,6 +155,8 @@ namespace EEGTool.Views.YelloSpot
         private int _saturationLoc;
         private int _sharpnessLoc;
         private int _outlineLoc;
+        private int _embossLoc;
+        private int _mosaicLoc;
         private int _indexCount;
         private bool _glResourcesInitialized;
         private byte[]? _pendingFrameData;
@@ -244,6 +260,18 @@ namespace EEGTool.Views.YelloSpot
             set => SetValue(ImageOutlineProperty, value);
         }
 
+        public double ImageEmboss
+        {
+            get => (double)GetValue(ImageEmbossProperty);
+            set => SetValue(ImageEmbossProperty, value);
+        }
+
+        public double ImageMosaic
+        {
+            get => (double)GetValue(ImageMosaicProperty);
+            set => SetValue(ImageMosaicProperty, value);
+        }
+
         private static void OnCameraDepthRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((YelloSpotCaptureView)d).LimitCameraZoom();
@@ -335,6 +363,8 @@ namespace EEGTool.Views.YelloSpot
             _saturationLoc = GL.GetUniformLocation(_shaderProgram, "uSaturation");
             _sharpnessLoc = GL.GetUniformLocation(_shaderProgram, "uSharpness");
             _outlineLoc = GL.GetUniformLocation(_shaderProgram, "uOutline");
+            _embossLoc = GL.GetUniformLocation(_shaderProgram, "uEmboss");
+            _mosaicLoc = GL.GetUniformLocation(_shaderProgram, "uMosaic");
 
             GL.BindTexture(TextureTarget.Texture2D, _textureId);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -431,6 +461,8 @@ namespace EEGTool.Views.YelloSpot
             GL.Uniform1(_saturationLoc, (float)Math.Clamp(ImageSaturation / 100.0, 0.0, 2.0));
             GL.Uniform1(_sharpnessLoc, (float)Math.Clamp(ImageSharpness / 20.0, 0.0, 5.0));
             GL.Uniform1(_outlineLoc, (float)Math.Clamp(ImageOutline / 100.0, 0.0, 1.0));
+            GL.Uniform1(_embossLoc, (float)Math.Clamp(ImageEmboss / 100.0, 0.0, 1.0));
+            GL.Uniform1(_mosaicLoc, (float)Math.Clamp(ImageMosaic / 100.0, 0.0, 1.0));
         }
 
         private void DetailPanel_Click(object sender, RoutedEventArgs e)

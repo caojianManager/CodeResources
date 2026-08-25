@@ -17,16 +17,28 @@ uniform float uContrast;
 uniform float uSaturation;
 uniform float uSharpness;
 uniform float uOutline;
+uniform float uEmboss;
+uniform float uMosaic;
 
 vec4 sampleAdjustedColor(vec2 uv)
 {
-    vec2 texelSize = 1.0 / vec2(textureSize(uFrameTexture, 0));
+    vec2 textureSizeValue = vec2(textureSize(uFrameTexture, 0));
+    vec2 texelSize = 1.0 / textureSizeValue;
+    if (uMosaic > 0.001)
+    {
+        float blockPixels = mix(1.0, 48.0, uMosaic);
+        vec2 blockSize = blockPixels / textureSizeValue;
+        uv = clamp((floor(uv / blockSize) + vec2(0.5)) * blockSize, vec2(0.0), vec2(1.0));
+    }
+
     vec4 center = texture(uFrameTexture, uv);
 
     vec3 left = texture(uFrameTexture, clamp(uv + vec2(-texelSize.x, 0.0), vec2(0.0), vec2(1.0))).rgb;
     vec3 right = texture(uFrameTexture, clamp(uv + vec2(texelSize.x, 0.0), vec2(0.0), vec2(1.0))).rgb;
     vec3 up = texture(uFrameTexture, clamp(uv + vec2(0.0, -texelSize.y), vec2(0.0), vec2(1.0))).rgb;
     vec3 down = texture(uFrameTexture, clamp(uv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0))).rgb;
+    vec3 topLeft = texture(uFrameTexture, clamp(uv + vec2(-texelSize.x, -texelSize.y), vec2(0.0), vec2(1.0))).rgb;
+    vec3 bottomRight = texture(uFrameTexture, clamp(uv + vec2(texelSize.x, texelSize.y), vec2(0.0), vec2(1.0))).rgb;
 
     vec3 edgeDetail = center.rgb * 4.0 - left - right - up - down;
     float centerGray = dot(center.rgb, vec3(0.299, 0.587, 0.114));
@@ -42,6 +54,8 @@ vec4 sampleAdjustedColor(vec2 uv)
     float adjustedGray = dot(rgb, vec3(0.299, 0.587, 0.114));
     rgb = mix(vec3(adjustedGray), rgb, uSaturation);
     rgb += vec3(uBrightness);
+    float embossGray = 0.5 + dot(bottomRight - topLeft, vec3(0.299, 0.587, 0.114)) * 3.0;
+    rgb = mix(rgb, vec3(embossGray), uEmboss);
     float outlineMask = smoothstep(0.12, 0.35, edge * uOutline * 5.0);
     rgb = mix(rgb, vec3(0.0), outlineMask * uOutline);
 

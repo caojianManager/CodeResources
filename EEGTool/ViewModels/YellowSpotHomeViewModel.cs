@@ -130,6 +130,22 @@ namespace EEGTool.ViewModels
             set => SetProperty(ref _imageOutline, value);
         }
 
+        private double _imageEmboss;
+
+        public double ImageEmboss
+        {
+            get => _imageEmboss;
+            set => SetProperty(ref _imageEmboss, value);
+        }
+
+        private double _imageMosaic;
+
+        public double ImageMosaic
+        {
+            get => _imageMosaic;
+            set => SetProperty(ref _imageMosaic, value);
+        }
+
         private string? _cameraErrorMessage;
 
         public string? CameraErrorMessage

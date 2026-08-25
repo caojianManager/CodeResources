@@ -126,7 +126,9 @@
                                           ImageContrast="{Binding ImageContrast, Mode=TwoWay}"
                                           ImageSaturation="{Binding ImageSaturation, Mode=TwoWay}"
                                           ImageSharpness="{Binding ImageSharpness, Mode=TwoWay}"
-                                          ImageOutline="{Binding ImageOutline, Mode=TwoWay}"/>
+                                          ImageOutline="{Binding ImageOutline, Mode=TwoWay}"
+                                          ImageEmboss="{Binding ImageEmboss, Mode=TwoWay}"
+                                          ImageMosaic="{Binding ImageMosaic, Mode=TwoWay}"/>
                 <TextBlock Text="{Binding CameraErrorMessage}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"
