@@ -93,7 +93,7 @@
                     <ComboBox Width="150"
                               Height="24"
                               Margin="8,0,0,3"
-                              VerticalAlignment="Bottom"
+                              VerticalAlignment="Center"
                               ItemsSource="{Binding CameraQualityOptions}"
                               SelectedItem="{Binding SelectedCameraQuality}"
                               DisplayMemberPath="Name"
