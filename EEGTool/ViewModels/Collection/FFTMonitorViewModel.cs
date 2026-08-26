@@ -430,6 +430,7 @@ namespace EEGTool.ViewModels.Collection
         private static List<string> GetChannelNames(int channelCount)
         {
             var template = CollectionInfoManager.GetInstance().Info.Template;
+
             List<int> enabledChannels = TemplateFileManager.GetInstance()
                 .GetCurrentChannelList(template)
                 .Where(channel => channel >= 1 && channel <= EEGTool.Models.BLE.CommandManager.ChannelCount)

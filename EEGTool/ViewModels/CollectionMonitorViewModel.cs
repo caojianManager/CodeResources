@@ -1,25 +1,27 @@
-﻿using EEGTool.Views.Basics;
+﻿using BLETool;
+using brainflow;
+using EEGTool.Models;
+using EEGTool.Models.BLE;
+using EEGTool.Models.Collection;
+using EEGTool.Models.Impedance;
+using EEGTool.Models.Template;
+using EEGTool.Views.Basics;
 using Framework.Event;
 using Framework.MVVM.Commands;
 using FrameWork.Event;
 using FrameWork.MVVM;
 using FrameWork.Tools;
 using MathNet.Numerics.IntegralTransforms;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using BLETool;
-using EEGTool.Models;
-using EEGTool.Models.BLE;
-using EEGTool.Models.Collection;
-using EEGTool.Models.Impedance;
-using EEGTool.Models.Template;
 using CommandManager = EEGTool.Models.BLE.CommandManager;
 using Logger = FrameWork.Log.Logger;
 
@@ -669,10 +671,88 @@ namespace EEGTool.ViewModels
         {
             public void BandPass(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type)
             {
+                if (data == null || data.Length < 2)
+                    return;
+
+                double mean = data.Average();
+                for (int i = 0; i < data.Length; i++)
+                    data[i] -= mean;
+
+
+                // ---- 1. 镜像扩展信号，缓解边缘效应 ----
+                int mirrorSamples = Math.Min(data.Length / 2, sampleRate);
+                double[] padded = new double[data.Length + 2 * mirrorSamples];
+
+                // 左边镜像
+                for (int i = 0; i < mirrorSamples; i++)
+                    padded[i] = data[mirrorSamples - 1 - i];
+
+                // 中间原始数据
+                Array.Copy(data, 0, padded, mirrorSamples, data.Length);
+
+                // 右边镜像
+                for (int i = 0; i < mirrorSamples; i++)
+                    padded[mirrorSamples + data.Length + i] = data[data.Length - 1 - i];
+
+                // ---- 2. 带通滤波 ----
+                var filteredPadded = DataFilter.perform_bandpass(
+                    padded,
+                    sampleRate,
+                    startHz,
+                    stopHz,
+                    order,
+                    (int)FilterTypes.BESSEL,
+                    0);
+
+                // ---- 3. 去掉镜像部分，返回原始长度 ----
+                double[] filtered = new double[data.Length];
+                Array.Copy(filteredPadded, mirrorSamples, filtered, 0, data.Length);
+             
+                data = filtered;
             }
 
             public void BandStop(double[] data, int sampleRate, double startHz, double stopHz, int order, FilterKind type)
             {
+                int mirrorCycles = 10;  
+                if (data == null || data.Length < 8)
+                    return;
+
+                // 0) 去均值
+                double mean = data.Average();
+                var x = data.Select(v => v - mean).ToArray();
+
+                // 1) 计算镜像长度 pad
+                int byCycles = (int)Math.Round(mirrorCycles * sampleRate / Math.Max(1.0, startHz));
+                int byOrder = 3 * (order + 1);
+                int pad = Math.Max(32, Math.Max(byCycles, byOrder));
+                pad = Math.Min(pad, x.Length); // 信号短时也能镜像整个长度
+
+                // 2) 偶对称镜像（even reflection）
+                var ext = new double[x.Length + 2 * pad];
+                // 左边
+                for (int i = 0; i < pad; i++)
+                    ext[i] = x[pad - 1 - i];
+                // 中间
+                Array.Copy(x, 0, ext, pad, x.Length);
+                // 右边
+                int n = x.Length;
+                for (int i = 0; i < pad; i++)
+                    ext[pad + n + i] = x[n - 1 - i];
+
+                // 3) 零相位带阻滤波
+                var yExt = DataFilter.perform_bandstop(
+                    ext, sampleRate, startHz, stopHz, order,
+                    (int)FilterTypes.BUTTERWORTH_ZERO_PHASE, 0.0);
+
+                // 4) 裁剪镜像
+                var resultData = new double[x.Length];
+                Array.Copy(yExt, pad, resultData, 0, x.Length);
+
+                // 5) 加回均值
+                for (int i = 0; i < resultData.Length; i++)
+                    resultData[i] += mean;
+
+                data = resultData;
             }
 
             public void RemoveEnvironmentalNoise(double[] data, int sampleRate, int noiseHz)
