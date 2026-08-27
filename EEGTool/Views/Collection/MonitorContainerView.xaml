@@ -185,6 +185,7 @@
 
             <Button Style="{StaticResource LayoutIconButtonStyle}"
                     Margin="0,0,15,0"
+                    Command="{Binding ClickFilterCommand}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     ToolTip="滤波" Cursor="Hand">

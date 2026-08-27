@@ -1,3 +1,4 @@
+using EEGTool.ViewModels.Filters;
 using Framework.MVVM.Commands;
 using FrameWork.MVVM;
 using System;
@@ -33,12 +34,14 @@ namespace EEGTool.ViewModels.Collection
             SetTwoLayoutCommand = new RelayCommand(_ => SetLayoutAndClose(TwoLayout));
             SetThreeLayoutCommand = new RelayCommand(_ => SetLayoutAndClose(ThreeLayout));
             ShowLayoutFlyoutCommand = new RelayCommand(_ => ShowLayoutFlyout());
+            ClickFilterCommand = new RelayCommand(_ => ClickFilterBtn());
         }
 
         public ICommand SetSingleLayoutCommand { get; }
         public ICommand SetTwoLayoutCommand { get; }
         public ICommand SetThreeLayoutCommand { get; }
         public ICommand ShowLayoutFlyoutCommand { get; }
+        public ICommand ClickFilterCommand { get; }
 
         public bool IsLayoutFlyoutOpen
         {
@@ -85,6 +88,11 @@ namespace EEGTool.ViewModels.Collection
         {
             LayoutMode = layoutMode;
             CloseLayoutFlyout();
+        }
+
+        private void ClickFilterBtn()
+        {
+            FilterConfigViewModel.Show();
         }
 
         private string LayoutMode
