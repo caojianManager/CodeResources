@@ -5,7 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EEGTool.Views.Filters"
         mc:Ignorable="d"
-        Title="FilterConfigView" Height="450" Width="800"
+        Title="滤波器" Height="600" Width="350"
+        MinHeight="600" MaxHeight="600"
+        MinWidth="350" MaxWidth="350"
+        ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen">
     <Grid>
         
