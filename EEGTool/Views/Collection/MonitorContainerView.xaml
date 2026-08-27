@@ -181,6 +181,17 @@
 
                 </StackPanel>
             </Border>
+
+
+            <Button Style="{StaticResource LayoutIconButtonStyle}"
+                    Margin="0,0,15,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    ToolTip="滤波" Cursor="Hand">
+                <iconPacks:PackIconPhosphorIcons Kind="WaveformFill"
+                           Width="20"
+                           Height="20"/>
+            </Button>
         </Grid>
      
         
