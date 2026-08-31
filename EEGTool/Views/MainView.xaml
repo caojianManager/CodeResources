@@ -307,10 +307,10 @@
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
                                     <iconPacks:PackIconMaterial Kind="EyeArrowLeftOutline"
                                                           Width="30"
-                                                                HorizontalAlignment="Center"
+                                                          HorizontalAlignment="Center"
                                                           Height="30"
                                                           Foreground="#537191"/>
-                                    <TextBlock Text="黄斑变性" FontSize="12"
+                                    <TextBlock Text="OpenTK(Camera)" FontSize="12"
                                                Margin="0,2,0,0"
                                                HorizontalAlignment="Center"
                                                Foreground="#1F456E"/>
